@@ -84,7 +84,7 @@ TOKEN:
 /**
  * Represents a SQL code block.
  */
-SimpleNode QueryStatement():
+ASTQueryStatement QueryStatement():
 {/*@bgen(jjtree) QueryStatement */
   ASTQueryStatement jjtn000 = new ASTQueryStatement(null, JJTQUERYSTATEMENT);
   boolean jjtc000 = true;
