@@ -30,6 +30,7 @@ public class SqlParserTest extends TestCase {
 	SqlParser parser;
 	boolean correctQueries;
 	BufferedReader testReader;
+	SimpleNode simpleNode;
 
 	testReader = new BufferedReader(new FileReader("./sql/testQueries.sql"));
 	parser = null;
@@ -48,7 +49,8 @@ public class SqlParserTest extends TestCase {
 	    }
 
 	    try {
-		SqlParser.CompilationUnit();
+		simpleNode = parser.QueryStatement();
+		simpleNode.dump("");
 	    } catch (Exception e) {
 		logger.log(Level.INFO, "Problems in query #" + queryCount, e);
 		correctQueries = false;
