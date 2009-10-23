@@ -17,15 +17,6 @@ PARSER_BEGIN(SqlParser)
  * 
  */
 public class SqlParser {
-
-    /**
-     * Returns the root node of the AST.  
-     * It only makes sense to call this after a successful parse. 
-     * @return the root node
-    */
-    public Node rootNode() {
-        return jjtree.rootNode();
-    }
 }
 
 PARSER_END(SqlParser)
@@ -87,11 +78,14 @@ TOKEN:
 /**
  * Represents a SQL code block.
  */
-void CompilationUnit():
+SimpleNode QueryStatement():
 {}
 {
 	Query()
 	";"
+    {
+    	return jjtThis;
+    }
 }
 
 /**
