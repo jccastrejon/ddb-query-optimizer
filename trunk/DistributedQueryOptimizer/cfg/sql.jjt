@@ -1,0 +1,265 @@
+options {
+	STATIC=true;
+    MULTI=true;
+    NODE_EXTENDS="mx.itesm.ddb.util.SqlNode";
+    NODE_PACKAGE="mx.itesm.ddb.parser";
+    TRACK_TOKENS=true;
+    IGNORE_CASE=true;
+    VISITOR=true;
+}
+
+PARSER_BEGIN(SqlParser)
+
+/**
+ * SQL Parser.
+ * 
+ * @author jccastrejon
+ * 
+ */
+public class SqlParser {
+
+    /**
+     * Returns the root node of the AST.  
+     * It only makes sense to call this after a successful parse. 
+     * @return the root node
+    */
+    public Node rootNode() {
+        return jjtree.rootNode();
+    }
+}
+
+PARSER_END(SqlParser)
+
+/* White spaces */
+SKIP :
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+| "\f"
+}
+
+/* SQL Select keywords */
+TOKEN :
+{
+	<K_ALL:"ALL">
+|   <K_AND:"AND">
+|   <K_ANY:"ANY">
+|   <K_AS:"AS">
+|   <K_ASC:"ASC">
+|	<K_BETWEEN:"BETWEEN">
+|   <K_DESC:"DESC">
+|   <K_DISTINCT:"DISTINCT">
+|   <K_EXISTS:"EXISTS">
+|   <K_FROM:"FROM">
+|	<K_IN:"IN">
+|	<K_IS:"IS">
+|   <K_LIKE:"LIKE">
+|   <K_NOT:"NOT">
+|   <K_NULL:"NULL">
+|   <K_OR:"OR">
+|   <K_SELECT:"SELECT">
+|   <K_WHERE:"WHERE">
+}
+
+/* Numeric constants */
+TOKEN :
+{
+	< S_NUMBER: <FLOAT>
+	    | <FLOAT> ( ["e","E"] ([ "-","+"])? <FLOAT> )?>
+| 	< #FLOAT: <INTEGER>
+	    | <INTEGER> ( "." <INTEGER> )?
+	    | "." <INTEGER>>
+| 	< #INTEGER: ( <DIGIT> )+ >
+| 	< #DIGIT: ["0" - "9"] >
+}
+
+/* Identifiers */
+TOKEN:
+{
+    < S_IDENTIFIER: (<LETTER>)+ (<DIGIT> | <LETTER> |<SPECIAL_CHARS>)* >
+|	< #LETTER: ["a"-"z", "A"-"Z"] >
+|	< #SPECIAL_CHARS: "$" | "_" | "#">
+|	< S_CHAR_LITERAL: "'" (~["'"])* "'" ("'" (~["'"])* "'")*>
+}
+
+/**
+ * Represents a SQL code block.
+ */
+void CompilationUnit():
+{}
+{
+	Query()
+	";"
+}
+
+/**
+ * SQL query.
+ */
+void Query() :
+{}
+{
+    "SELECT" [ "ALL" | "DISTINCT" ] SelectList()
+    FromClause()
+    [ WhereClause() ]
+}
+
+/*
+ * Result attributes.
+ */
+void SelectList():
+{}
+{
+    "*" | SelectItem() ("," SelectItem())*
+}
+
+void SelectItem():
+{}
+{
+    (
+    	LOOKAHEAD(2) <S_IDENTIFIER>".*" // table.*
+      | SQLSimpleExpression() // column name or expression
+    )
+    [ [ "AS" ] <S_IDENTIFIER>]
+}
+
+void SQLSimpleExpression():
+{}
+{
+	<S_IDENTIFIER>
+|	SQLMultiplicativeExpression() ( ("+" | "-" | "||") SQLMultiplicativeExpression())*
+}
+
+
+void SQLMultiplicativeExpression():
+{}
+{
+    SQLExponentExpression() ( ("*" | "/") SQLExponentExpression())*
+}
+
+void SQLExponentExpression():
+{}
+{
+    SQLUnaryExpression() ( "**" SQLUnaryExpression())*
+}
+
+void SQLUnaryExpression():
+{}
+{
+    ["+" | "-"] SQLPrimaryExpression()
+}
+
+void SQLPrimaryExpression():
+{}
+{
+    <S_NUMBER>
+  | <S_CHAR_LITERAL>
+  | "NULL"
+  | "(" (LOOKAHEAD(3) Query() | SQLExpression()) ")"
+}
+
+void SQLExpression():
+{}
+{
+    SQLAndExpression() ("OR" SQLAndExpression())*
+}
+
+void SQLAndExpression():
+{}
+{
+    SQLUnaryLogicalExpression() ( "AND" SQLUnaryLogicalExpression())*
+}
+
+void SQLUnaryLogicalExpression():
+{}
+{
+    LOOKAHEAD(2) ExistsClause()
+  | (["NOT"] SQLRelationalExpression())
+}
+
+void ExistsClause():
+{}
+{
+    ["NOT"] "EXISTS" "(" Query() ")"
+}
+
+void SQLRelationalExpression():
+{}
+{
+    /* Only after looking past "(", Expression() and "," we will know that
+       it is expression list */
+
+    (LOOKAHEAD("(" SQLSimpleExpression() ",")
+     "(" SQLExpressionList() ")"
+|
+    (SQLSimpleExpression()))
+
+    /* Lookahead(2) is required because of NOT IN,NOT BETWEEN and NOT LIKE */
+   ( SQLRelationalOperatorExpression() |  LOOKAHEAD(2) (SQLInClause())
+                                    |  LOOKAHEAD(2) (SQLBetweenClause())
+                                    |  LOOKAHEAD(2) (SQLLikeClause())
+                                    |  IsNullClause()
+   )?
+}
+
+void SQLExpressionList():
+{}
+{
+    SQLExpression() ("," SQLExpression())*
+}
+
+void SQLRelationalOperatorExpression():
+{}
+{
+    /* Only after seeing an ANY/ALL or "(" followed by a SubQuery() we can
+    determine that is is a sub-query
+    */
+    (   LOOKAHEAD("ANY" | "ALL" | "(" "SELECT")
+        (["ALL" | "ANY"] "(" Query() ")")
+    )
+}
+
+void SQLInClause():
+{}
+{
+    ["NOT"] "IN" "(" (LOOKAHEAD(3) Query() | SQLExpressionList()) ")"
+}
+
+void SQLBetweenClause():
+{}
+{
+    ["NOT"] "BETWEEN" SQLSimpleExpression() "AND" SQLSimpleExpression()
+}
+
+void SQLLikeClause():
+{}
+{
+    ["NOT"] "LIKE" SQLSimpleExpression()
+}
+
+void IsNullClause():
+{}
+{
+    "IS" ["NOT"] "NULL"
+}
+
+void FromClause():
+{}
+{
+    "FROM" QueryTableExpression() ( "," QueryTableExpression())*
+}
+
+void QueryTableExpression():
+{}
+{
+    (<S_IDENTIFIER> // might also be a query name
+     | LOOKAHEAD(3) "(" Query() ")"
+    )
+}
+
+void WhereClause():
+{}
+{
+    "WHERE" SQLExpression()
+}
