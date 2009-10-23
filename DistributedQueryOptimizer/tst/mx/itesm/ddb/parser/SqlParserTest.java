@@ -7,7 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import junit.framework.TestCase;
-import mx.itesm.ddb.util.RelationalAlgebra;
+import mx.itesm.ddb.util.QueryData;
 
 /**
  * @author jccastrejon
@@ -31,7 +31,7 @@ public class SqlParserTest extends TestCase {
 	SqlParser parser;
 	boolean correctQueries;
 	BufferedReader testReader;
-	RelationalAlgebra queryStatement;
+	QueryData queryStatement;
 
 	testReader = new BufferedReader(new FileReader("./sql/testQueries.sql"));
 	parser = null;
@@ -52,8 +52,7 @@ public class SqlParserTest extends TestCase {
 	    try {
 		System.out.println("\nParsing query #" + queryCount);
 		queryStatement = SqlParser.QueryStatement();
-		System.out.println("\u03A0<sub>" + queryStatement.getAttributes() + "<sub>("
-			+ queryStatement.getRelations() + ")");
+		System.out.println(queryStatement);
 	    } catch (Exception e) {
 		logger.log(Level.INFO, "Problems in query #" + queryCount, e);
 		correctQueries = false;
