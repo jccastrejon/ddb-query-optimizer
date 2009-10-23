@@ -14,7 +14,7 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
 /**
  * Represents a SQL code block.
  */
-  static final public SimpleNode QueryStatement() throws ParseException {
+  static final public ASTQueryStatement QueryStatement() throws ParseException {
  /*@bgen(jjtree) QueryStatement */
   ASTQueryStatement jjtn000 = new ASTQueryStatement(null, JJTQUERYSTATEMENT);
   boolean jjtc000 = true;
