@@ -5,7 +5,7 @@ package mx.itesm.ddb.parser;
 
 public interface SqlParserTreeConstants
 {
-  public int JJTCOMPILATIONUNIT = 0;
+  public int JJTQUERYSTATEMENT = 0;
   public int JJTQUERY = 1;
   public int JJTSELECTLIST = 2;
   public int JJTSELECTITEM = 3;
@@ -31,7 +31,7 @@ public interface SqlParserTreeConstants
 
 
   public String[] jjtNodeName = {
-    "CompilationUnit",
+    "QueryStatement",
     "Query",
     "SelectList",
     "SelectItem",
@@ -56,4 +56,4 @@ public interface SqlParserTreeConstants
     "WhereClause",
   };
 }
-/* JavaCC - OriginalChecksum=a0d38294dff0e38e78782750ca3c6c73 (do not edit this line) */
+/* JavaCC - OriginalChecksum=bceb2590a685869d8302644b6c0b0f43 (do not edit this line) */

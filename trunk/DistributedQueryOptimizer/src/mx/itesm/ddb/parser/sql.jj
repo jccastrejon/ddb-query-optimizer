@@ -23,15 +23,6 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants/*@egen*
   protected static JJTSqlParserState jjtree = new JJTSqlParserState();
 
 /*@egen*/
-
-    /**
-     * Returns the root node of the AST.  
-     * It only makes sense to call this after a successful parse. 
-     * @return the root node
-    */
-    public Node rootNode() {
-        return jjtree.rootNode();
-    }
 }
 
 PARSER_END(SqlParser)
@@ -93,18 +84,27 @@ TOKEN:
 /**
  * Represents a SQL code block.
  */
-void CompilationUnit():
-{/*@bgen(jjtree) CompilationUnit */
-  ASTCompilationUnit jjtn000 = new ASTCompilationUnit(null, JJTCOMPILATIONUNIT);
+SimpleNode QueryStatement():
+{/*@bgen(jjtree) QueryStatement */
+  ASTQueryStatement jjtn000 = new ASTQueryStatement(null, JJTQUERYSTATEMENT);
   boolean jjtc000 = true;
   jjtree.openNodeScope(jjtn000);
   jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/}
-{/*@bgen(jjtree) CompilationUnit */
+{/*@bgen(jjtree) QueryStatement */
         try {
 /*@egen*/
 	Query()
 	";"/*@bgen(jjtree)*/
+    {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+      jjtn000.jjtSetLastToken(getToken(0));
+    }
+/*@egen*/
+    {
+    	return jjtn000;
+    }/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
