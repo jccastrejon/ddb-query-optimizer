@@ -53,6 +53,7 @@ public class SqlParserTest extends TestCase {
 
 	    try {
 		queryStatement = SqlParser.QueryStatement();
+		System.out.println("\nParsing query #" + queryCount);
 		queryStatement.jjtAccept(visitor, null);
 	    } catch (Exception e) {
 		logger.log(Level.INFO, "Problems in query #" + queryCount, e);
