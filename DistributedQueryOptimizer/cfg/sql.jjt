@@ -16,6 +16,11 @@ PARSER_BEGIN(SqlParser)
  * @author jccastrejon
  * 
  */
+ 
+import mx.itesm.ddb.util.RelationalAlgebra;
+import java.util.List;
+import java.util.ArrayList;
+ 
 public class SqlParser {
 }
 
@@ -78,51 +83,103 @@ TOKEN:
 /**
  * Represents a SQL code block.
  */
-ASTQueryStatement QueryStatement():
-{}
+RelationalAlgebra QueryStatement():
 {
-	Query()
+	RelationalAlgebra returnValue;
+}
+{
+	returnValue = Query()
 	";"
     {
-    	return jjtThis;
+    	return returnValue;
     }
 }
 
 /**
  * SQL query.
  */
-void Query() :
-{}
+RelationalAlgebra Query() :
 {
-    "SELECT" [ "ALL" | "DISTINCT" ] SelectList()
-    FromClause()
+	RelationalAlgebra returnValue;
+	List<String> attributes;
+	List<String> relations;
+}
+{
+    "SELECT" [ "ALL" | "DISTINCT" ] 
+    attributes = SelectList()
+    relations = FromClause()
     [ WhereClause() ]
+    {
+    	returnValue = new RelationalAlgebra(attributes, relations);
+    	return returnValue;
+    }
 }
 
 /*
  * Result attributes.
  */
-void SelectList():
-{}
+List<String> SelectList():
 {
-    "*" | SelectItem() ("," SelectItem())*
+	List<String> returnValue = new ArrayList<String>();
+	String attribute;	
+}
+{
+	(
+	    "*"
+	    {
+	    	returnValue.add("*");
+	    } 
+	    | attribute = SelectItem()
+	    {
+	    	returnValue.add(attribute);
+	    }
+	   	(
+	   		"," attribute = SelectItem()
+	   		{
+	   			returnValue.add(attribute);
+	   		}
+	   	)*
+   	)
+    {
+    	return returnValue;
+    }
 }
 
-void SelectItem():
-{}
+String SelectItem():
+{
+	String returnValue = null;
+	Token token = null;
+}
 {
     (
-    	LOOKAHEAD(2) <S_IDENTIFIER>".*" // table.*
-      | SQLSimpleExpression() // column name or expression
+		LOOKAHEAD(2) token = <S_IDENTIFIER>".*" // table.*
+      | returnValue = SQLSimpleExpression() // column name or expression
     )
     [ [ "AS" ] <S_IDENTIFIER>]
+    {
+    	if(token != null){
+    		returnValue = token.image + ".*";
+    	}
+    	return returnValue;
+    }
 }
 
-void SQLSimpleExpression():
-{}
+String SQLSimpleExpression():
 {
-	<S_IDENTIFIER>
-|	SQLMultiplicativeExpression() ( ("+" | "-" | "||") SQLMultiplicativeExpression())*
+	String returnValue = null;
+	Token token = null;
+}
+{
+	(
+			token = <S_IDENTIFIER>
+		|	SQLMultiplicativeExpression() ( ("+" | "-" | "||") SQLMultiplicativeExpression())*
+	)
+	{
+		if(token != null){
+			returnValue = token.image;
+		}
+		return returnValue;
+	}
 }
 
 
@@ -238,18 +295,44 @@ void IsNullClause():
     "IS" ["NOT"] "NULL"
 }
 
-void FromClause():
-{}
+List<String> FromClause():
 {
-    "FROM" QueryTableExpression() ( "," QueryTableExpression())*
+	List<String> returnValue = new ArrayList<String>();
+	String relation;
+}
+{
+    "FROM" 
+    relation = QueryTableExpression()
+    {
+    	returnValue.add(relation);
+    }
+    ( 
+    	"," relation = QueryTableExpression()
+    	{
+    		returnValue.add(relation);
+    	}
+    )*
+    {
+    	return returnValue;
+    }
 }
 
-void QueryTableExpression():
-{}
+String QueryTableExpression():
 {
-    (<S_IDENTIFIER> // might also be a query name
-     | LOOKAHEAD(3) "(" Query() ")"
+	String returnValue = null;
+	Token token = null;
+}
+{
+    (
+		token = <S_IDENTIFIER> // might also be a query name
+		| LOOKAHEAD(3) "(" Query() ")"
     )
+    {
+		if(token != null){
+			returnValue = token.image;
+		}
+		return returnValue;
+    }
 }
 
 void WhereClause():
