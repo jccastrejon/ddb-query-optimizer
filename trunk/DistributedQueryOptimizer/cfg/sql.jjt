@@ -78,7 +78,7 @@ TOKEN:
 /**
  * Represents a SQL code block.
  */
-SimpleNode QueryStatement():
+ASTQueryStatement QueryStatement():
 {}
 {
 	Query()
