@@ -25,380 +25,167 @@ import mx.itesm.ddb.parser.ASTSelectList;
 import mx.itesm.ddb.parser.ASTWhereClause;
 import mx.itesm.ddb.parser.SimpleNode;
 import mx.itesm.ddb.parser.SqlParserVisitor;
+import mx.itesm.ddb.parser.Token;
 
 /**
  * @author jccastrejon
  * 
  */
 public class RelationalAlgebraVisitor implements SqlParserVisitor {
-    private int indent = 0;
-
-    private String indentString() {
-	StringBuffer sb = new StringBuffer();
-	for (int i = 0; i < indent; ++i) {
-	    sb.append(' ');
-	}
-	return sb.toString();
-    }
-    
 
     @Override
     public Object visit(SimpleNode node, Object data) {
-	System.out.println(indentString() + node + ": acceptor not unimplemented in subclass?");
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTQueryStatement, java.lang.Object)
-     */
     @Override
     public Object visit(ASTQueryStatement node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * mx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.ASTQuery,
-     * java.lang.Object)
-     */
     @Override
     public Object visit(ASTQuery node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * mx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.ASTSelectList
-     * , java.lang.Object)
-     */
     @Override
     public Object visit(ASTSelectList node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	Token currentToken;
+
+	// Recover result attributes
+	currentToken = node.jjtGetFirstToken();
+
+	System.out.print("\u03A0<sub>");
+
+	while (currentToken != node.jjtGetLastToken()) {
+	    System.out.print(currentToken.image);
+	    currentToken = currentToken.next;
+	}
+
+	System.out.print(currentToken.image);
+	System.out.print("</sub>");
+
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * mx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.ASTSelectItem
-     * , java.lang.Object)
-     */
     @Override
     public Object visit(ASTSelectItem node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTSQLSimpleExpression, java.lang.Object)
-     */
     @Override
     public Object visit(ASTSQLSimpleExpression node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTSQLMultiplicativeExpression, java.lang.Object)
-     */
     @Override
     public Object visit(ASTSQLMultiplicativeExpression node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTSQLExponentExpression, java.lang.Object)
-     */
     @Override
     public Object visit(ASTSQLExponentExpression node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTSQLUnaryExpression, java.lang.Object)
-     */
     @Override
     public Object visit(ASTSQLUnaryExpression node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTSQLPrimaryExpression, java.lang.Object)
-     */
     @Override
     public Object visit(ASTSQLPrimaryExpression node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTSQLExpression, java.lang.Object)
-     */
     @Override
     public Object visit(ASTSQLExpression node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTSQLAndExpression, java.lang.Object)
-     */
     @Override
     public Object visit(ASTSQLAndExpression node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTSQLUnaryLogicalExpression, java.lang.Object)
-     */
     @Override
     public Object visit(ASTSQLUnaryLogicalExpression node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTExistsClause, java.lang.Object)
-     */
     @Override
     public Object visit(ASTExistsClause node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTSQLRelationalExpression, java.lang.Object)
-     */
     @Override
     public Object visit(ASTSQLRelationalExpression node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTSQLExpressionList, java.lang.Object)
-     */
     @Override
     public Object visit(ASTSQLExpressionList node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTSQLRelationalOperatorExpression, java.lang.Object)
-     */
     @Override
     public Object visit(ASTSQLRelationalOperatorExpression node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * mx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.ASTSQLInClause
-     * , java.lang.Object)
-     */
     @Override
     public Object visit(ASTSQLInClause node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTSQLBetweenClause, java.lang.Object)
-     */
     @Override
     public Object visit(ASTSQLBetweenClause node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTSQLLikeClause, java.lang.Object)
-     */
     @Override
     public Object visit(ASTSQLLikeClause node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTIsNullClause, java.lang.Object)
-     */
     @Override
     public Object visit(ASTIsNullClause node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * mx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.ASTFromClause
-     * , java.lang.Object)
-     */
     @Override
     public Object visit(ASTFromClause node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	Token currentToken;
+	ASTQueryTableExpression currentRelation;
+
+	// Recover relations
+	System.out.print("(");
+	for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+	    currentRelation = (ASTQueryTableExpression) node.jjtGetChild(i);
+	    currentToken = currentRelation.jjtGetFirstToken();
+
+	    while (currentToken != currentRelation.jjtGetLastToken()) {
+		System.out.print(currentToken.image);
+		currentToken = currentToken.next;
+	    }
+
+	    System.out.print(currentToken.image);
+	    if (i != (node.jjtGetNumChildren() - 1)) {
+		System.out.print("\u22C8");
+	    }
+	}
+	System.out.print(")");
+
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @seemx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.
-     * ASTQueryTableExpression, java.lang.Object)
-     */
     @Override
     public Object visit(ASTQueryTableExpression node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * mx.itesm.ddb.parser.SqlParserVisitor#visit(mx.itesm.ddb.parser.ASTWhereClause
-     * , java.lang.Object)
-     */
     @Override
     public Object visit(ASTWhereClause node, Object data) {
-	System.out.println(indentString() + node);
-	++indent;
-	data = node.childrenAccept(this, data);
-	--indent;
-	return data;
+	return node.childrenAccept(this, data);
     }
 }
