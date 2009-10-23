@@ -7,7 +7,10 @@ package mx.itesm.ddb.parser;
  * 
  */
 
-import mx.itesm.ddb.util.RelationalAlgebra;
+import mx.itesm.ddb.util.QueryData;
+import mx.itesm.ddb.util.RelationData;
+import mx.itesm.ddb.util.impl.SimpleRelationData;
+import mx.itesm.ddb.util.impl.QueryRelationData;
 import java.util.List;
 import java.util.ArrayList;
 
