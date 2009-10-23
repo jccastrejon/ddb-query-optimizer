@@ -17,7 +17,10 @@ PARSER_BEGIN(SqlParser)
  * 
  */
  
-import mx.itesm.ddb.util.RelationalAlgebra;
+import mx.itesm.ddb.util.QueryData;
+import mx.itesm.ddb.util.RelationData;
+import mx.itesm.ddb.util.impl.SimpleRelationData;
+import mx.itesm.ddb.util.impl.QueryRelationData;
 import java.util.List;
 import java.util.ArrayList;
  
@@ -83,9 +86,9 @@ TOKEN:
 /**
  * Represents a SQL code block.
  */
-RelationalAlgebra QueryStatement():
+QueryData QueryStatement():
 {
-	RelationalAlgebra returnValue;
+	QueryData returnValue;
 }
 {
 	returnValue = Query()
@@ -98,11 +101,11 @@ RelationalAlgebra QueryStatement():
 /**
  * SQL query.
  */
-RelationalAlgebra Query() :
+QueryData Query() :
 {
-	RelationalAlgebra returnValue;
+	QueryData returnValue;
 	List<String> attributes;
-	List<String> relations;
+	List<RelationData> relations;
 }
 {
     "SELECT" [ "ALL" | "DISTINCT" ] 
@@ -110,7 +113,7 @@ RelationalAlgebra Query() :
     relations = FromClause()
     [ WhereClause() ]
     {
-    	returnValue = new RelationalAlgebra(attributes, relations);
+    	returnValue = new QueryData(attributes, relations);
     	return returnValue;
     }
 }
@@ -295,10 +298,10 @@ void IsNullClause():
     "IS" ["NOT"] "NULL"
 }
 
-List<String> FromClause():
+List<RelationData> FromClause():
 {
-	List<String> returnValue = new ArrayList<String>();
-	String relation;
+	List<RelationData> returnValue = new ArrayList<RelationData>();
+	RelationData relation;
 }
 {
     "FROM" 
@@ -317,19 +320,22 @@ List<String> FromClause():
     }
 }
 
-String QueryTableExpression():
+RelationData QueryTableExpression():
 {
-	String returnValue = null;
+	RelationData returnValue = null;
 	Token token = null;
+	QueryData queryData = null;
 }
 {
     (
-		token = <S_IDENTIFIER> // might also be a query name
-		| LOOKAHEAD(3) "(" Query() ")"
+		token = <S_IDENTIFIER>
+		| LOOKAHEAD(3) "(" queryData = Query() ")"
     )
     {
 		if(token != null){
-			returnValue = token.image;
+			returnValue = new SimpleRelationData(token.image);
+		} else if(queryData != null){
+			returnValue = new QueryRelationData(queryData);
 		}
 		return returnValue;
     }
