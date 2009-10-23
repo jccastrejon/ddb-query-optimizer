@@ -20,7 +20,10 @@ package mx.itesm.ddb.parser;
  * 
  */
  
-import mx.itesm.ddb.util.RelationalAlgebra;
+import mx.itesm.ddb.util.QueryData;
+import mx.itesm.ddb.util.RelationData;
+import mx.itesm.ddb.util.impl.SimpleRelationData;
+import mx.itesm.ddb.util.impl.QueryRelationData;
 import java.util.List;
 import java.util.ArrayList;
  
@@ -89,14 +92,14 @@ TOKEN:
 /**
  * Represents a SQL code block.
  */
-RelationalAlgebra QueryStatement():
+QueryData QueryStatement():
 {/*@bgen(jjtree) QueryStatement */
         ASTQueryStatement jjtn000 = new ASTQueryStatement(null, JJTQUERYSTATEMENT);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	RelationalAlgebra returnValue;
+	QueryData returnValue;
 }
 {/*@bgen(jjtree) QueryStatement */
         try {
@@ -138,16 +141,16 @@ RelationalAlgebra QueryStatement():
 /**
  * SQL query.
  */
-RelationalAlgebra Query() :
+QueryData Query() :
 {/*@bgen(jjtree) Query */
         ASTQuery jjtn000 = new ASTQuery(null, JJTQUERY);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	RelationalAlgebra returnValue;
+	QueryData returnValue;
 	List<String> attributes;
-	List<String> relations;
+	List<RelationData> relations;
 }
 {/*@bgen(jjtree) Query */
     try {
@@ -163,7 +166,7 @@ RelationalAlgebra Query() :
     }
 /*@egen*/
     {
-    	returnValue = new RelationalAlgebra(attributes, relations);
+    	returnValue = new QueryData(attributes, relations);
     	return returnValue;
     }/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
@@ -877,15 +880,15 @@ void IsNullClause():
 /*@egen*/
 }
 
-List<String> FromClause():
+List<RelationData> FromClause():
 {/*@bgen(jjtree) FromClause */
         ASTFromClause jjtn000 = new ASTFromClause(null, JJTFROMCLAUSE);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	List<String> returnValue = new ArrayList<String>();
-	String relation;
+	List<RelationData> returnValue = new ArrayList<RelationData>();
+	RelationData relation;
 }
 {/*@bgen(jjtree) FromClause */
     try {
@@ -933,22 +936,23 @@ List<String> FromClause():
 /*@egen*/
 }
 
-String QueryTableExpression():
+RelationData QueryTableExpression():
 {/*@bgen(jjtree) QueryTableExpression */
         ASTQueryTableExpression jjtn000 = new ASTQueryTableExpression(null, JJTQUERYTABLEEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	String returnValue = null;
+	RelationData returnValue = null;
 	Token token = null;
+	QueryData queryData = null;
 }
 {/*@bgen(jjtree) QueryTableExpression */
     try {
 /*@egen*/
     (
-		token = <S_IDENTIFIER> // might also be a query name
-		| LOOKAHEAD(3) "(" Query() ")"
+		token = <S_IDENTIFIER>
+		| LOOKAHEAD(3) "(" queryData = Query() ")"
     )/*@bgen(jjtree)*/
     {
       jjtree.closeNodeScope(jjtn000, true);
@@ -958,7 +962,9 @@ String QueryTableExpression():
 /*@egen*/
     {
 		if(token != null){
-			returnValue = token.image;
+			returnValue = new SimpleRelationData(token.image);
+		} else if(queryData != null){
+			returnValue = new QueryRelationData(queryData);
 		}
 		return returnValue;
     }/*@bgen(jjtree)*/

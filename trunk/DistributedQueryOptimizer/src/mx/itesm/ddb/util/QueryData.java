@@ -1,34 +1,42 @@
-/**
- * 
- */
 package mx.itesm.ddb.util;
 
 import java.util.List;
 
 /**
+ * Holder class for a SQL query data, that is, projection attributes and
+ * relations.
+ * 
  * @author jccastrejon
  * 
  */
-public class RelationalAlgebra {
+public class QueryData {
 
     /**
-     * 
+     * Query projection attributes.
      */
     List<String> attributes;
 
     /**
-     * 
+     * Query relations.
      */
-    List<String> relations;
+    List<RelationData> relations;
 
     /**
+     * Full constructor.
      * 
      * @param attributes
+     *            Query projection attributes.
      * @param relations
+     *            Query relations.
      */
-    public RelationalAlgebra(List<String> attributes, List<String> relations) {
+    public QueryData(List<String> attributes, List<RelationData> relations) {
 	this.attributes = attributes;
 	this.relations = relations;
+    }
+
+    @Override
+    public String toString() {
+	return "\u03A0<sub>" + this.attributes + "<sub>(" + this.relations + ")";
     }
 
     /**
@@ -49,7 +57,7 @@ public class RelationalAlgebra {
     /**
      * @return the relations
      */
-    public List<String> getRelations() {
+    public List<RelationData> getRelations() {
 	return relations;
     }
 
@@ -57,7 +65,7 @@ public class RelationalAlgebra {
      * @param relations
      *            the relations to set
      */
-    public void setRelations(List<String> relations) {
+    public void setRelations(List<RelationData> relations) {
 	this.relations = relations;
     }
 }
