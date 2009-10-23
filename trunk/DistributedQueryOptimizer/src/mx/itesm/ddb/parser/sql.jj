@@ -19,6 +19,11 @@ package mx.itesm.ddb.parser;
  * @author jccastrejon
  * 
  */
+ 
+import mx.itesm.ddb.util.RelationalAlgebra;
+import java.util.List;
+import java.util.ArrayList;
+ 
 public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants/*@egen*/ {/*@bgen(jjtree)*/
   protected static JJTSqlParserState jjtree = new JJTSqlParserState();
 
@@ -84,17 +89,19 @@ TOKEN:
 /**
  * Represents a SQL code block.
  */
-ASTQueryStatement QueryStatement():
+RelationalAlgebra QueryStatement():
 {/*@bgen(jjtree) QueryStatement */
-  ASTQueryStatement jjtn000 = new ASTQueryStatement(null, JJTQUERYSTATEMENT);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTQueryStatement jjtn000 = new ASTQueryStatement(null, JJTQUERYSTATEMENT);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	RelationalAlgebra returnValue;
+}
 {/*@bgen(jjtree) QueryStatement */
         try {
 /*@egen*/
-	Query()
+	returnValue = Query()
 	";"/*@bgen(jjtree)*/
     {
       jjtree.closeNodeScope(jjtn000, true);
@@ -103,7 +110,7 @@ ASTQueryStatement QueryStatement():
     }
 /*@egen*/
     {
-    	return jjtn000;
+    	return returnValue;
     }/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
@@ -131,19 +138,34 @@ ASTQueryStatement QueryStatement():
 /**
  * SQL query.
  */
-void Query() :
+RelationalAlgebra Query() :
 {/*@bgen(jjtree) Query */
-  ASTQuery jjtn000 = new ASTQuery(null, JJTQUERY);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTQuery jjtn000 = new ASTQuery(null, JJTQUERY);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	RelationalAlgebra returnValue;
+	List<String> attributes;
+	List<String> relations;
+}
 {/*@bgen(jjtree) Query */
     try {
 /*@egen*/
-    "SELECT" [ "ALL" | "DISTINCT" ] SelectList()
-    FromClause()
+    "SELECT" [ "ALL" | "DISTINCT" ] 
+    attributes = SelectList()
+    relations = FromClause()
     [ WhereClause() ]/*@bgen(jjtree)*/
+    {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+      jjtn000.jjtSetLastToken(getToken(0));
+    }
+/*@egen*/
+    {
+    	returnValue = new RelationalAlgebra(attributes, relations);
+    	return returnValue;
+    }/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
@@ -170,55 +192,97 @@ void Query() :
 /*
  * Result attributes.
  */
-void SelectList():
+List<String> SelectList():
 {/*@bgen(jjtree) SelectList */
-  ASTSelectList jjtn000 = new ASTSelectList(null, JJTSELECTLIST);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
-{/*@bgen(jjtree) SelectList */
-    try {
+        ASTSelectList jjtn000 = new ASTSelectList(null, JJTSELECTLIST);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-    "*" | SelectItem() ("," SelectItem())*/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
+	List<String> returnValue = new ArrayList<String>();
+	String attribute;	
+}
+{/*@bgen(jjtree) SelectList */
+        try {
+/*@egen*/
+	(
+	    "*"
+	    {
+	    	returnValue.add("*");
+	    } 
+	    | attribute = SelectItem()
+	    {
+	    	returnValue.add(attribute);
+	    }
+	   	(
+	   		"," attribute = SelectItem()
+	   		{
+	   			returnValue.add(attribute);
+	   		}
+	   	)*
+   	)/*@bgen(jjtree)*/
+    {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+      jjtn000.jjtSetLastToken(getToken(0));
     }
+/*@egen*/
+    {
+    	return returnValue;
+    }/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
 
-void SelectItem():
+String SelectItem():
 {/*@bgen(jjtree) SelectItem */
-  ASTSelectItem jjtn000 = new ASTSelectItem(null, JJTSELECTITEM);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTSelectItem jjtn000 = new ASTSelectItem(null, JJTSELECTITEM);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	String returnValue = null;
+	Token token = null;
+}
 {/*@bgen(jjtree) SelectItem */
     try {
 /*@egen*/
     (
-    	LOOKAHEAD(2) <S_IDENTIFIER>".*" // table.*
-      | SQLSimpleExpression() // column name or expression
+		LOOKAHEAD(2) token = <S_IDENTIFIER>".*" // table.*
+      | returnValue = SQLSimpleExpression() // column name or expression
     )
     [ [ "AS" ] <S_IDENTIFIER>]/*@bgen(jjtree)*/
+    {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+      jjtn000.jjtSetLastToken(getToken(0));
+    }
+/*@egen*/
+    {
+    	if(token != null){
+    		returnValue = token.image + ".*";
+    	}
+    	return returnValue;
+    }/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
@@ -242,18 +306,35 @@ void SelectItem():
 /*@egen*/
 }
 
-void SQLSimpleExpression():
+String SQLSimpleExpression():
 {/*@bgen(jjtree) SQLSimpleExpression */
-  ASTSQLSimpleExpression jjtn000 = new ASTSQLSimpleExpression(null, JJTSQLSIMPLEEXPRESSION);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTSQLSimpleExpression jjtn000 = new ASTSQLSimpleExpression(null, JJTSQLSIMPLEEXPRESSION);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	String returnValue = null;
+	Token token = null;
+}
 {/*@bgen(jjtree) SQLSimpleExpression */
         try {
 /*@egen*/
-	<S_IDENTIFIER>
-|	SQLMultiplicativeExpression() ( ("+" | "-" | "||") SQLMultiplicativeExpression())*/*@bgen(jjtree)*/
+	(
+			token = <S_IDENTIFIER>
+		|	SQLMultiplicativeExpression() ( ("+" | "-" | "||") SQLMultiplicativeExpression())*
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		if(token != null){
+			returnValue = token.image;
+		}
+		return returnValue;
+	}/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
@@ -796,17 +877,39 @@ void IsNullClause():
 /*@egen*/
 }
 
-void FromClause():
+List<String> FromClause():
 {/*@bgen(jjtree) FromClause */
-  ASTFromClause jjtn000 = new ASTFromClause(null, JJTFROMCLAUSE);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTFromClause jjtn000 = new ASTFromClause(null, JJTFROMCLAUSE);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	List<String> returnValue = new ArrayList<String>();
+	String relation;
+}
 {/*@bgen(jjtree) FromClause */
     try {
 /*@egen*/
-    "FROM" QueryTableExpression() ( "," QueryTableExpression())*/*@bgen(jjtree)*/
+    "FROM" 
+    relation = QueryTableExpression()
+    {
+    	returnValue.add(relation);
+    }
+    ( 
+    	"," relation = QueryTableExpression()
+    	{
+    		returnValue.add(relation);
+    	}
+    )*/*@bgen(jjtree)*/
+    {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+      jjtn000.jjtSetLastToken(getToken(0));
+    }
+/*@egen*/
+    {
+    	return returnValue;
+    }/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
@@ -830,19 +933,35 @@ void FromClause():
 /*@egen*/
 }
 
-void QueryTableExpression():
+String QueryTableExpression():
 {/*@bgen(jjtree) QueryTableExpression */
-  ASTQueryTableExpression jjtn000 = new ASTQueryTableExpression(null, JJTQUERYTABLEEXPRESSION);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTQueryTableExpression jjtn000 = new ASTQueryTableExpression(null, JJTQUERYTABLEEXPRESSION);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	String returnValue = null;
+	Token token = null;
+}
 {/*@bgen(jjtree) QueryTableExpression */
     try {
 /*@egen*/
-    (<S_IDENTIFIER> // might also be a query name
-     | LOOKAHEAD(3) "(" Query() ")"
+    (
+		token = <S_IDENTIFIER> // might also be a query name
+		| LOOKAHEAD(3) "(" Query() ")"
     )/*@bgen(jjtree)*/
+    {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+      jjtn000.jjtSetLastToken(getToken(0));
+    }
+/*@egen*/
+    {
+		if(token != null){
+			returnValue = token.image;
+		}
+		return returnValue;
+    }/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
