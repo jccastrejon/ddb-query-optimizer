@@ -10,21 +10,23 @@ options {
 
 PARSER_BEGIN(SqlParser)
 
-/**
- * SQL Parser.
- * 
- * @author jccastrejon
- * 
- */
+package mx.itesm.ddb.parser; 
+
+import java.util.List;
+import java.util.ArrayList;
  
 import mx.itesm.ddb.util.QueryData;
 import mx.itesm.ddb.util.RelationData;
 import mx.itesm.ddb.util.ConditionData;
 import mx.itesm.ddb.util.impl.SimpleRelationData;
 import mx.itesm.ddb.util.impl.QueryRelationData;
-import java.util.List;
-import java.util.ArrayList;
- 
+
+/**
+ * SQL Parser.
+ * 
+ * @author jccastrejon
+ * 
+ */ 
 public class SqlParser {
 }
 
@@ -460,64 +462,71 @@ String SQLRelationalExpression():
 	String expression;
 }
 {
-	(
-	    /* Only after looking past "(", Expression() and "," we will know that
-	       it is expression list */
-	
-	    (LOOKAHEAD("("
-	    {
-	    	returnValue.append("(");
-	    } 
-	    expression = SQLSimpleExpression()
-	    {
-	    	returnValue.append(expression);
-	    } 
-	    ","
-	    {
-	    	returnValue.append(",");
-	    })
-	     
-	     "("
-	     {
-	     	returnValue.append("(");
-	     } 
-	     expression = SQLExpressionList()
-	     {
-	     	returnValue.append(expression);
-	     } 
-	     ")"
-	     {
-	     	returnValue.append(")");
-	     }
-		|(expression = SQLSimpleExpression()
-	    {
-	    	returnValue.append(expression);
-	    }))
-	
-	    /* Lookahead(2) is required because of NOT IN,NOT BETWEEN and NOT LIKE */
-	   ( 
-	   	expression = SQLRelationalOperatorExpression()
-	   	{
-	   		returnValue.append(expression);
-	   	}
-	   	| LOOKAHEAD(2) (expression = SQLInClause())
-	   	{
-	   		returnValue.append(expression);
-	   	}
-		|  LOOKAHEAD(2) (expression = SQLBetweenClause())
-		{
-			returnValue.append(expression);
-		}
-		|  LOOKAHEAD(2) (expression = SQLLikeClause())
-		{
-			returnValue.append(expression);
-		}
-		|  expression = IsNullClause()
-		{
-			returnValue.append(expression);
-		}
-	   )?
-	)
+(
+    /* Only after looking past "(", Expression() and "," we will know that
+    it is expression list */
+    
+    (
+        LOOKAHEAD(
+            "("
+            {
+                returnValue.append("(");
+            }
+            expression = SQLSimpleExpression()
+            {
+                returnValue.append(expression);
+            }
+            ","
+            {
+                returnValue.append(",");
+            }
+        )
+    
+        "("
+        {
+            returnValue.append("(");
+        }
+        expression = SQLExpressionList()
+        {
+            returnValue.append(expression);
+        }
+        ")"
+        {
+            returnValue.append(")");
+        }
+        | 
+        (
+            expression = SQLSimpleExpression()
+            {
+                returnValue.append(expression);
+            }
+        )
+    )
+    
+    /* Lookahead(2) is required because of NOT IN,NOT BETWEEN and NOT LIKE */
+    (
+        expression = SQLRelationalOperatorExpression()
+        {
+            returnValue.append(expression);
+        }
+        | LOOKAHEAD(2) (expression = SQLInClause())
+        {
+            returnValue.append(expression);
+        }
+        | LOOKAHEAD(2) (expression = SQLBetweenClause())
+        {
+            returnValue.append(expression);
+        }
+        | LOOKAHEAD(2) (expression = SQLLikeClause())
+        {
+            returnValue.append(expression);
+        }
+        | expression = IsNullClause()
+        {
+            returnValue.append(expression);
+        }
+    )?
+)
 	{
 		return returnValue.toString();
 	}
