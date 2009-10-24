@@ -22,6 +22,7 @@ package mx.itesm.ddb.parser;
  
 import mx.itesm.ddb.util.QueryData;
 import mx.itesm.ddb.util.RelationData;
+import mx.itesm.ddb.util.ConditionData;
 import mx.itesm.ddb.util.impl.SimpleRelationData;
 import mx.itesm.ddb.util.impl.QueryRelationData;
 import java.util.List;
@@ -151,6 +152,7 @@ QueryData Query() :
 	QueryData returnValue;
 	List<String> attributes;
 	List<RelationData> relations;
+	String conditions = null;
 }
 {/*@bgen(jjtree) Query */
     try {
@@ -158,7 +160,9 @@ QueryData Query() :
     "SELECT" [ "ALL" | "DISTINCT" ] 
     attributes = SelectList()
     relations = FromClause()
-    [ WhereClause() ]/*@bgen(jjtree)*/
+    [
+    	conditions = WhereClause()
+    ]/*@bgen(jjtree)*/
     {
       jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;
@@ -166,7 +170,7 @@ QueryData Query() :
     }
 /*@egen*/
     {
-    	returnValue = new QueryData(attributes, relations);
+    	returnValue = new QueryData(attributes, relations, conditions);
     	return returnValue;
     }/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
@@ -267,64 +271,28 @@ String SelectItem():
 	Token token = null;
 }
 {/*@bgen(jjtree) SelectItem */
-    try {
-/*@egen*/
-    (
-		LOOKAHEAD(2) token = <S_IDENTIFIER>".*" // table.*
-      | returnValue = SQLSimpleExpression() // column name or expression
-    )
-    [ [ "AS" ] <S_IDENTIFIER>]/*@bgen(jjtree)*/
-    {
-      jjtree.closeNodeScope(jjtn000, true);
-      jjtc000 = false;
-      jjtn000.jjtSetLastToken(getToken(0));
-    }
-/*@egen*/
-    {
-    	if(token != null){
-    		returnValue = token.image + ".*";
-    	}
-    	return returnValue;
-    }/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
-/*@egen*/
-}
-
-String SQLSimpleExpression():
-{/*@bgen(jjtree) SQLSimpleExpression */
-        ASTSQLSimpleExpression jjtn000 = new ASTSQLSimpleExpression(null, JJTSQLSIMPLEEXPRESSION);
-        boolean jjtc000 = true;
-        jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/
-	String returnValue = null;
-	Token token = null;
-}
-{/*@bgen(jjtree) SQLSimpleExpression */
         try {
 /*@egen*/
 	(
-			token = <S_IDENTIFIER>
-		|	SQLMultiplicativeExpression() ( ("+" | "-" | "||") SQLMultiplicativeExpression())*
+	    (
+			LOOKAHEAD(2) token = <S_IDENTIFIER>".*" // table.*
+			{
+				returnValue = token.image + ".*";
+			}
+			| returnValue = SQLSimpleExpression() // column name or expression
+	    )
+	    [ 
+	    	[
+	    		"AS"
+	    		{
+	    			returnValue += "AS";
+	    		}
+	    	]
+	    	token = <S_IDENTIFIER>
+	    	{
+	    		returnValue += token.image;
+	    	}
+	    ]
 	)/*@bgen(jjtree)*/
         {
           jjtree.closeNodeScope(jjtn000, true);
@@ -333,9 +301,6 @@ String SQLSimpleExpression():
         }
 /*@egen*/
 	{
-		if(token != null){
-			returnValue = token.image;
-		}
 		return returnValue;
 	}/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
@@ -361,380 +326,782 @@ String SQLSimpleExpression():
 /*@egen*/
 }
 
+String SQLSimpleExpression():
+{/*@bgen(jjtree) SQLSimpleExpression */
+        ASTSQLSimpleExpression jjtn000 = new ASTSQLSimpleExpression(null, JJTSQLSIMPLEEXPRESSION);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
+{/*@bgen(jjtree) SQLSimpleExpression */
+        try {
+/*@egen*/
+	(
+		expression = SQLMultiplicativeExpression()
+		{
+			returnValue.append(expression);
+		}
+		(
+			(
+				"+"
+				{
+					returnValue.append("+");
+				}
+				| "-"
+				{
+					returnValue.append("-");
+				}
+				| "||"
+				{
+					returnValue.append("||");
+				}
+			) 
+			expression = SQLMultiplicativeExpression()
+			{
+				returnValue.append(expression);
+			}
+		)*
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
+/*@egen*/
+}
 
-void SQLMultiplicativeExpression():
+
+String SQLMultiplicativeExpression():
 {/*@bgen(jjtree) SQLMultiplicativeExpression */
-  ASTSQLMultiplicativeExpression jjtn000 = new ASTSQLMultiplicativeExpression(null, JJTSQLMULTIPLICATIVEEXPRESSION);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTSQLMultiplicativeExpression jjtn000 = new ASTSQLMultiplicativeExpression(null, JJTSQLMULTIPLICATIVEEXPRESSION);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
 {/*@bgen(jjtree) SQLMultiplicativeExpression */
-    try {
+        try {
 /*@egen*/
-    SQLExponentExpression() ( ("*" | "/") SQLExponentExpression())*/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
+	(
+		expression = SQLUnaryExpression()	//TODO: exponent?
+		{
+			returnValue.append(expression);
+		}
+		(
+			(
+				"*"
+				{
+					returnValue.append("*");
+				}
+				| "/"
+				{
+					returnValue.append("/");
+				}
+				| "="
+				{
+					returnValue.append("=");
+				}
+			)
+			expression = SQLUnaryExpression()	//TODO: exponent?
+			{
+				returnValue.append(expression);
+			}
+		)*
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
 
-void SQLExponentExpression():
-{/*@bgen(jjtree) SQLExponentExpression */
-  ASTSQLExponentExpression jjtn000 = new ASTSQLExponentExpression(null, JJTSQLEXPONENTEXPRESSION);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
-{/*@bgen(jjtree) SQLExponentExpression */
-    try {
-/*@egen*/
-    SQLUnaryExpression() ( "**" SQLUnaryExpression())*/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
-/*@egen*/
-}
-
-void SQLUnaryExpression():
+String SQLUnaryExpression():
 {/*@bgen(jjtree) SQLUnaryExpression */
-  ASTSQLUnaryExpression jjtn000 = new ASTSQLUnaryExpression(null, JJTSQLUNARYEXPRESSION);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTSQLUnaryExpression jjtn000 = new ASTSQLUnaryExpression(null, JJTSQLUNARYEXPRESSION);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
 {/*@bgen(jjtree) SQLUnaryExpression */
-    try {
+        try {
 /*@egen*/
-    ["+" | "-"] SQLPrimaryExpression()/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
+	(
+	    [
+	    	"+"
+	    	{
+	    		returnValue.append("+");
+	    	}
+	    	| "-"
+	    	{
+	    		returnValue.append("-");
+	    	}
+	    ] 
+	    expression = SQLPrimaryExpression()
+	    {
+	    	returnValue.append(expression);
+	    }
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
 
-void SQLPrimaryExpression():
+String SQLPrimaryExpression():
 {/*@bgen(jjtree) SQLPrimaryExpression */
-  ASTSQLPrimaryExpression jjtn000 = new ASTSQLPrimaryExpression(null, JJTSQLPRIMARYEXPRESSION);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTSQLPrimaryExpression jjtn000 = new ASTSQLPrimaryExpression(null, JJTSQLPRIMARYEXPRESSION);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+	Token token;
+	QueryData queryData;
+}
 {/*@bgen(jjtree) SQLPrimaryExpression */
-    try {
+        try {
 /*@egen*/
-    <S_NUMBER>
-  | <S_CHAR_LITERAL>
-  | "NULL"
-  | "(" (LOOKAHEAD(3) Query() | SQLExpression()) ")"/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
+	(
+	    token = <S_NUMBER>
+	    {
+	    	returnValue.append(token.image);
+	    }
+		| token = <S_CHAR_LITERAL>
+	    {
+	    	returnValue.append(token.image);
+	    }
+		| token = <S_IDENTIFIER>
+	    {
+	    	returnValue.append(token.image);
+	    }
+		| "NULL"
+	    {
+	    	returnValue.append("NULL");
+	    }
+		| "("
+	    {
+	    	returnValue.append("(");
+	    }
+		(
+			LOOKAHEAD(3) queryData = Query()
+			{
+				returnValue.append(queryData.toString());	//TODO: Fix this!!:.
+			}
+			| expression = SQLExpression()
+			{
+				returnValue.append(expression);
+			}
+		)
+		")"
+		{
+			returnValue.append(")");
+		}
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
 
-void SQLExpression():
+String SQLExpression():
 {/*@bgen(jjtree) SQLExpression */
-  ASTSQLExpression jjtn000 = new ASTSQLExpression(null, JJTSQLEXPRESSION);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTSQLExpression jjtn000 = new ASTSQLExpression(null, JJTSQLEXPRESSION);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
 {/*@bgen(jjtree) SQLExpression */
-    try {
+        try {
 /*@egen*/
-    SQLAndExpression() ("OR" SQLAndExpression())*/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
+	(
+	    expression = SQLAndExpression()
+	    {
+	    	returnValue.append(expression);
+	    } 
+	    (
+	    	"OR"
+	    	{
+	    		returnValue.append("OR");
+	    	}
+	    	expression = SQLAndExpression()
+	    	{
+	    		returnValue.append(expression);
+	    	}
+	    )*
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
 
-void SQLAndExpression():
+String SQLAndExpression():
 {/*@bgen(jjtree) SQLAndExpression */
-  ASTSQLAndExpression jjtn000 = new ASTSQLAndExpression(null, JJTSQLANDEXPRESSION);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTSQLAndExpression jjtn000 = new ASTSQLAndExpression(null, JJTSQLANDEXPRESSION);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
 {/*@bgen(jjtree) SQLAndExpression */
-    try {
+        try {
 /*@egen*/
-    SQLUnaryLogicalExpression() ( "AND" SQLUnaryLogicalExpression())*/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
+	(
+	    expression = SQLUnaryLogicalExpression()
+	    {
+	    	returnValue.append(expression);
+	    }
+	    (
+	    	"AND"
+	    	{
+	    		returnValue.append("AND");
+	    	}
+	    	expression = SQLUnaryLogicalExpression()
+	    	{
+	    		returnValue.append(expression);
+	    	}
+	    )*
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
 
-void SQLUnaryLogicalExpression():
+String SQLUnaryLogicalExpression():
 {/*@bgen(jjtree) SQLUnaryLogicalExpression */
-  ASTSQLUnaryLogicalExpression jjtn000 = new ASTSQLUnaryLogicalExpression(null, JJTSQLUNARYLOGICALEXPRESSION);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTSQLUnaryLogicalExpression jjtn000 = new ASTSQLUnaryLogicalExpression(null, JJTSQLUNARYLOGICALEXPRESSION);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
 {/*@bgen(jjtree) SQLUnaryLogicalExpression */
-    try {
+        try {
 /*@egen*/
-    LOOKAHEAD(2) ExistsClause()
-  | (["NOT"] SQLRelationalExpression())/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
+	(
+	    LOOKAHEAD(2) expression = ExistsClause()
+	    {
+	    	returnValue.append(expression);
+	    }
+		|(
+			[
+				"NOT"
+				{
+					returnValue.append("NOT");
+				}
+			]
+			expression = SQLRelationalExpression()
+			{
+				returnValue.append(expression);
+			}
+		)
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
 
-void ExistsClause():
+String ExistsClause():
 {/*@bgen(jjtree) ExistsClause */
-  ASTExistsClause jjtn000 = new ASTExistsClause(null, JJTEXISTSCLAUSE);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTExistsClause jjtn000 = new ASTExistsClause(null, JJTEXISTSCLAUSE);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+	QueryData queryData;
+}
 {/*@bgen(jjtree) ExistsClause */
-    try {
+        try {
 /*@egen*/
-    ["NOT"] "EXISTS" "(" Query() ")"/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
+	(
+	    [
+	    	"NOT"
+	    	{
+	    		returnValue.append("NOT");
+	    	}
+	    ] 
+	    "EXISTS"
+	    {
+	    	returnValue.append("EXISTS");
+	    }
+	    "("
+	    {
+	    	returnValue.append("(");
+	    } 
+	    queryData = Query()
+	    {
+	    	returnValue.append(queryData.toString()); //TODO: Fix this!!:.
+	    } 
+	    ")"
+	    {
+	    	returnValue.append(")");
+	    }
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
 
-void SQLRelationalExpression():
+String SQLRelationalExpression():
 {/*@bgen(jjtree) SQLRelationalExpression */
-  ASTSQLRelationalExpression jjtn000 = new ASTSQLRelationalExpression(null, JJTSQLRELATIONALEXPRESSION);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTSQLRelationalExpression jjtn000 = new ASTSQLRelationalExpression(null, JJTSQLRELATIONALEXPRESSION);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
 {/*@bgen(jjtree) SQLRelationalExpression */
-    try {
+        try {
 /*@egen*/
-    /* Only after looking past "(", Expression() and "," we will know that
-       it is expression list */
-
-    (LOOKAHEAD("(" SQLSimpleExpression() ",")
-     "(" SQLExpressionList() ")"
-|
-    (SQLSimpleExpression()))
-
-    /* Lookahead(2) is required because of NOT IN,NOT BETWEEN and NOT LIKE */
-   ( SQLRelationalOperatorExpression() |  LOOKAHEAD(2) (SQLInClause())
-                                    |  LOOKAHEAD(2) (SQLBetweenClause())
-                                    |  LOOKAHEAD(2) (SQLLikeClause())
-                                    |  IsNullClause()
-   )?/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
+	(
+	    /* Only after looking past "(", Expression() and "," we will know that
+	       it is expression list */
+	
+	    (LOOKAHEAD("("
+	    {
+	    	returnValue.append("(");
+	    } 
+	    expression = SQLSimpleExpression()
+	    {
+	    	returnValue.append(expression);
+	    } 
+	    ","
+	    {
+	    	returnValue.append(",");
+	    })
+	     
+	     "("
+	     {
+	     	returnValue.append("(");
+	     } 
+	     expression = SQLExpressionList()
+	     {
+	     	returnValue.append(expression);
+	     } 
+	     ")"
+	     {
+	     	returnValue.append(")");
+	     }
+		|(expression = SQLSimpleExpression()
+	    {
+	    	returnValue.append(expression);
+	    }))
+	
+	    /* Lookahead(2) is required because of NOT IN,NOT BETWEEN and NOT LIKE */
+	   ( 
+	   	expression = SQLRelationalOperatorExpression()
+	   	{
+	   		returnValue.append(expression);
+	   	}
+	   	| LOOKAHEAD(2) (expression = SQLInClause())
+	   	{
+	   		returnValue.append(expression);
+	   	}
+		|  LOOKAHEAD(2) (expression = SQLBetweenClause())
+		{
+			returnValue.append(expression);
+		}
+		|  LOOKAHEAD(2) (expression = SQLLikeClause())
+		{
+			returnValue.append(expression);
+		}
+		|  expression = IsNullClause()
+		{
+			returnValue.append(expression);
+		}
+	   )?
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
 
-void SQLExpressionList():
+String SQLExpressionList():
 {/*@bgen(jjtree) SQLExpressionList */
-  ASTSQLExpressionList jjtn000 = new ASTSQLExpressionList(null, JJTSQLEXPRESSIONLIST);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
-{/*@bgen(jjtree) SQLExpressionList */
-    try {
+        ASTSQLExpressionList jjtn000 = new ASTSQLExpressionList(null, JJTSQLEXPRESSIONLIST);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-    SQLExpression() ("," SQLExpression())*/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
+{/*@bgen(jjtree) SQLExpressionList */
+        try {
+/*@egen*/
+	(
+	    expression = SQLExpression()
+	    {
+	    	returnValue.append(expression);
+	    }
+	    (
+	    	","
+	    	{
+	    		returnValue.append(",");
+	    	}
+	    	expression = SQLExpression()
+	    	{
+	    		returnValue.append(expression);
+	    	}
+	    )*
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
 
-void SQLRelationalOperatorExpression():
+String SQLRelationalOperatorExpression():
 {/*@bgen(jjtree) SQLRelationalOperatorExpression */
-  ASTSQLRelationalOperatorExpression jjtn000 = new ASTSQLRelationalOperatorExpression(null, JJTSQLRELATIONALOPERATOREXPRESSION);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTSQLRelationalOperatorExpression jjtn000 = new ASTSQLRelationalOperatorExpression(null, JJTSQLRELATIONALOPERATOREXPRESSION);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+	QueryData queryData;
+}
 {/*@bgen(jjtree) SQLRelationalOperatorExpression */
     try {
 /*@egen*/
     /* Only after seeing an ANY/ALL or "(" followed by a SubQuery() we can
     determine that is is a sub-query
     */
-    (   LOOKAHEAD("ANY" | "ALL" | "(" "SELECT")
-        (["ALL" | "ANY"] "(" Query() ")")
+    (   LOOKAHEAD(
+			"ANY"
+			{
+				returnValue.append("ANY");
+			}
+			| "ALL"
+			{
+				returnValue.append("ALL");
+			}
+			| 
+				"("
+				{
+					returnValue.append("(");
+				} 
+				"SELECT"
+				{
+					returnValue.append("SELECT");
+				}
+    	)
+        (
+        	[
+        		"ALL"
+        		{
+        			returnValue.append("ALL");
+        		}
+        		| "ANY"
+        		{
+        			returnValue.append("ANY");
+        		}
+        	] 
+        	"("
+        	{
+        		returnValue.append("(");
+        	} 
+        	queryData = Query()
+        	{
+        		returnValue.append(queryData.toString());	//TODO: Fix this!!:.
+        	} 
+        	")"
+        	{
+        		returnValue.append(")");
+        	}
+        )
     )/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
@@ -758,125 +1125,255 @@ void SQLRelationalOperatorExpression():
 /*@egen*/
 }
 
-void SQLInClause():
+String SQLInClause():
 {/*@bgen(jjtree) SQLInClause */
-  ASTSQLInClause jjtn000 = new ASTSQLInClause(null, JJTSQLINCLAUSE);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTSQLInClause jjtn000 = new ASTSQLInClause(null, JJTSQLINCLAUSE);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+	QueryData queryData;
+}
 {/*@bgen(jjtree) SQLInClause */
-    try {
+        try {
 /*@egen*/
-    ["NOT"] "IN" "(" (LOOKAHEAD(3) Query() | SQLExpressionList()) ")"/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
+	(
+	    [
+	    	"NOT"
+	    	{
+	    		returnValue.append("NOT");
+	    	}
+	    ] 
+	    "IN"
+	    {
+	    	returnValue.append("IN");
+	    } 
+	    "("
+	    {
+	    	returnValue.append("(");
+	    } 
+	    (
+	    	LOOKAHEAD(3) queryData = Query()
+	    	{
+	    		returnValue.append(queryData.toString());	//TODO: Fix this!!:.
+	    	} 
+	    	| expression = SQLExpressionList()
+	    	{
+	    		returnValue.append(expression);
+	    	}
+	    ) 
+	    ")"
+	    {
+	    	returnValue.append(")");
+	    }
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
 
-void SQLBetweenClause():
+String SQLBetweenClause():
 {/*@bgen(jjtree) SQLBetweenClause */
-  ASTSQLBetweenClause jjtn000 = new ASTSQLBetweenClause(null, JJTSQLBETWEENCLAUSE);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
+        ASTSQLBetweenClause jjtn000 = new ASTSQLBetweenClause(null, JJTSQLBETWEENCLAUSE);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
 {/*@bgen(jjtree) SQLBetweenClause */
-    try {
+        try {
 /*@egen*/
-    ["NOT"] "BETWEEN" SQLSimpleExpression() "AND" SQLSimpleExpression()/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
+	(
+	    [
+	    	"NOT"
+	    	{
+	    		returnValue.append("NOT");
+	    	}
+	    ]
+	    "BETWEEN"
+	    {
+	    	returnValue.append("BETWEEN");
+	    } 
+	    expression = SQLSimpleExpression()
+	    {
+	    	returnValue.append(expression);
+	    } 
+	    "AND"
+	    {
+	    	returnValue.append("AND");
+	    } 
+	    expression = SQLSimpleExpression()
+	    {
+	    	returnValue.append(expression);
+	    }
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
 /*@egen*/
-}
-
-void SQLLikeClause():
-{/*@bgen(jjtree) SQLLikeClause */
-  ASTSQLLikeClause jjtn000 = new ASTSQLLikeClause(null, JJTSQLLIKECLAUSE);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
-{/*@bgen(jjtree) SQLLikeClause */
-    try {
-/*@egen*/
-    ["NOT"] "LIKE" SQLSimpleExpression()/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
 
-void IsNullClause():
-{/*@bgen(jjtree) IsNullClause */
-  ASTIsNullClause jjtn000 = new ASTIsNullClause(null, JJTISNULLCLAUSE);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
-{/*@bgen(jjtree) IsNullClause */
-    try {
+String SQLLikeClause():
+{/*@bgen(jjtree) SQLLikeClause */
+        ASTSQLLikeClause jjtn000 = new ASTSQLLikeClause(null, JJTSQLLIKECLAUSE);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-    "IS" ["NOT"] "NULL"/*@bgen(jjtree)*/
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
-    }
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
+{/*@bgen(jjtree) SQLLikeClause */
+        try {
+/*@egen*/
+	(
+	    [
+	    	"NOT"
+	    	{
+	    		returnValue.append("NOT");
+	    	}
+	    ] 
+	   	"LIKE"
+	   	{
+	   		returnValue.append("LIKE");
+	   	}
+	   	expression = SQLSimpleExpression()
+	   	{
+	   		returnValue.append(expression);
+	   	}
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
+/*@egen*/
+}
+
+String IsNullClause():
+{/*@bgen(jjtree) IsNullClause */
+        ASTIsNullClause jjtn000 = new ASTIsNullClause(null, JJTISNULLCLAUSE);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	StringBuilder returnValue = new StringBuilder();
+}
+{/*@bgen(jjtree) IsNullClause */
+        try {
+/*@egen*/
+	(
+	    "IS"
+	    {
+	    	returnValue.append("IS");
+	    }
+	    [
+	    	"NOT"
+	    	{
+	    		returnValue.append("NOT");
+	    	}
+	    ]
+	    "NULL"
+	    {
+	    	returnValue.append("NULL");
+	    }
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue.toString();
+	}/*@bgen(jjtree)*/
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
 
@@ -991,36 +1488,50 @@ RelationData QueryTableExpression():
 /*@egen*/
 }
 
-void WhereClause():
+String WhereClause():
 {/*@bgen(jjtree) WhereClause */
-  ASTWhereClause jjtn000 = new ASTWhereClause(null, JJTWHERECLAUSE);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-  jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/}
-{/*@bgen(jjtree) WhereClause */
-    try {
+        ASTWhereClause jjtn000 = new ASTWhereClause(null, JJTWHERECLAUSE);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-    "WHERE" SQLExpression()/*@bgen(jjtree)*/
-    } catch (Throwable jjte000) {
-      if (jjtc000) {
-        jjtree.clearNodeScope(jjtn000);
-        jjtc000 = false;
-      } else {
-        jjtree.popNode();
-      }
-      if (jjte000 instanceof RuntimeException) {
-        throw (RuntimeException)jjte000;
-      }
-      if (jjte000 instanceof ParseException) {
-        throw (ParseException)jjte000;
-      }
-      throw (Error)jjte000;
-    } finally {
-      if (jjtc000) {
-        jjtree.closeNodeScope(jjtn000, true);
-        jjtn000.jjtSetLastToken(getToken(0));
-      }
+	String returnValue;
+}
+{/*@bgen(jjtree) WhereClause */
+        try {
+/*@egen*/
+	(
+    	"WHERE"
+    	returnValue = SQLExpression()
+    )/*@bgen(jjtree)*/
+    {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+      jjtn000.jjtSetLastToken(getToken(0));
     }
+/*@egen*/
+    {
+    	return returnValue;
+    }/*@bgen(jjtree)*/
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
