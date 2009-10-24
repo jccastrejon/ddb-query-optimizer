@@ -19,6 +19,7 @@ PARSER_BEGIN(SqlParser)
  
 import mx.itesm.ddb.util.QueryData;
 import mx.itesm.ddb.util.RelationData;
+import mx.itesm.ddb.util.ConditionData;
 import mx.itesm.ddb.util.impl.SimpleRelationData;
 import mx.itesm.ddb.util.impl.QueryRelationData;
 import java.util.List;
@@ -106,14 +107,17 @@ QueryData Query() :
 	QueryData returnValue;
 	List<String> attributes;
 	List<RelationData> relations;
+	String conditions = null;
 }
 {
     "SELECT" [ "ALL" | "DISTINCT" ] 
     attributes = SelectList()
     relations = FromClause()
-    [ WhereClause() ]
+    [
+    	conditions = WhereClause()
+    ]
     {
-    	returnValue = new QueryData(attributes, relations);
+    	returnValue = new QueryData(attributes, relations, conditions);
     	return returnValue;
     }
 }
@@ -154,148 +158,585 @@ String SelectItem():
 	Token token = null;
 }
 {
-    (
-		LOOKAHEAD(2) token = <S_IDENTIFIER>".*" // table.*
-      | returnValue = SQLSimpleExpression() // column name or expression
-    )
-    [ [ "AS" ] <S_IDENTIFIER>]
-    {
-    	if(token != null){
-    		returnValue = token.image + ".*";
-    	}
-    	return returnValue;
-    }
-}
-
-String SQLSimpleExpression():
-{
-	String returnValue = null;
-	Token token = null;
-}
-{
 	(
-			token = <S_IDENTIFIER>
-		|	SQLMultiplicativeExpression() ( ("+" | "-" | "||") SQLMultiplicativeExpression())*
+	    (
+			LOOKAHEAD(2) token = <S_IDENTIFIER>".*" // table.*
+			{
+				returnValue = token.image + ".*";
+			}
+			| returnValue = SQLSimpleExpression() // column name or expression
+	    )
+	    [ 
+	    	[
+	    		"AS"
+	    		{
+	    			returnValue += "AS";
+	    		}
+	    	]
+	    	token = <S_IDENTIFIER>
+	    	{
+	    		returnValue += token.image;
+	    	}
+	    ]
 	)
 	{
-		if(token != null){
-			returnValue = token.image;
-		}
 		return returnValue;
 	}
 }
 
-
-void SQLMultiplicativeExpression():
-{}
+String SQLSimpleExpression():
 {
-    SQLExponentExpression() ( ("*" | "/") SQLExponentExpression())*
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
+{
+	(
+		expression = SQLMultiplicativeExpression()
+		{
+			returnValue.append(expression);
+		}
+		(
+			(
+				"+"
+				{
+					returnValue.append("+");
+				}
+				| "-"
+				{
+					returnValue.append("-");
+				}
+				| "||"
+				{
+					returnValue.append("||");
+				}
+			) 
+			expression = SQLMultiplicativeExpression()
+			{
+				returnValue.append(expression);
+			}
+		)*
+	)
+	{
+		return returnValue.toString();
+	}
 }
 
-void SQLExponentExpression():
-{}
+
+String SQLMultiplicativeExpression():
 {
-    SQLUnaryExpression() ( "**" SQLUnaryExpression())*
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
+{
+	(
+		expression = SQLUnaryExpression()	//TODO: exponent?
+		{
+			returnValue.append(expression);
+		}
+		(
+			(
+				"*"
+				{
+					returnValue.append("*");
+				}
+				| "/"
+				{
+					returnValue.append("/");
+				}
+				| "="
+				{
+					returnValue.append("=");
+				}
+			)
+			expression = SQLUnaryExpression()	//TODO: exponent?
+			{
+				returnValue.append(expression);
+			}
+		)*
+	)
+	{
+		return returnValue.toString();
+	}
 }
 
-void SQLUnaryExpression():
-{}
+String SQLUnaryExpression():
 {
-    ["+" | "-"] SQLPrimaryExpression()
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
+{
+	(
+	    [
+	    	"+"
+	    	{
+	    		returnValue.append("+");
+	    	}
+	    	| "-"
+	    	{
+	    		returnValue.append("-");
+	    	}
+	    ] 
+	    expression = SQLPrimaryExpression()
+	    {
+	    	returnValue.append(expression);
+	    }
+	)
+	{
+		return returnValue.toString();
+	}
 }
 
-void SQLPrimaryExpression():
-{}
+String SQLPrimaryExpression():
 {
-    <S_NUMBER>
-  | <S_CHAR_LITERAL>
-  | "NULL"
-  | "(" (LOOKAHEAD(3) Query() | SQLExpression()) ")"
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+	Token token;
+	QueryData queryData;
+}
+{
+	(
+	    token = <S_NUMBER>
+	    {
+	    	returnValue.append(token.image);
+	    }
+		| token = <S_CHAR_LITERAL>
+	    {
+	    	returnValue.append(token.image);
+	    }
+		| token = <S_IDENTIFIER>
+	    {
+	    	returnValue.append(token.image);
+	    }
+		| "NULL"
+	    {
+	    	returnValue.append("NULL");
+	    }
+		| "("
+	    {
+	    	returnValue.append("(");
+	    }
+		(
+			LOOKAHEAD(3) queryData = Query()
+			{
+				returnValue.append(queryData.toString());	//TODO: Fix this!!:.
+			}
+			| expression = SQLExpression()
+			{
+				returnValue.append(expression);
+			}
+		)
+		")"
+		{
+			returnValue.append(")");
+		}
+	)
+	{
+		return returnValue.toString();
+	}
 }
 
-void SQLExpression():
-{}
+String SQLExpression():
 {
-    SQLAndExpression() ("OR" SQLAndExpression())*
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
+{
+	(
+	    expression = SQLAndExpression()
+	    {
+	    	returnValue.append(expression);
+	    } 
+	    (
+	    	"OR"
+	    	{
+	    		returnValue.append("OR");
+	    	}
+	    	expression = SQLAndExpression()
+	    	{
+	    		returnValue.append(expression);
+	    	}
+	    )*
+	)
+	{
+		return returnValue.toString();
+	}
 }
 
-void SQLAndExpression():
-{}
+String SQLAndExpression():
 {
-    SQLUnaryLogicalExpression() ( "AND" SQLUnaryLogicalExpression())*
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
+{
+	(
+	    expression = SQLUnaryLogicalExpression()
+	    {
+	    	returnValue.append(expression);
+	    }
+	    (
+	    	"AND"
+	    	{
+	    		returnValue.append("AND");
+	    	}
+	    	expression = SQLUnaryLogicalExpression()
+	    	{
+	    		returnValue.append(expression);
+	    	}
+	    )*
+	)
+	{
+		return returnValue.toString();
+	}
 }
 
-void SQLUnaryLogicalExpression():
-{}
+String SQLUnaryLogicalExpression():
 {
-    LOOKAHEAD(2) ExistsClause()
-  | (["NOT"] SQLRelationalExpression())
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
+{
+	(
+	    LOOKAHEAD(2) expression = ExistsClause()
+	    {
+	    	returnValue.append(expression);
+	    }
+		|(
+			[
+				"NOT"
+				{
+					returnValue.append("NOT");
+				}
+			]
+			expression = SQLRelationalExpression()
+			{
+				returnValue.append(expression);
+			}
+		)
+	)
+	{
+		return returnValue.toString();
+	}
 }
 
-void ExistsClause():
-{}
+String ExistsClause():
 {
-    ["NOT"] "EXISTS" "(" Query() ")"
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+	QueryData queryData;
+}
+{
+	(
+	    [
+	    	"NOT"
+	    	{
+	    		returnValue.append("NOT");
+	    	}
+	    ] 
+	    "EXISTS"
+	    {
+	    	returnValue.append("EXISTS");
+	    }
+	    "("
+	    {
+	    	returnValue.append("(");
+	    } 
+	    queryData = Query()
+	    {
+	    	returnValue.append(queryData.toString()); //TODO: Fix this!!:.
+	    } 
+	    ")"
+	    {
+	    	returnValue.append(")");
+	    }
+	)
+	{
+		return returnValue.toString();
+	}
 }
 
-void SQLRelationalExpression():
-{}
+String SQLRelationalExpression():
 {
-    /* Only after looking past "(", Expression() and "," we will know that
-       it is expression list */
-
-    (LOOKAHEAD("(" SQLSimpleExpression() ",")
-     "(" SQLExpressionList() ")"
-|
-    (SQLSimpleExpression()))
-
-    /* Lookahead(2) is required because of NOT IN,NOT BETWEEN and NOT LIKE */
-   ( SQLRelationalOperatorExpression() |  LOOKAHEAD(2) (SQLInClause())
-                                    |  LOOKAHEAD(2) (SQLBetweenClause())
-                                    |  LOOKAHEAD(2) (SQLLikeClause())
-                                    |  IsNullClause()
-   )?
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
+{
+	(
+	    /* Only after looking past "(", Expression() and "," we will know that
+	       it is expression list */
+	
+	    (LOOKAHEAD("("
+	    {
+	    	returnValue.append("(");
+	    } 
+	    expression = SQLSimpleExpression()
+	    {
+	    	returnValue.append(expression);
+	    } 
+	    ","
+	    {
+	    	returnValue.append(",");
+	    })
+	     
+	     "("
+	     {
+	     	returnValue.append("(");
+	     } 
+	     expression = SQLExpressionList()
+	     {
+	     	returnValue.append(expression);
+	     } 
+	     ")"
+	     {
+	     	returnValue.append(")");
+	     }
+		|(expression = SQLSimpleExpression()
+	    {
+	    	returnValue.append(expression);
+	    }))
+	
+	    /* Lookahead(2) is required because of NOT IN,NOT BETWEEN and NOT LIKE */
+	   ( 
+	   	expression = SQLRelationalOperatorExpression()
+	   	{
+	   		returnValue.append(expression);
+	   	}
+	   	| LOOKAHEAD(2) (expression = SQLInClause())
+	   	{
+	   		returnValue.append(expression);
+	   	}
+		|  LOOKAHEAD(2) (expression = SQLBetweenClause())
+		{
+			returnValue.append(expression);
+		}
+		|  LOOKAHEAD(2) (expression = SQLLikeClause())
+		{
+			returnValue.append(expression);
+		}
+		|  expression = IsNullClause()
+		{
+			returnValue.append(expression);
+		}
+	   )?
+	)
+	{
+		return returnValue.toString();
+	}
 }
 
-void SQLExpressionList():
-{}
+String SQLExpressionList():
 {
-    SQLExpression() ("," SQLExpression())*
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
+{
+	(
+	    expression = SQLExpression()
+	    {
+	    	returnValue.append(expression);
+	    }
+	    (
+	    	","
+	    	{
+	    		returnValue.append(",");
+	    	}
+	    	expression = SQLExpression()
+	    	{
+	    		returnValue.append(expression);
+	    	}
+	    )*
+	)
+	{
+		return returnValue.toString();
+	}
 }
 
-void SQLRelationalOperatorExpression():
-{}
+String SQLRelationalOperatorExpression():
+{
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+	QueryData queryData;
+}
 {
     /* Only after seeing an ANY/ALL or "(" followed by a SubQuery() we can
     determine that is is a sub-query
     */
-    (   LOOKAHEAD("ANY" | "ALL" | "(" "SELECT")
-        (["ALL" | "ANY"] "(" Query() ")")
+    (   LOOKAHEAD(
+			"ANY"
+			{
+				returnValue.append("ANY");
+			}
+			| "ALL"
+			{
+				returnValue.append("ALL");
+			}
+			| 
+				"("
+				{
+					returnValue.append("(");
+				} 
+				"SELECT"
+				{
+					returnValue.append("SELECT");
+				}
+    	)
+        (
+        	[
+        		"ALL"
+        		{
+        			returnValue.append("ALL");
+        		}
+        		| "ANY"
+        		{
+        			returnValue.append("ANY");
+        		}
+        	] 
+        	"("
+        	{
+        		returnValue.append("(");
+        	} 
+        	queryData = Query()
+        	{
+        		returnValue.append(queryData.toString());	//TODO: Fix this!!:.
+        	} 
+        	")"
+        	{
+        		returnValue.append(")");
+        	}
+        )
     )
+	{
+		return returnValue.toString();
+	}
 }
 
-void SQLInClause():
-{}
+String SQLInClause():
 {
-    ["NOT"] "IN" "(" (LOOKAHEAD(3) Query() | SQLExpressionList()) ")"
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+	QueryData queryData;
+}
+{
+	(
+	    [
+	    	"NOT"
+	    	{
+	    		returnValue.append("NOT");
+	    	}
+	    ] 
+	    "IN"
+	    {
+	    	returnValue.append("IN");
+	    } 
+	    "("
+	    {
+	    	returnValue.append("(");
+	    } 
+	    (
+	    	LOOKAHEAD(3) queryData = Query()
+	    	{
+	    		returnValue.append(queryData.toString());	//TODO: Fix this!!:.
+	    	} 
+	    	| expression = SQLExpressionList()
+	    	{
+	    		returnValue.append(expression);
+	    	}
+	    ) 
+	    ")"
+	    {
+	    	returnValue.append(")");
+	    }
+	)
+	{
+		return returnValue.toString();
+	}
 }
 
-void SQLBetweenClause():
-{}
+String SQLBetweenClause():
 {
-    ["NOT"] "BETWEEN" SQLSimpleExpression() "AND" SQLSimpleExpression()
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
+{
+	(
+	    [
+	    	"NOT"
+	    	{
+	    		returnValue.append("NOT");
+	    	}
+	    ]
+	    "BETWEEN"
+	    {
+	    	returnValue.append("BETWEEN");
+	    } 
+	    expression = SQLSimpleExpression()
+	    {
+	    	returnValue.append(expression);
+	    } 
+	    "AND"
+	    {
+	    	returnValue.append("AND");
+	    } 
+	    expression = SQLSimpleExpression()
+	    {
+	    	returnValue.append(expression);
+	    }
+	)
+	{
+		return returnValue.toString();
+	}
 }
 
-void SQLLikeClause():
-{}
+String SQLLikeClause():
 {
-    ["NOT"] "LIKE" SQLSimpleExpression()
+	StringBuilder returnValue = new StringBuilder();
+	String expression;
+}
+{
+	(
+	    [
+	    	"NOT"
+	    	{
+	    		returnValue.append("NOT");
+	    	}
+	    ] 
+	   	"LIKE"
+	   	{
+	   		returnValue.append("LIKE");
+	   	}
+	   	expression = SQLSimpleExpression()
+	   	{
+	   		returnValue.append(expression);
+	   	}
+	)
+	{
+		return returnValue.toString();
+	}
 }
 
-void IsNullClause():
-{}
+String IsNullClause():
 {
-    "IS" ["NOT"] "NULL"
+	StringBuilder returnValue = new StringBuilder();
+}
+{
+	(
+	    "IS"
+	    {
+	    	returnValue.append("IS");
+	    }
+	    [
+	    	"NOT"
+	    	{
+	    		returnValue.append("NOT");
+	    	}
+	    ]
+	    "NULL"
+	    {
+	    	returnValue.append("NULL");
+	    }
+	)
+	{
+		return returnValue.toString();
+	}
 }
 
 List<RelationData> FromClause():
@@ -341,8 +782,16 @@ RelationData QueryTableExpression():
     }
 }
 
-void WhereClause():
-{}
+String WhereClause():
 {
-    "WHERE" SQLExpression()
+	String returnValue;
+}
+{
+	(
+    	"WHERE"
+    	returnValue = SQLExpression()
+    )
+    {
+    	return returnValue;
+    }
 }
