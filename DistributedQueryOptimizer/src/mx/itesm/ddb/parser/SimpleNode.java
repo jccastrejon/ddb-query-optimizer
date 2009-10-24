@@ -2,8 +2,6 @@
 /* JavaCCOptions:MULTI=true,NODE_USES_PARSER=true,VISITOR=true,TRACK_TOKENS=true,NODE_PREFIX=AST,NODE_EXTENDS=mx.itesm.ddb.util.SqlNode,NODE_FACTORY=,SUPPORT_CLASS_VISIBILITY_PUBLIC=true */
 package mx.itesm.ddb.parser;
 
-
-
 public
 class SimpleNode extends mx.itesm.ddb.util.SqlNode implements Node {
 
@@ -102,4 +100,4 @@ class SimpleNode extends mx.itesm.ddb.util.SqlNode implements Node {
   }
 }
 
-/* JavaCC - OriginalChecksum=d0d959b6fcb0366f43c6129497b0b85c (do not edit this line) */
+/* JavaCC - OriginalChecksum=2ea31aaf46f6667aa0513c1dabe97a36 (do not edit this line) */

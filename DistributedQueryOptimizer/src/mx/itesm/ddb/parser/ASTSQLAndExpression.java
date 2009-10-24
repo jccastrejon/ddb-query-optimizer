@@ -2,8 +2,6 @@
 /* JavaCCOptions:MULTI=true,NODE_USES_PARSER=true,VISITOR=true,TRACK_TOKENS=true,NODE_PREFIX=AST,NODE_EXTENDS=mx.itesm.ddb.util.SqlNode,NODE_FACTORY=,SUPPORT_CLASS_VISIBILITY_PUBLIC=true */
 package mx.itesm.ddb.parser;
 
-
-
 public
 class ASTSQLAndExpression extends SimpleNode {
   public ASTSQLAndExpression(int id) {
@@ -20,4 +18,4 @@ class ASTSQLAndExpression extends SimpleNode {
     return visitor.visit(this, data);
   }
 }
-/* JavaCC - OriginalChecksum=59c49c8d8e8888689130253b44321d28 (do not edit this line) */
+/* JavaCC - OriginalChecksum=0cb30b9453d767de9804de5740d99ab5 (do not edit this line) */

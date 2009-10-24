@@ -2,8 +2,6 @@
 /* JavaCCOptions:MULTI=true,NODE_USES_PARSER=true,VISITOR=true,TRACK_TOKENS=true,NODE_PREFIX=AST,NODE_EXTENDS=mx.itesm.ddb.util.SqlNode,NODE_FACTORY=,SUPPORT_CLASS_VISIBILITY_PUBLIC=true */
 package mx.itesm.ddb.parser;
 
-
-
 public
 class ASTSelectItem extends SimpleNode {
   public ASTSelectItem(int id) {
@@ -20,4 +18,4 @@ class ASTSelectItem extends SimpleNode {
     return visitor.visit(this, data);
   }
 }
-/* JavaCC - OriginalChecksum=872b6a5d89c09abcbfd851e13599f526 (do not edit this line) */
+/* JavaCC - OriginalChecksum=e2754b0300b06c97a8d7f6145c04b8e8 (do not edit this line) */
