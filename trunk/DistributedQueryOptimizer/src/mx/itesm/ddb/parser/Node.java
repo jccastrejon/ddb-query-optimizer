@@ -2,8 +2,6 @@
 /* JavaCCOptions:MULTI=true,NODE_USES_PARSER=true,VISITOR=true,TRACK_TOKENS=true,NODE_PREFIX=AST,NODE_EXTENDS=mx.itesm.ddb.util.SqlNode,NODE_FACTORY=,SUPPORT_CLASS_VISIBILITY_PUBLIC=true */
 package mx.itesm.ddb.parser;
 
-
-
 /* All AST nodes must implement this interface.  It provides basic
    machinery for constructing the parent and child relationships
    between nodes. */
@@ -38,4 +36,4 @@ interface Node {
   /** Accept the visitor. **/
   public Object jjtAccept(SqlParserVisitor visitor, Object data);
 }
-/* JavaCC - OriginalChecksum=094cb500c1495dcfe458716c38b277c3 (do not edit this line) */
+/* JavaCC - OriginalChecksum=3b48bfde3aaca125a2529fd601bc0b72 (do not edit this line) */
