@@ -9,6 +9,7 @@ package mx.itesm.ddb.parser;
 
 import mx.itesm.ddb.util.QueryData;
 import mx.itesm.ddb.util.RelationData;
+import mx.itesm.ddb.util.ConditionData;
 import mx.itesm.ddb.util.impl.SimpleRelationData;
 import mx.itesm.ddb.util.impl.QueryRelationData;
 import java.util.List;
@@ -121,8 +122,7 @@ static private int jjMoveStringLiteralDfa0_0()
       case 41:
          return jjStopAtPos(0, 42);
       case 42:
-         jjmatchedKind = 33;
-         return jjMoveStringLiteralDfa1_0(0x10000000000L);
+         return jjStopAtPos(0, 33);
       case 43:
          return jjStopAtPos(0, 36);
       case 44:
@@ -135,6 +135,8 @@ static private int jjMoveStringLiteralDfa0_0()
          return jjStopAtPos(0, 39);
       case 59:
          return jjStopAtPos(0, 32);
+      case 61:
+         return jjStopAtPos(0, 40);
       case 65:
       case 97:
          return jjMoveStringLiteralDfa1_0(0x7c0L);
@@ -186,8 +188,6 @@ static private int jjMoveStringLiteralDfa1_0(long active0)
       case 42:
          if ((active0 & 0x800000000L) != 0L)
             return jjStopAtPos(1, 35);
-         else if ((active0 & 0x10000000000L) != 0L)
-            return jjStopAtPos(1, 40);
          break;
       case 69:
       case 101:
@@ -751,7 +751,7 @@ public static final String[] jjstrLiteralImages = {
 "", null, null, null, null, null, null, null, null, null, null, null, null, 
 null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
 null, null, null, null, null, "\73", "\52", "\54", "\56\52", "\53", "\55", 
-"\174\174", "\57", "\52\52", "\50", "\51", };
+"\174\174", "\57", "\75", "\50", "\51", };
 
 /** Lexer state names. */
 public static final String[] lexStateNames = {

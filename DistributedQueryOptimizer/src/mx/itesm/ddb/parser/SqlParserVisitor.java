@@ -12,7 +12,6 @@ public interface SqlParserVisitor
   public Object visit(ASTSelectItem node, Object data);
   public Object visit(ASTSQLSimpleExpression node, Object data);
   public Object visit(ASTSQLMultiplicativeExpression node, Object data);
-  public Object visit(ASTSQLExponentExpression node, Object data);
   public Object visit(ASTSQLUnaryExpression node, Object data);
   public Object visit(ASTSQLPrimaryExpression node, Object data);
   public Object visit(ASTSQLExpression node, Object data);
@@ -30,4 +29,4 @@ public interface SqlParserVisitor
   public Object visit(ASTQueryTableExpression node, Object data);
   public Object visit(ASTWhereClause node, Object data);
 }
-/* JavaCC - OriginalChecksum=44c7461000ac465312f3eac2c4a5c01f (do not edit this line) */
+/* JavaCC - OriginalChecksum=66ba3045e3457019fc340f86e5948d00 (do not edit this line) */

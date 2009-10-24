@@ -22,21 +22,47 @@ public class QueryData {
     List<RelationData> relations;
 
     /**
+     * Query conditions.
+     */
+    String conditions;
+
+    /**
      * Full constructor.
      * 
      * @param attributes
      *            Query projection attributes.
      * @param relations
      *            Query relations.
+     * @param conditions
+     *            Query conditions.
      */
-    public QueryData(List<String> attributes, List<RelationData> relations) {
+    public QueryData(List<String> attributes, List<RelationData> relations, String conditions) {
 	this.attributes = attributes;
 	this.relations = relations;
+	this.conditions = conditions;
     }
 
     @Override
     public String toString() {
-	return "\u03A0<sub>" + this.attributes + "<sub>(" + this.relations + ")";
+	StringBuilder returnValue;
+
+	// Projections
+	returnValue = new StringBuilder("\u03A0<sub>" + this.attributes + "</sub>(");
+
+	// Selections
+	if (this.conditions != null) {
+	    returnValue.append("\u03c3<sub>" + this.conditions + "</sub>(");
+	}
+
+	// Relations
+	returnValue.append(this.relations + ")");
+
+	// Close parenthesis in case of selections
+	if (this.conditions != null) {
+	    returnValue.append(")");
+	}
+
+	return returnValue.toString();
     }
 
     /**
