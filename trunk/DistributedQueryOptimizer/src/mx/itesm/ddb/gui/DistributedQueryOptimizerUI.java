@@ -109,7 +109,7 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
 	testQueriesButton = new JButton("Tests");
 
 	resultText.setContentType("text/html");
-	resultText.setPreferredSize(new Dimension(500, 500));
+	resultText.setPreferredSize(new Dimension(900, 500));
 	resultText.setEditable(false);
 	executeQueryButton.addActionListener(this);
 	testQueriesButton.addActionListener(this);
@@ -202,10 +202,11 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
      * 
      * @param query
      *            SQL query.
-     * @return QueryData.
+     * @return Relational Calculus representation of the query data.
      */
-    public QueryData executeQuery(String query) {
-	QueryData returnValue;
+    public String executeQuery(String query) {
+	QueryData queryData;
+	String returnValue;
 
 	if (parser == null) {
 	    parser = new SqlParser(new StringReader(query));
@@ -214,10 +215,11 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
 	}
 
 	try {
-	    returnValue = SqlParser.QueryStatement();
+	    queryData = SqlParser.QueryStatement();
+	    returnValue = queryData.toString();
 	} catch (Exception e) {
-	    returnValue = null;
-	    logger.log(Level.WARNING, "Problems while parsing query", e);
+	    returnValue = "<font color='red'>Problems while parsing query [" + query + "]</font>";
+	    logger.log(Level.WARNING, "Problems while parsing query [" + query + "]", e);
 	}
 
 	return returnValue;

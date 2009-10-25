@@ -16,11 +16,23 @@ package mx.itesm.ddb.parser;
 import java.util.List;
 import java.util.ArrayList;
  
+import mx.itesm.ddb.util.ConditionData;
+import mx.itesm.ddb.util.ConditionOperator;
+import mx.itesm.ddb.util.ExpressionData;
+import mx.itesm.ddb.util.ExpressionOperator;
 import mx.itesm.ddb.util.QueryData;
 import mx.itesm.ddb.util.RelationData;
-import mx.itesm.ddb.util.ConditionData;
-import mx.itesm.ddb.util.impl.SimpleRelationData;
+
+import mx.itesm.ddb.util.impl.AliasExpressionData;
+import mx.itesm.ddb.util.impl.ConditionExpressionData;
+import mx.itesm.ddb.util.impl.ExpressionConditionData;
+import mx.itesm.ddb.util.impl.OperationConditionData;
+import mx.itesm.ddb.util.impl.OperationExpressionData;
+import mx.itesm.ddb.util.impl.QueryConditionData;
+import mx.itesm.ddb.util.impl.QueryExpressionData;
 import mx.itesm.ddb.util.impl.QueryRelationData;
+import mx.itesm.ddb.util.impl.SimpleExpressionData;
+import mx.itesm.ddb.util.impl.SimpleRelationData;
 
 /**
  * SQL Parser.
@@ -150,9 +162,9 @@ QueryData Query() :
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
 	QueryData returnValue;
-	List<String> attributes;
+	List<ExpressionData> attributes;
 	List<RelationData> relations;
-	String conditions = null;
+	ConditionData conditions = null;
 }
 {/*@bgen(jjtree) Query */
     try {
@@ -199,15 +211,15 @@ QueryData Query() :
 /*
  * Result attributes.
  */
-List<String> SelectList():
+List<ExpressionData> SelectList():
 {/*@bgen(jjtree) SelectList */
         ASTSelectList jjtn000 = new ASTSelectList(null, JJTSELECTLIST);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	List<String> returnValue = new ArrayList<String>();
-	String attribute;	
+	List<ExpressionData> returnValue = new ArrayList<ExpressionData>();
+	ExpressionData expression;	
 }
 {/*@bgen(jjtree) SelectList */
         try {
@@ -215,16 +227,17 @@ List<String> SelectList():
 	(
 	    "*"
 	    {
-	    	returnValue.add("*");
+	    	returnValue.add(new SimpleExpressionData("*"));
 	    } 
-	    | attribute = SelectItem()
+	    | expression = SelectItem()
 	    {
-	    	returnValue.add(attribute);
+	    	returnValue.add(expression);
 	    }
 	   	(
-	   		"," attribute = SelectItem()
+	   		"," 
+	   		expression = SelectItem()
 	   		{
-	   			returnValue.add(attribute);
+	   			returnValue.add(expression);
 	   		}
 	   	)*
    	)/*@bgen(jjtree)*/
@@ -260,14 +273,14 @@ List<String> SelectList():
 /*@egen*/
 }
 
-String SelectItem():
+ExpressionData SelectItem():
 {/*@bgen(jjtree) SelectItem */
         ASTSelectItem jjtn000 = new ASTSelectItem(null, JJTSELECTITEM);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	String returnValue = null;
+	ExpressionData returnValue;
 	Token token = null;
 }
 {/*@bgen(jjtree) SelectItem */
@@ -277,20 +290,17 @@ String SelectItem():
 	    (
 			LOOKAHEAD(2) token = <S_IDENTIFIER>".*" // table.*
 			{
-				returnValue = token.image + ".*";
+				returnValue = new SimpleExpressionData(token.image + ".*");
 			}
 			| returnValue = SQLSimpleExpression() // column name or expression
 	    )
 	    [ 
 	    	[
 	    		"AS"
-	    		{
-	    			returnValue += "AS";
-	    		}
 	    	]
 	    	token = <S_IDENTIFIER>
 	    	{
-	    		returnValue += token.image;
+	    		returnValue = new AliasExpressionData(returnValue, token.image);
 	    	}
 	    ]
 	)/*@bgen(jjtree)*/
@@ -326,42 +336,41 @@ String SelectItem():
 /*@egen*/
 }
 
-String SQLSimpleExpression():
+ExpressionData SQLSimpleExpression():
 {/*@bgen(jjtree) SQLSimpleExpression */
         ASTSQLSimpleExpression jjtn000 = new ASTSQLSimpleExpression(null, JJTSQLSIMPLEEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	StringBuilder returnValue = new StringBuilder();
-	String expression;
+	ExpressionData returnValue;
+	ExpressionData firstExpression;
+	ExpressionData secondExpression;
+	ExpressionOperator operator;
 }
 {/*@bgen(jjtree) SQLSimpleExpression */
         try {
 /*@egen*/
 	(
-		expression = SQLMultiplicativeExpression()
+		firstExpression = SQLMultiplicativeExpression()
 		{
-			returnValue.append(expression);
+			returnValue = firstExpression;
 		}
 		(
 			(
 				"+"
 				{
-					returnValue.append("+");
+					operator = ExpressionOperator.ArithmeticOperator.ADD_OPERATOR;
 				}
 				| "-"
 				{
-					returnValue.append("-");
-				}
-				| "||"
-				{
-					returnValue.append("||");
+					operator = ExpressionOperator.ArithmeticOperator.SUBSTRACT_OPERATOR;
 				}
 			) 
-			expression = SQLMultiplicativeExpression()
+			secondExpression = SQLMultiplicativeExpression()
 			{
-				returnValue.append(expression);
+				returnValue = new OperationExpressionData(operator, firstExpression, secondExpression);
+				firstExpression = returnValue;
 			}
 		)*
 	)/*@bgen(jjtree)*/
@@ -372,7 +381,7 @@ String SQLSimpleExpression():
         }
 /*@egen*/
 	{
-		return returnValue.toString();
+		return returnValue;
 	}/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
@@ -398,42 +407,45 @@ String SQLSimpleExpression():
 }
 
 
-String SQLMultiplicativeExpression():
+ExpressionData SQLMultiplicativeExpression():
 {/*@bgen(jjtree) SQLMultiplicativeExpression */
         ASTSQLMultiplicativeExpression jjtn000 = new ASTSQLMultiplicativeExpression(null, JJTSQLMULTIPLICATIVEEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	StringBuilder returnValue = new StringBuilder();
-	String expression;
+	ExpressionData returnValue;
+	ExpressionData firstExpression;
+	ExpressionData secondExpression;
+	ExpressionOperator operator;
 }
 {/*@bgen(jjtree) SQLMultiplicativeExpression */
         try {
 /*@egen*/
 	(
-		expression = SQLUnaryExpression()	//TODO: exponent?
+		firstExpression = SQLUnaryExpression()
 		{
-			returnValue.append(expression);
+			returnValue = firstExpression;
 		}
 		(
 			(
 				"*"
 				{
-					returnValue.append("*");
+					operator = ExpressionOperator.ArithmeticOperator.MULTIPLY_OPERATOR;
 				}
 				| "/"
 				{
-					returnValue.append("/");
+					operator = ExpressionOperator.ArithmeticOperator.DIVIDE_OPERATOR;
 				}
-				| "="
+				| "="							//TODO: Is this correct here?:.
 				{
-					returnValue.append("=");
+					operator = ExpressionOperator.ArithmeticOperator.EQUALS_OPERATOR;
 				}
 			)
-			expression = SQLUnaryExpression()	//TODO: exponent?
+			secondExpression = SQLUnaryExpression()
 			{
-				returnValue.append(expression);
+				returnValue = new OperationExpressionData(operator, firstExpression, secondExpression);
+				firstExpression = returnValue;
 			}
 		)*
 	)/*@bgen(jjtree)*/
@@ -444,7 +456,7 @@ String SQLMultiplicativeExpression():
         }
 /*@egen*/
 	{
-		return returnValue.toString();
+		return returnValue;
 	}/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
@@ -469,15 +481,16 @@ String SQLMultiplicativeExpression():
 /*@egen*/
 }
 
-String SQLUnaryExpression():
+ExpressionData SQLUnaryExpression():
 {/*@bgen(jjtree) SQLUnaryExpression */
         ASTSQLUnaryExpression jjtn000 = new ASTSQLUnaryExpression(null, JJTSQLUNARYEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	StringBuilder returnValue = new StringBuilder();
-	String expression;
+	ExpressionData returnValue;
+	ExpressionData expression;
+	ExpressionOperator operator = null;
 }
 {/*@bgen(jjtree) SQLUnaryExpression */
         try {
@@ -486,16 +499,16 @@ String SQLUnaryExpression():
 	    [
 	    	"+"
 	    	{
-	    		returnValue.append("+");
+	    		operator = ExpressionOperator.ArithmeticOperator.ADD_OPERATOR;
 	    	}
 	    	| "-"
 	    	{
-	    		returnValue.append("-");
+	    		operator = ExpressionOperator.ArithmeticOperator.SUBSTRACT_OPERATOR;
 	    	}
 	    ] 
 	    expression = SQLPrimaryExpression()
 	    {
-	    	returnValue.append(expression);
+	    	returnValue = expression;
 	    }
 	)/*@bgen(jjtree)*/
         {
@@ -505,7 +518,11 @@ String SQLUnaryExpression():
         }
 /*@egen*/
 	{
-		return returnValue.toString();
+		if(operator != null){
+			returnValue = new OperationExpressionData(operator, expression);	
+		}
+		
+		return returnValue;
 	}/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
@@ -530,17 +547,18 @@ String SQLUnaryExpression():
 /*@egen*/
 }
 
-String SQLPrimaryExpression():
+ExpressionData SQLPrimaryExpression():
 {/*@bgen(jjtree) SQLPrimaryExpression */
         ASTSQLPrimaryExpression jjtn000 = new ASTSQLPrimaryExpression(null, JJTSQLPRIMARYEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	StringBuilder returnValue = new StringBuilder();
-	String expression;
+	ExpressionData returnValue = null;
+	String simpleExpression = null;
 	Token token;
 	QueryData queryData;
+	ConditionData conditionData;
 }
 {/*@bgen(jjtree) SQLPrimaryExpression */
         try {
@@ -548,38 +566,32 @@ String SQLPrimaryExpression():
 	(
 	    token = <S_NUMBER>
 	    {
-	    	returnValue.append(token.image);
+	    	simpleExpression = token.image;
 	    }
 		| token = <S_CHAR_LITERAL>
 	    {
-	    	returnValue.append(token.image);
+	    	simpleExpression = token.image;
 	    }
 		| token = <S_IDENTIFIER>
 	    {
-	    	returnValue.append(token.image);
+	    	simpleExpression = token.image;
 	    }
 		| "NULL"
 	    {
-	    	returnValue.append("NULL");
+	    	simpleExpression = "NULL";
 	    }
 		| "("
-	    {
-	    	returnValue.append("(");
-	    }
-		(
-			LOOKAHEAD(3) queryData = Query()
-			{
-				returnValue.append(queryData.toString());	//TODO: Fix this!!:.
-			}
-			| expression = SQLExpression()
-			{
-				returnValue.append(expression);
-			}
-		)
+			(
+				LOOKAHEAD(3) queryData = Query()
+				{
+					returnValue = new QueryExpressionData(queryData);
+				}
+				| conditionData = SQLExpression()
+				{
+					returnValue = new ConditionExpressionData(conditionData);
+				}
+			)
 		")"
-		{
-			returnValue.append(")");
-		}
 	)/*@bgen(jjtree)*/
         {
           jjtree.closeNodeScope(jjtn000, true);
@@ -588,7 +600,10 @@ String SQLPrimaryExpression():
         }
 /*@egen*/
 	{
-		return returnValue.toString();
+		if(simpleExpression != null){
+			returnValue = new SimpleExpressionData(simpleExpression);
+		}
+		return returnValue;
 	}/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
@@ -613,32 +628,32 @@ String SQLPrimaryExpression():
 /*@egen*/
 }
 
-String SQLExpression():
+ConditionData SQLExpression():
 {/*@bgen(jjtree) SQLExpression */
         ASTSQLExpression jjtn000 = new ASTSQLExpression(null, JJTSQLEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	StringBuilder returnValue = new StringBuilder();
-	String expression;
+	ConditionData returnValue;
+	ConditionData firstCondition;
+	ConditionData secondCondition;
 }
 {/*@bgen(jjtree) SQLExpression */
         try {
 /*@egen*/
 	(
-	    expression = SQLAndExpression()
+	    firstCondition = SQLAndExpression()
 	    {
-	    	returnValue.append(expression);
-	    } 
+	    	returnValue = firstCondition;
+	    }
 	    (
 	    	"OR"
+	    	secondCondition = SQLAndExpression()
 	    	{
-	    		returnValue.append("OR");
-	    	}
-	    	expression = SQLAndExpression()
-	    	{
-	    		returnValue.append(expression);
+				returnValue = new OperationConditionData(ConditionOperator.BinaryOperator.OR_OPERATOR, 
+					firstCondition, secondCondition);
+				firstCondition = returnValue;
 	    	}
 	    )*
 	)/*@bgen(jjtree)*/
@@ -649,7 +664,7 @@ String SQLExpression():
         }
 /*@egen*/
 	{
-		return returnValue.toString();
+		return returnValue;
 	}/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
@@ -674,32 +689,32 @@ String SQLExpression():
 /*@egen*/
 }
 
-String SQLAndExpression():
+ConditionData SQLAndExpression():
 {/*@bgen(jjtree) SQLAndExpression */
         ASTSQLAndExpression jjtn000 = new ASTSQLAndExpression(null, JJTSQLANDEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	StringBuilder returnValue = new StringBuilder();
-	String expression;
+	ConditionData returnValue;
+	ConditionData firstCondition;
+	ConditionData secondCondition;
 }
 {/*@bgen(jjtree) SQLAndExpression */
         try {
 /*@egen*/
 	(
-	    expression = SQLUnaryLogicalExpression()
+	    firstCondition = SQLUnaryLogicalExpression()
 	    {
-	    	returnValue.append(expression);
+	    	returnValue = firstCondition;
 	    }
 	    (
 	    	"AND"
+	    	secondCondition = SQLUnaryLogicalExpression()
 	    	{
-	    		returnValue.append("AND");
-	    	}
-	    	expression = SQLUnaryLogicalExpression()
-	    	{
-	    		returnValue.append(expression);
+				returnValue = new OperationConditionData(ConditionOperator.BinaryOperator.AND_OPERATOR, 
+					firstCondition, secondCondition);
+				firstCondition = returnValue;
 	    	}
 	    )*
 	)/*@bgen(jjtree)*/
@@ -710,7 +725,7 @@ String SQLAndExpression():
         }
 /*@egen*/
 	{
-		return returnValue.toString();
+		return returnValue;
 	}/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
@@ -735,35 +750,32 @@ String SQLAndExpression():
 /*@egen*/
 }
 
-String SQLUnaryLogicalExpression():
+ConditionData SQLUnaryLogicalExpression():
 {/*@bgen(jjtree) SQLUnaryLogicalExpression */
         ASTSQLUnaryLogicalExpression jjtn000 = new ASTSQLUnaryLogicalExpression(null, JJTSQLUNARYLOGICALEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	StringBuilder returnValue = new StringBuilder();
-	String expression;
+	ConditionData condition;
+	ConditionOperator operator = null;
 }
 {/*@bgen(jjtree) SQLUnaryLogicalExpression */
         try {
 /*@egen*/
 	(
-	    LOOKAHEAD(2) expression = ExistsClause()
+	    LOOKAHEAD(2) condition = ExistsClause()
 	    {
-	    	returnValue.append(expression);
+	    	operator = ConditionOperator.UnaryOperator.EXISTS_OPERATOR;
 	    }
 		|(
 			[
 				"NOT"
 				{
-					returnValue.append("NOT");
+					operator = ConditionOperator.UnaryOperator.NOT_OPERATOR;
 				}
 			]
-			expression = SQLRelationalExpression()
-			{
-				returnValue.append(expression);
-			}
+			condition = SQLRelationalExpression()
 		)
 	)/*@bgen(jjtree)*/
         {
@@ -773,7 +785,7 @@ String SQLUnaryLogicalExpression():
         }
 /*@egen*/
 	{
-		return returnValue.toString();
+		return new OperationConditionData(operator, condition);
 	}/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
@@ -798,16 +810,17 @@ String SQLUnaryLogicalExpression():
 /*@egen*/
 }
 
-String ExistsClause():
+ConditionData ExistsClause():
 {/*@bgen(jjtree) ExistsClause */
         ASTExistsClause jjtn000 = new ASTExistsClause(null, JJTEXISTSCLAUSE);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
-/*@egen*/
-	StringBuilder returnValue = new StringBuilder();
-	String expression;
+/*@egen*/	
 	QueryData queryData;
+	ConditionData returnValue;
+	ConditionOperator notOperator = null;
+	ConditionOperator existsOperator = null;
 }
 {/*@bgen(jjtree) ExistsClause */
         try {
@@ -816,25 +829,16 @@ String ExistsClause():
 	    [
 	    	"NOT"
 	    	{
-	    		returnValue.append("NOT");
+	    		notOperator = ConditionOperator.UnaryOperator.NOT_OPERATOR;
 	    	}
 	    ] 
 	    "EXISTS"
 	    {
-	    	returnValue.append("EXISTS");
+	    	existsOperator = ConditionOperator.UnaryOperator.EXISTS_OPERATOR;
 	    }
 	    "("
-	    {
-	    	returnValue.append("(");
-	    } 
 	    queryData = Query()
-	    {
-	    	returnValue.append(queryData.toString()); //TODO: Fix this!!:.
-	    } 
 	    ")"
-	    {
-	    	returnValue.append(")");
-	    }
 	)/*@bgen(jjtree)*/
         {
           jjtree.closeNodeScope(jjtn000, true);
@@ -843,7 +847,13 @@ String ExistsClause():
         }
 /*@egen*/
 	{
-		return returnValue.toString();
+		returnValue = new OperationConditionData(existsOperator, new QueryConditionData(queryData));
+		
+		if(notOperator != null){
+			returnValue = new OperationConditionData(notOperator, returnValue);
+		}
+		
+		return returnValue;
 	}/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
@@ -868,84 +878,43 @@ String ExistsClause():
 /*@egen*/
 }
 
-String SQLRelationalExpression():
+ConditionData SQLRelationalExpression():
 {/*@bgen(jjtree) SQLRelationalExpression */
         ASTSQLRelationalExpression jjtn000 = new ASTSQLRelationalExpression(null, JJTSQLRELATIONALEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	StringBuilder returnValue = new StringBuilder();
-	String expression;
+	ConditionData returnValue;
+	ConditionData condition = null;
+	ConditionOperator nullOperator = null;
+	ExpressionData expression;
+	List<ConditionData> conditions = null;
 }
 {/*@bgen(jjtree) SQLRelationalExpression */
-try {
+        try {
 /*@egen*/
-(
-    /* Only after looking past "(", Expression() and "," we will know that
-    it is expression list */
-    
-    (
-        LOOKAHEAD(
-            "("
-            {
-                returnValue.append("(");
-            }
-            expression = SQLSimpleExpression()
-            {
-                returnValue.append(expression);
-            }
-            ","
-            {
-                returnValue.append(",");
-            }
-        )
-    
-        "("
-        {
-            returnValue.append("(");
-        }
-        expression = SQLExpressionList()
-        {
-            returnValue.append(expression);
-        }
-        ")"
-        {
-            returnValue.append(")");
-        }
-        | 
-        (
-            expression = SQLSimpleExpression()
-            {
-                returnValue.append(expression);
-            }
-        )
-    )
-    
-    /* Lookahead(2) is required because of NOT IN,NOT BETWEEN and NOT LIKE */
-    (
-        expression = SQLRelationalOperatorExpression()
-        {
-            returnValue.append(expression);
-        }
-        | LOOKAHEAD(2) (expression = SQLInClause())
-        {
-            returnValue.append(expression);
-        }
-        | LOOKAHEAD(2) (expression = SQLBetweenClause())
-        {
-            returnValue.append(expression);
-        }
-        | LOOKAHEAD(2) (expression = SQLLikeClause())
-        {
-            returnValue.append(expression);
-        }
-        | expression = IsNullClause()
-        {
-            returnValue.append(expression);
-        }
-    )?
-)/*@bgen(jjtree)*/
+	(   
+	    (
+	       	"("
+	       	returnValue = SQLExpressionList()
+	       	")"
+	        |
+	        expression = SQLSimpleExpression()
+	        {
+	        	returnValue = new ExpressionConditionData(expression);
+	        }
+	    )
+	    
+	    /* Lookahead(2) is required because of NOT IN,NOT BETWEEN and NOT LIKE */
+	    (
+	        condition = SQLRelationalOperatorExpression()
+	        | LOOKAHEAD(2) (condition = SQLInClause())
+	        | LOOKAHEAD(2) (condition = SQLBetweenClause())
+	        | LOOKAHEAD(2) (condition = SQLLikeClause())
+	        | nullOperator = IsNullClause()
+	    )?
+	)/*@bgen(jjtree)*/
         {
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
@@ -953,57 +922,66 @@ try {
         }
 /*@egen*/
 	{
-		return returnValue.toString();
+		if(nullOperator != null) {
+			returnValue = new OperationConditionData(nullOperator, returnValue);
+		} else if (conditions != null) {
+			conditions = new ArrayList<ConditionData>();
+	    	conditions.add(returnValue);
+	    	conditions.addAll(((OperationConditionData)condition).getConditions());
+	        returnValue = new OperationConditionData(((OperationConditionData)condition).getOperator(), conditions);
+		}
+		
+		return returnValue;
 	}/*@bgen(jjtree)*/
-} catch (Throwable jjte000) {
-  if (jjtc000) {
-    jjtree.clearNodeScope(jjtn000);
-    jjtc000 = false;
-  } else {
-    jjtree.popNode();
-  }
-  if (jjte000 instanceof RuntimeException) {
-    throw (RuntimeException)jjte000;
-  }
-  if (jjte000 instanceof ParseException) {
-    throw (ParseException)jjte000;
-  }
-  throw (Error)jjte000;
-} finally {
-  if (jjtc000) {
-    jjtree.closeNodeScope(jjtn000, true);
-    jjtn000.jjtSetLastToken(getToken(0));
-  }
-}
+        } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            throw (RuntimeException)jjte000;
+          }
+          if (jjte000 instanceof ParseException) {
+            throw (ParseException)jjte000;
+          }
+          throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
 /*@egen*/
 }
 
-String SQLExpressionList():
+ConditionData SQLExpressionList():
 {/*@bgen(jjtree) SQLExpressionList */
         ASTSQLExpressionList jjtn000 = new ASTSQLExpressionList(null, JJTSQLEXPRESSIONLIST);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	StringBuilder returnValue = new StringBuilder();
-	String expression;
+	ConditionData returnValue;
+	ConditionData firstCondition;
+	ConditionData secondCondition;
 }
 {/*@bgen(jjtree) SQLExpressionList */
         try {
 /*@egen*/
 	(
-	    expression = SQLExpression()
+	    firstCondition = SQLExpression()
 	    {
-	    	returnValue.append(expression);
+	    	returnValue = firstCondition;
 	    }
 	    (
 	    	","
+	    	secondCondition = SQLExpression()
 	    	{
-	    		returnValue.append(",");
-	    	}
-	    	expression = SQLExpression()
-	    	{
-	    		returnValue.append(expression);
+				returnValue = new OperationConditionData(ConditionOperator.BinaryOperator.COMMA_OPERATOR, 
+					firstCondition, secondCondition);
+				firstCondition = returnValue;
 	    	}
 	    )*
 	)/*@bgen(jjtree)*/
@@ -1014,7 +992,7 @@ String SQLExpressionList():
         }
 /*@egen*/
 	{
-		return returnValue.toString();
+		return returnValue;
 	}/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
@@ -1039,15 +1017,15 @@ String SQLExpressionList():
 /*@egen*/
 }
 
-String SQLRelationalOperatorExpression():
+ConditionData SQLRelationalOperatorExpression():
 {/*@bgen(jjtree) SQLRelationalOperatorExpression */
         ASTSQLRelationalOperatorExpression jjtn000 = new ASTSQLRelationalOperatorExpression(null, JJTSQLRELATIONALOPERATOREXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	StringBuilder returnValue = new StringBuilder();
-	String expression;
+	ConditionData returnValue;
+	ConditionOperator operator = null;
 	QueryData queryData;
 }
 {/*@bgen(jjtree) SQLRelationalOperatorExpression */
@@ -1058,46 +1036,26 @@ String SQLRelationalOperatorExpression():
     */
     (   LOOKAHEAD(
 			"ANY"
-			{
-				returnValue.append("ANY");
-			}
 			| "ALL"
-			{
-				returnValue.append("ALL");
-			}
-			| 
-				"("
-				{
-					returnValue.append("(");
-				} 
-				"SELECT"
-				{
-					returnValue.append("SELECT");
-				}
+			| "(" "SELECT"
     	)
         (
         	[
         		"ALL"
         		{
-        			returnValue.append("ALL");
+        			operator = ConditionOperator.UnaryOperator.ALL_OPERATOR;
         		}
         		| "ANY"
         		{
-        			returnValue.append("ANY");
+        			operator = ConditionOperator.UnaryOperator.ANY_OPERATOR;
         		}
         	] 
         	"("
-        	{
-        		returnValue.append("(");
-        	} 
         	queryData = Query()
         	{
-        		returnValue.append(queryData.toString());	//TODO: Fix this!!:.
+        		returnValue = new QueryConditionData(queryData);
         	} 
         	")"
-        	{
-        		returnValue.append(")");
-        	}
         )
     )/*@bgen(jjtree)*/
         {
@@ -1107,7 +1065,11 @@ String SQLRelationalOperatorExpression():
         }
 /*@egen*/
 	{
-		return returnValue.toString();
+		if(operator != null) {
+			returnValue = new OperationConditionData(operator, returnValue);
+		}
+		
+		return returnValue;
 	}/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
@@ -1132,15 +1094,16 @@ String SQLRelationalOperatorExpression():
 /*@egen*/
 }
 
-String SQLInClause():
+ConditionData SQLInClause():
 {/*@bgen(jjtree) SQLInClause */
         ASTSQLInClause jjtn000 = new ASTSQLInClause(null, JJTSQLINCLAUSE);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	StringBuilder returnValue = new StringBuilder();
-	String expression;
+	ConditionData returnValue;
+	ConditionOperator notOperator = null;
+	ConditionOperator inOperator = null;
 	QueryData queryData;
 }
 {/*@bgen(jjtree) SQLInClause */
@@ -1150,31 +1113,22 @@ String SQLInClause():
 	    [
 	    	"NOT"
 	    	{
-	    		returnValue.append("NOT");
+	    		notOperator = ConditionOperator.UnaryOperator.NOT_OPERATOR;
 	    	}
 	    ] 
 	    "IN"
 	    {
-	    	returnValue.append("IN");
+	    	inOperator = ConditionOperator.BinaryOperator.IN_OPERATOR;
 	    } 
 	    "("
-	    {
-	    	returnValue.append("(");
-	    } 
 	    (
 	    	LOOKAHEAD(3) queryData = Query()
 	    	{
-	    		returnValue.append(queryData.toString());	//TODO: Fix this!!:.
+	    		returnValue = new QueryConditionData(queryData);
 	    	} 
-	    	| expression = SQLExpressionList()
-	    	{
-	    		returnValue.append(expression);
-	    	}
+	    	| returnValue = SQLExpressionList()
 	    ) 
 	    ")"
-	    {
-	    	returnValue.append(")");
-	    }
 	)/*@bgen(jjtree)*/
         {
           jjtree.closeNodeScope(jjtn000, true);
@@ -1183,7 +1137,13 @@ String SQLInClause():
         }
 /*@egen*/
 	{
-		return returnValue.toString();
+		returnValue = new OperationConditionData(inOperator, returnValue);
+		
+		if(notOperator != null) {
+			returnValue = new OperationConditionData(notOperator, returnValue);
+		}
+		
+		return returnValue;
 	}/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
@@ -1208,15 +1168,19 @@ String SQLInClause():
 /*@egen*/
 }
 
-String SQLBetweenClause():
+ConditionData SQLBetweenClause():
 {/*@bgen(jjtree) SQLBetweenClause */
         ASTSQLBetweenClause jjtn000 = new ASTSQLBetweenClause(null, JJTSQLBETWEENCLAUSE);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	StringBuilder returnValue = new StringBuilder();
-	String expression;
+	ConditionData returnValue;
+	ConditionData firstCondition;
+	ConditionData secondCondition;
+	ExpressionData expression;
+	ConditionOperator notOperator = null;
+	ConditionOperator betweenOperator = null;
 }
 {/*@bgen(jjtree) SQLBetweenClause */
         try {
@@ -1225,24 +1189,21 @@ String SQLBetweenClause():
 	    [
 	    	"NOT"
 	    	{
-	    		returnValue.append("NOT");
+	    		notOperator = ConditionOperator.UnaryOperator.NOT_OPERATOR;
 	    	}
 	    ]
 	    "BETWEEN"
 	    {
-	    	returnValue.append("BETWEEN");
+	    	betweenOperator = ConditionOperator.BinaryOperator.BETWEEN_OPERATOR;
 	    } 
 	    expression = SQLSimpleExpression()
 	    {
-	    	returnValue.append(expression);
+	    	firstCondition = new ExpressionConditionData(expression);
 	    } 
 	    "AND"
-	    {
-	    	returnValue.append("AND");
-	    } 
 	    expression = SQLSimpleExpression()
 	    {
-	    	returnValue.append(expression);
+	    	secondCondition = new ExpressionConditionData(expression);
 	    }
 	)/*@bgen(jjtree)*/
         {
@@ -1252,7 +1213,13 @@ String SQLBetweenClause():
         }
 /*@egen*/
 	{
-		return returnValue.toString();
+		returnValue = new OperationConditionData(betweenOperator, firstCondition, secondCondition);
+		
+		if(notOperator != null) {
+			returnValue = new OperationConditionData(notOperator, returnValue);
+		}
+		
+		return returnValue;
 	}/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
@@ -1277,15 +1244,18 @@ String SQLBetweenClause():
 /*@egen*/
 }
 
-String SQLLikeClause():
+ConditionData SQLLikeClause():
 {/*@bgen(jjtree) SQLLikeClause */
         ASTSQLLikeClause jjtn000 = new ASTSQLLikeClause(null, JJTSQLLIKECLAUSE);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	StringBuilder returnValue = new StringBuilder();
-	String expression;
+	ConditionData returnValue;
+	ExpressionData expression;
+	ExpressionConditionData expressionCondition;
+	ConditionOperator notOperator = null;
+	ConditionOperator likeOperator = null;
 }
 {/*@bgen(jjtree) SQLLikeClause */
         try {
@@ -1294,16 +1264,16 @@ String SQLLikeClause():
 	    [
 	    	"NOT"
 	    	{
-	    		returnValue.append("NOT");
+	    		notOperator = ConditionOperator.UnaryOperator.NOT_OPERATOR;
 	    	}
 	    ] 
 	   	"LIKE"
 	   	{
-	   		returnValue.append("LIKE");
+	   		likeOperator = ConditionOperator.BinaryOperator.LIKE_OPERATOR;
 	   	}
 	   	expression = SQLSimpleExpression()
 	   	{
-	   		returnValue.append(expression);
+	   		expressionCondition = new ExpressionConditionData(expression);
 	   	}
 	)/*@bgen(jjtree)*/
         {
@@ -1313,7 +1283,13 @@ String SQLLikeClause():
         }
 /*@egen*/
 	{
-		return returnValue.toString();
+		returnValue = new OperationConditionData(likeOperator, expressionCondition);
+		
+		if(notOperator != null) {
+			returnValue = new OperationConditionData(notOperator, returnValue);
+		}
+		
+		return returnValue;
 	}/*@bgen(jjtree)*/
         } catch (Throwable jjte000) {
           if (jjtc000) {
@@ -1338,14 +1314,14 @@ String SQLLikeClause():
 /*@egen*/
 }
 
-String IsNullClause():
+ConditionOperator IsNullClause():
 {/*@bgen(jjtree) IsNullClause */
         ASTIsNullClause jjtn000 = new ASTIsNullClause(null, JJTISNULLCLAUSE);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	StringBuilder returnValue = new StringBuilder();
+	ConditionOperator returnValue;
 }
 {/*@bgen(jjtree) IsNullClause */
         try {
@@ -1353,18 +1329,15 @@ String IsNullClause():
 	(
 	    "IS"
 	    {
-	    	returnValue.append("IS");
+	    	returnValue = ConditionOperator.UnaryOperator.IS_NULL_OPERATOR;
 	    }
 	    [
 	    	"NOT"
 	    	{
-	    		returnValue.append("NOT");
+	    		returnValue = ConditionOperator.UnaryOperator.IS_NOT_NULL_OPERATOR;
 	    	}
 	    ]
 	    "NULL"
-	    {
-	    	returnValue.append("NULL");
-	    }
 	)/*@bgen(jjtree)*/
         {
           jjtree.closeNodeScope(jjtn000, true);
@@ -1372,8 +1345,8 @@ String IsNullClause():
           jjtn000.jjtSetLastToken(getToken(0));
         }
 /*@egen*/
-	{
-		return returnValue.toString();
+	{	
+		return returnValue;
 	}/*@bgen(jjtree)*/
         } finally {
           if (jjtc000) {
@@ -1495,14 +1468,14 @@ RelationData QueryTableExpression():
 /*@egen*/
 }
 
-String WhereClause():
+ConditionData WhereClause():
 {/*@bgen(jjtree) WhereClause */
         ASTWhereClause jjtn000 = new ASTWhereClause(null, JJTWHERECLAUSE);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));
 /*@egen*/
-	String returnValue;
+	ConditionData returnValue;
 }
 {/*@bgen(jjtree) WhereClause */
         try {

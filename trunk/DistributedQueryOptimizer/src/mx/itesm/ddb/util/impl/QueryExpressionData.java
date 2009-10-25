@@ -1,28 +1,24 @@
 package mx.itesm.ddb.util.impl;
 
+import mx.itesm.ddb.util.ExpressionData;
 import mx.itesm.ddb.util.QueryData;
-import mx.itesm.ddb.util.RelationData;
 
 /**
- * Holder class for a relation represented by a SubQuery.
- * 
  * @author jccastrejon
  * 
  */
-public class QueryRelationData implements RelationData {
+public class QueryExpressionData implements ExpressionData {
 
     /**
-     * SubQuery data.
-     */
-    public QueryData queryData;
-
-    /**
-     * Full constructor.
      * 
-     * @param queryData
-     *            SubQuery data.
      */
-    public QueryRelationData(QueryData queryData) {
+    private QueryData queryData;
+
+    /**
+     * 
+     * @param query
+     */
+    public QueryExpressionData(QueryData queryData) {
 	this.queryData = queryData;
     }
 
