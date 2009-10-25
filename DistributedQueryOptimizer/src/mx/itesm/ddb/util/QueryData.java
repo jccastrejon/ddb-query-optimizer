@@ -14,7 +14,7 @@ public class QueryData {
     /**
      * Query projection attributes.
      */
-    List<String> attributes;
+    List<ExpressionData> attributes;
 
     /**
      * Query relations.
@@ -24,7 +24,7 @@ public class QueryData {
     /**
      * Query conditions.
      */
-    String conditions;
+    ConditionData conditions;
 
     /**
      * Full constructor.
@@ -36,7 +36,8 @@ public class QueryData {
      * @param conditions
      *            Query conditions.
      */
-    public QueryData(List<String> attributes, List<RelationData> relations, String conditions) {
+    public QueryData(List<ExpressionData> attributes, List<RelationData> relations,
+	    ConditionData conditions) {
 	this.attributes = attributes;
 	this.relations = relations;
 	this.conditions = conditions;
@@ -68,7 +69,7 @@ public class QueryData {
     /**
      * @return the attributes
      */
-    public List<String> getAttributes() {
+    public List<ExpressionData> getAttributes() {
 	return attributes;
     }
 
@@ -76,7 +77,7 @@ public class QueryData {
      * @param attributes
      *            the attributes to set
      */
-    public void setAttributes(List<String> attributes) {
+    public void setAttributes(List<ExpressionData> attributes) {
 	this.attributes = attributes;
     }
 
@@ -93,5 +94,20 @@ public class QueryData {
      */
     public void setRelations(List<RelationData> relations) {
 	this.relations = relations;
+    }
+
+    /**
+     * @return the conditions
+     */
+    public ConditionData getConditions() {
+	return conditions;
+    }
+
+    /**
+     * @param conditions
+     *            the conditions to set
+     */
+    public void setConditions(ConditionData conditions) {
+	this.conditions = conditions;
     }
 }

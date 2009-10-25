@@ -4,11 +4,23 @@ package mx.itesm.ddb.parser;
 import java.util.List;
 import java.util.ArrayList;
 
+import mx.itesm.ddb.util.ConditionData;
+import mx.itesm.ddb.util.ConditionOperator;
+import mx.itesm.ddb.util.ExpressionData;
+import mx.itesm.ddb.util.ExpressionOperator;
 import mx.itesm.ddb.util.QueryData;
 import mx.itesm.ddb.util.RelationData;
-import mx.itesm.ddb.util.ConditionData;
-import mx.itesm.ddb.util.impl.SimpleRelationData;
+
+import mx.itesm.ddb.util.impl.AliasExpressionData;
+import mx.itesm.ddb.util.impl.ConditionExpressionData;
+import mx.itesm.ddb.util.impl.ExpressionConditionData;
+import mx.itesm.ddb.util.impl.OperationConditionData;
+import mx.itesm.ddb.util.impl.OperationExpressionData;
+import mx.itesm.ddb.util.impl.QueryConditionData;
+import mx.itesm.ddb.util.impl.QueryExpressionData;
 import mx.itesm.ddb.util.impl.QueryRelationData;
+import mx.itesm.ddb.util.impl.SimpleExpressionData;
+import mx.itesm.ddb.util.impl.SimpleRelationData;
 
 /**
  * SQL Parser.
@@ -67,9 +79,9 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
         jjtn000.jjtSetFirstToken(getToken(1));QueryData returnValue;
-        List<String> attributes;
+        List<ExpressionData> attributes;
         List<RelationData> relations;
-        String conditions = null;
+        ConditionData conditions = null;
     try {
       jj_consume_token(K_SELECT);
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -133,18 +145,18 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
 /*
  * Result attributes.
  */
-  static final public List<String> SelectList() throws ParseException {
+  static final public List<ExpressionData> SelectList() throws ParseException {
  /*@bgen(jjtree) SelectList */
         ASTSelectList jjtn000 = new ASTSelectList(null, JJTSELECTLIST);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));List<String> returnValue = new ArrayList<String>();
-        String attribute;
+        jjtn000.jjtSetFirstToken(getToken(1));List<ExpressionData> returnValue = new ArrayList<ExpressionData>();
+        ExpressionData expression;
     try {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case 33:
         jj_consume_token(33);
-                returnValue.add("*");
+                returnValue.add(new SimpleExpressionData("*"));
         break;
       case K_NULL:
       case S_NUMBER:
@@ -152,9 +164,9 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
       case S_CHAR_LITERAL:
       case 36:
       case 37:
-      case 41:
-        attribute = SelectItem();
-                returnValue.add(attribute);
+      case 40:
+        expression = SelectItem();
+                returnValue.add(expression);
         label_1:
         while (true) {
           switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -166,8 +178,8 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
             break label_1;
           }
           jj_consume_token(34);
-          attribute = SelectItem();
-                                returnValue.add(attribute);
+          expression = SelectItem();
+                                returnValue.add(expression);
         }
         break;
       default:
@@ -202,18 +214,18 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String SelectItem() throws ParseException {
+  static final public ExpressionData SelectItem() throws ParseException {
  /*@bgen(jjtree) SelectItem */
         ASTSelectItem jjtn000 = new ASTSelectItem(null, JJTSELECTITEM);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));String returnValue = null;
+        jjtn000.jjtSetFirstToken(getToken(1));ExpressionData returnValue;
         Token token = null;
     try {
       if (jj_2_1(2)) {
         token = jj_consume_token(S_IDENTIFIER);
         jj_consume_token(35);
-                                returnValue = token.image + ".*";
+                                returnValue = new SimpleExpressionData(token.image + ".*");
       } else {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case K_NULL:
@@ -222,7 +234,7 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
         case S_CHAR_LITERAL:
         case 36:
         case 37:
-        case 41:
+        case 40:
           returnValue = SQLSimpleExpression();
           break;
         default:
@@ -237,14 +249,13 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case K_AS:
           jj_consume_token(K_AS);
-                                returnValue += "AS";
           break;
         default:
           jj_la1[6] = jj_gen;
           ;
         }
         token = jj_consume_token(S_IDENTIFIER);
-                        returnValue += token.image;
+                        returnValue = new AliasExpressionData(returnValue, token.image);
         break;
       default:
         jj_la1[7] = jj_gen;
@@ -277,22 +288,23 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String SQLSimpleExpression() throws ParseException {
+  static final public ExpressionData SQLSimpleExpression() throws ParseException {
  /*@bgen(jjtree) SQLSimpleExpression */
         ASTSQLSimpleExpression jjtn000 = new ASTSQLSimpleExpression(null, JJTSQLSIMPLEEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
-        String expression;
+        jjtn000.jjtSetFirstToken(getToken(1));ExpressionData returnValue;
+        ExpressionData firstExpression;
+        ExpressionData secondExpression;
+        ExpressionOperator operator;
     try {
-      expression = SQLMultiplicativeExpression();
-                        returnValue.append(expression);
+      firstExpression = SQLMultiplicativeExpression();
+                        returnValue = firstExpression;
       label_2:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case 36:
         case 37:
-        case 38:
           ;
           break;
         default:
@@ -302,28 +314,25 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case 36:
           jj_consume_token(36);
-                                        returnValue.append("+");
+                                        operator = ExpressionOperator.ArithmeticOperator.ADD_OPERATOR;
           break;
         case 37:
           jj_consume_token(37);
-                                        returnValue.append("-");
-          break;
-        case 38:
-          jj_consume_token(38);
-                                        returnValue.append("||");
+                                        operator = ExpressionOperator.ArithmeticOperator.SUBSTRACT_OPERATOR;
           break;
         default:
           jj_la1[9] = jj_gen;
           jj_consume_token(-1);
           throw new ParseException();
         }
-        expression = SQLMultiplicativeExpression();
-                                returnValue.append(expression);
+        secondExpression = SQLMultiplicativeExpression();
+                                returnValue = new OperationExpressionData(operator, firstExpression, secondExpression);
+                                firstExpression = returnValue;
       }
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
           jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
+                {if (true) return returnValue;}
     } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
@@ -347,22 +356,24 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String SQLMultiplicativeExpression() throws ParseException {
+  static final public ExpressionData SQLMultiplicativeExpression() throws ParseException {
  /*@bgen(jjtree) SQLMultiplicativeExpression */
         ASTSQLMultiplicativeExpression jjtn000 = new ASTSQLMultiplicativeExpression(null, JJTSQLMULTIPLICATIVEEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
-        String expression;
+        jjtn000.jjtSetFirstToken(getToken(1));ExpressionData returnValue;
+        ExpressionData firstExpression;
+        ExpressionData secondExpression;
+        ExpressionOperator operator;
     try {
-      expression = SQLUnaryExpression();
-                        returnValue.append(expression);
+      firstExpression = SQLUnaryExpression();
+                        returnValue = firstExpression;
       label_3:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case 33:
+        case 38:
         case 39:
-        case 40:
           ;
           break;
         default:
@@ -372,28 +383,29 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case 33:
           jj_consume_token(33);
-                                        returnValue.append("*");
+                                        operator = ExpressionOperator.ArithmeticOperator.MULTIPLY_OPERATOR;
+          break;
+        case 38:
+          jj_consume_token(38);
+                                        operator = ExpressionOperator.ArithmeticOperator.DIVIDE_OPERATOR;
           break;
         case 39:
           jj_consume_token(39);
-                                        returnValue.append("/");
-          break;
-        case 40:
-          jj_consume_token(40);
-                                        returnValue.append("=");
+                                        operator = ExpressionOperator.ArithmeticOperator.EQUALS_OPERATOR;
           break;
         default:
           jj_la1[11] = jj_gen;
           jj_consume_token(-1);
           throw new ParseException();
         }
-        expression = SQLUnaryExpression();
-                                returnValue.append(expression);
+        secondExpression = SQLUnaryExpression();
+                                returnValue = new OperationExpressionData(operator, firstExpression, secondExpression);
+                                firstExpression = returnValue;
       }
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
           jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
+                {if (true) return returnValue;}
     } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
@@ -417,13 +429,14 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String SQLUnaryExpression() throws ParseException {
+  static final public ExpressionData SQLUnaryExpression() throws ParseException {
  /*@bgen(jjtree) SQLUnaryExpression */
         ASTSQLUnaryExpression jjtn000 = new ASTSQLUnaryExpression(null, JJTSQLUNARYEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
-        String expression;
+        jjtn000.jjtSetFirstToken(getToken(1));ExpressionData returnValue;
+        ExpressionData expression;
+        ExpressionOperator operator = null;
     try {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case 36:
@@ -431,11 +444,11 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case 36:
           jj_consume_token(36);
-                        returnValue.append("+");
+                        operator = ExpressionOperator.ArithmeticOperator.ADD_OPERATOR;
           break;
         case 37:
           jj_consume_token(37);
-                        returnValue.append("-");
+                        operator = ExpressionOperator.ArithmeticOperator.SUBSTRACT_OPERATOR;
           break;
         default:
           jj_la1[12] = jj_gen;
@@ -448,11 +461,15 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
         ;
       }
       expression = SQLPrimaryExpression();
-                returnValue.append(expression);
+                returnValue = expression;
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
           jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
+                if(operator != null){
+                        returnValue = new OperationExpressionData(operator, expression);
+                }
+
+                {if (true) return returnValue;}
     } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
@@ -476,40 +493,39 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String SQLPrimaryExpression() throws ParseException {
+  static final public ExpressionData SQLPrimaryExpression() throws ParseException {
  /*@bgen(jjtree) SQLPrimaryExpression */
         ASTSQLPrimaryExpression jjtn000 = new ASTSQLPrimaryExpression(null, JJTSQLPRIMARYEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
-        String expression;
+        jjtn000.jjtSetFirstToken(getToken(1));ExpressionData returnValue = null;
+        String simpleExpression = null;
         Token token;
         QueryData queryData;
+        ConditionData conditionData;
     try {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case S_NUMBER:
         token = jj_consume_token(S_NUMBER);
-                returnValue.append(token.image);
+                simpleExpression = token.image;
         break;
       case S_CHAR_LITERAL:
         token = jj_consume_token(S_CHAR_LITERAL);
-                returnValue.append(token.image);
+                simpleExpression = token.image;
         break;
       case S_IDENTIFIER:
         token = jj_consume_token(S_IDENTIFIER);
-                returnValue.append(token.image);
+                simpleExpression = token.image;
         break;
       case K_NULL:
         jj_consume_token(K_NULL);
-                returnValue.append("NULL");
+                simpleExpression = "NULL";
         break;
-      case 41:
-        jj_consume_token(41);
-                returnValue.append("(");
+      case 40:
+        jj_consume_token(40);
         if (jj_2_2(3)) {
           queryData = Query();
-                                returnValue.append(queryData.toString());       //TODO: Fix this!!:.
-
+                                        returnValue = new QueryExpressionData(queryData);
         } else {
           switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
           case K_EXISTS:
@@ -520,9 +536,9 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
           case S_CHAR_LITERAL:
           case 36:
           case 37:
-          case 41:
-            expression = SQLExpression();
-                                returnValue.append(expression);
+          case 40:
+            conditionData = SQLExpression();
+                                        returnValue = new ConditionExpressionData(conditionData);
             break;
           default:
             jj_la1[14] = jj_gen;
@@ -530,8 +546,7 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
             throw new ParseException();
           }
         }
-        jj_consume_token(42);
-                        returnValue.append(")");
+        jj_consume_token(41);
         break;
       default:
         jj_la1[15] = jj_gen;
@@ -541,7 +556,10 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
           jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
+                if(simpleExpression != null){
+                        returnValue = new SimpleExpressionData(simpleExpression);
+                }
+                {if (true) return returnValue;}
     } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
@@ -565,16 +583,17 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String SQLExpression() throws ParseException {
+  static final public ConditionData SQLExpression() throws ParseException {
  /*@bgen(jjtree) SQLExpression */
         ASTSQLExpression jjtn000 = new ASTSQLExpression(null, JJTSQLEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
-        String expression;
+        jjtn000.jjtSetFirstToken(getToken(1));ConditionData returnValue;
+        ConditionData firstCondition;
+        ConditionData secondCondition;
     try {
-      expression = SQLAndExpression();
-                returnValue.append(expression);
+      firstCondition = SQLAndExpression();
+                returnValue = firstCondition;
       label_4:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -586,14 +605,15 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
           break label_4;
         }
         jj_consume_token(K_OR);
-                        returnValue.append("OR");
-        expression = SQLAndExpression();
-                        returnValue.append(expression);
+        secondCondition = SQLAndExpression();
+                                returnValue = new OperationConditionData(ConditionOperator.BinaryOperator.OR_OPERATOR,
+                                        firstCondition, secondCondition);
+                                firstCondition = returnValue;
       }
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
           jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
+                {if (true) return returnValue;}
     } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
@@ -617,16 +637,17 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String SQLAndExpression() throws ParseException {
+  static final public ConditionData SQLAndExpression() throws ParseException {
  /*@bgen(jjtree) SQLAndExpression */
         ASTSQLAndExpression jjtn000 = new ASTSQLAndExpression(null, JJTSQLANDEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
-        String expression;
+        jjtn000.jjtSetFirstToken(getToken(1));ConditionData returnValue;
+        ConditionData firstCondition;
+        ConditionData secondCondition;
     try {
-      expression = SQLUnaryLogicalExpression();
-                returnValue.append(expression);
+      firstCondition = SQLUnaryLogicalExpression();
+                returnValue = firstCondition;
       label_5:
       while (true) {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
@@ -638,14 +659,15 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
           break label_5;
         }
         jj_consume_token(K_AND);
-                        returnValue.append("AND");
-        expression = SQLUnaryLogicalExpression();
-                        returnValue.append(expression);
+        secondCondition = SQLUnaryLogicalExpression();
+                                returnValue = new OperationConditionData(ConditionOperator.BinaryOperator.AND_OPERATOR,
+                                        firstCondition, secondCondition);
+                                firstCondition = returnValue;
       }
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
           jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
+                {if (true) return returnValue;}
     } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
@@ -669,17 +691,17 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String SQLUnaryLogicalExpression() throws ParseException {
+  static final public ConditionData SQLUnaryLogicalExpression() throws ParseException {
  /*@bgen(jjtree) SQLUnaryLogicalExpression */
         ASTSQLUnaryLogicalExpression jjtn000 = new ASTSQLUnaryLogicalExpression(null, JJTSQLUNARYLOGICALEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
-        String expression;
+        jjtn000.jjtSetFirstToken(getToken(1));ConditionData condition;
+        ConditionOperator operator = null;
     try {
       if (jj_2_3(2)) {
-        expression = ExistsClause();
-                returnValue.append(expression);
+        condition = ExistsClause();
+                operator = ConditionOperator.UnaryOperator.EXISTS_OPERATOR;
       } else {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case K_NOT:
@@ -689,18 +711,17 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
         case S_CHAR_LITERAL:
         case 36:
         case 37:
-        case 41:
+        case 40:
           switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
           case K_NOT:
             jj_consume_token(K_NOT);
-                                        returnValue.append("NOT");
+                                        operator = ConditionOperator.UnaryOperator.NOT_OPERATOR;
             break;
           default:
             jj_la1[18] = jj_gen;
             ;
           }
-          expression = SQLRelationalExpression();
-                                returnValue.append(expression);
+          condition = SQLRelationalExpression();
           break;
         default:
           jj_la1[19] = jj_gen;
@@ -711,7 +732,7 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
           jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
+                {if (true) return new OperationConditionData(operator, condition);}
     } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
@@ -735,37 +756,40 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String ExistsClause() throws ParseException {
+  static final public ConditionData ExistsClause() throws ParseException {
  /*@bgen(jjtree) ExistsClause */
         ASTExistsClause jjtn000 = new ASTExistsClause(null, JJTEXISTSCLAUSE);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
-        String expression;
-        QueryData queryData;
+        jjtn000.jjtSetFirstToken(getToken(1));QueryData queryData;
+        ConditionData returnValue;
+        ConditionOperator notOperator = null;
+        ConditionOperator existsOperator = null;
     try {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case K_NOT:
         jj_consume_token(K_NOT);
-                        returnValue.append("NOT");
+                        notOperator = ConditionOperator.UnaryOperator.NOT_OPERATOR;
         break;
       default:
         jj_la1[20] = jj_gen;
         ;
       }
       jj_consume_token(K_EXISTS);
-                returnValue.append("EXISTS");
-      jj_consume_token(41);
-                returnValue.append("(");
+                existsOperator = ConditionOperator.UnaryOperator.EXISTS_OPERATOR;
+      jj_consume_token(40);
       queryData = Query();
-                returnValue.append(queryData.toString()); //TODO: Fix this!!:.
-
-      jj_consume_token(42);
-                returnValue.append(")");
+      jj_consume_token(41);
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
           jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
+                returnValue = new OperationConditionData(existsOperator, new QueryConditionData(queryData));
+
+                if(notOperator != null){
+                        returnValue = new OperationConditionData(notOperator, returnValue);
+                }
+
+                {if (true) return returnValue;}
     } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
@@ -789,38 +813,36 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String SQLRelationalExpression() throws ParseException {
+  static final public ConditionData SQLRelationalExpression() throws ParseException {
  /*@bgen(jjtree) SQLRelationalExpression */
         ASTSQLRelationalExpression jjtn000 = new ASTSQLRelationalExpression(null, JJTSQLRELATIONALEXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
-        String expression;
+        jjtn000.jjtSetFirstToken(getToken(1));ConditionData returnValue;
+        ConditionData condition = null;
+        ConditionOperator nullOperator = null;
+        ExpressionData expression;
+        List<ConditionData> conditions = null;
     try {
-      if (jj_2_4(2147483647)) {
+      switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+      case 40:
+        jj_consume_token(40);
+        returnValue = SQLExpressionList();
         jj_consume_token(41);
-            returnValue.append("(");
-        expression = SQLExpressionList();
-            returnValue.append(expression);
-        jj_consume_token(42);
-            returnValue.append(")");
-      } else {
-        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-        case K_NULL:
-        case S_NUMBER:
-        case S_IDENTIFIER:
-        case S_CHAR_LITERAL:
-        case 36:
-        case 37:
-        case 41:
-          expression = SQLSimpleExpression();
-                returnValue.append(expression);
-          break;
-        default:
-          jj_la1[21] = jj_gen;
-          jj_consume_token(-1);
-          throw new ParseException();
-        }
+        break;
+      case K_NULL:
+      case S_NUMBER:
+      case S_IDENTIFIER:
+      case S_CHAR_LITERAL:
+      case 36:
+      case 37:
+        expression = SQLSimpleExpression();
+                        returnValue = new ExpressionConditionData(expression);
+        break;
+      default:
+        jj_la1[21] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
       }
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case K_ALL:
@@ -830,30 +852,25 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
       case K_IS:
       case K_LIKE:
       case K_NOT:
-      case 41:
+      case 40:
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case K_ALL:
         case K_ANY:
-        case 41:
-          expression = SQLRelationalOperatorExpression();
-            returnValue.append(expression);
+        case 40:
+          condition = SQLRelationalOperatorExpression();
           break;
         default:
           jj_la1[22] = jj_gen;
-          if (jj_2_5(2)) {
-            expression = SQLInClause();
-            returnValue.append(expression);
+          if (jj_2_4(2)) {
+            condition = SQLInClause();
+          } else if (jj_2_5(2)) {
+            condition = SQLBetweenClause();
           } else if (jj_2_6(2)) {
-            expression = SQLBetweenClause();
-            returnValue.append(expression);
-          } else if (jj_2_7(2)) {
-            expression = SQLLikeClause();
-            returnValue.append(expression);
+            condition = SQLLikeClause();
           } else {
             switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
             case K_IS:
-              expression = IsNullClause();
-            returnValue.append(expression);
+              nullOperator = IsNullClause();
               break;
             default:
               jj_la1[23] = jj_gen;
@@ -870,59 +887,16 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
           jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
-    } catch (Throwable jjte000) {
-  if (jjtc000) {
-    jjtree.clearNodeScope(jjtn000);
-    jjtc000 = false;
-  } else {
-    jjtree.popNode();
-  }
-  if (jjte000 instanceof RuntimeException) {
-    {if (true) throw (RuntimeException)jjte000;}
-  }
-  if (jjte000 instanceof ParseException) {
-    {if (true) throw (ParseException)jjte000;}
-  }
-  {if (true) throw (Error)jjte000;}
-    } finally {
-  if (jjtc000) {
-    jjtree.closeNodeScope(jjtn000, true);
-    jjtn000.jjtSetLastToken(getToken(0));
-  }
-    }
-    throw new Error("Missing return statement in function");
-  }
+                if(nullOperator != null) {
+                        returnValue = new OperationConditionData(nullOperator, returnValue);
+                } else if (conditions != null) {
+                        conditions = new ArrayList<ConditionData>();
+                conditions.add(returnValue);
+                conditions.addAll(((OperationConditionData)condition).getConditions());
+                returnValue = new OperationConditionData(((OperationConditionData)condition).getOperator(), conditions);
+                }
 
-  static final public String SQLExpressionList() throws ParseException {
- /*@bgen(jjtree) SQLExpressionList */
-        ASTSQLExpressionList jjtn000 = new ASTSQLExpressionList(null, JJTSQLEXPRESSIONLIST);
-        boolean jjtc000 = true;
-        jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
-        String expression;
-    try {
-      expression = SQLExpression();
-                returnValue.append(expression);
-      label_6:
-      while (true) {
-        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
-        case 34:
-          ;
-          break;
-        default:
-          jj_la1[25] = jj_gen;
-          break label_6;
-        }
-        jj_consume_token(34);
-                        returnValue.append(",");
-        expression = SQLExpression();
-                        returnValue.append(expression);
-      }
-          jjtree.closeNodeScope(jjtn000, true);
-          jjtc000 = false;
-          jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
+                {if (true) return returnValue;}
     } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
@@ -946,16 +920,70 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String SQLRelationalOperatorExpression() throws ParseException {
+  static final public ConditionData SQLExpressionList() throws ParseException {
+ /*@bgen(jjtree) SQLExpressionList */
+        ASTSQLExpressionList jjtn000 = new ASTSQLExpressionList(null, JJTSQLEXPRESSIONLIST);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));ConditionData returnValue;
+        ConditionData firstCondition;
+        ConditionData secondCondition;
+    try {
+      firstCondition = SQLExpression();
+                returnValue = firstCondition;
+      label_6:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
+        case 34:
+          ;
+          break;
+        default:
+          jj_la1[25] = jj_gen;
+          break label_6;
+        }
+        jj_consume_token(34);
+        secondCondition = SQLExpression();
+                                returnValue = new OperationConditionData(ConditionOperator.BinaryOperator.COMMA_OPERATOR,
+                                        firstCondition, secondCondition);
+                                firstCondition = returnValue;
+      }
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+                {if (true) return returnValue;}
+    } catch (Throwable jjte000) {
+          if (jjtc000) {
+            jjtree.clearNodeScope(jjtn000);
+            jjtc000 = false;
+          } else {
+            jjtree.popNode();
+          }
+          if (jjte000 instanceof RuntimeException) {
+            {if (true) throw (RuntimeException)jjte000;}
+          }
+          if (jjte000 instanceof ParseException) {
+            {if (true) throw (ParseException)jjte000;}
+          }
+          {if (true) throw (Error)jjte000;}
+    } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+    }
+    throw new Error("Missing return statement in function");
+  }
+
+  static final public ConditionData SQLRelationalOperatorExpression() throws ParseException {
  /*@bgen(jjtree) SQLRelationalOperatorExpression */
         ASTSQLRelationalOperatorExpression jjtn000 = new ASTSQLRelationalOperatorExpression(null, JJTSQLRELATIONALOPERATOREXPRESSION);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
-        String expression;
+        jjtn000.jjtSetFirstToken(getToken(1));ConditionData returnValue;
+        ConditionOperator operator = null;
         QueryData queryData;
     try {
-      if (jj_2_8(2147483647)) {
+      if (jj_2_7(2147483647)) {
 
       } else {
         jj_consume_token(-1);
@@ -967,11 +995,11 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case K_ALL:
           jj_consume_token(K_ALL);
-                                returnValue.append("ALL");
+                                operator = ConditionOperator.UnaryOperator.ALL_OPERATOR;
           break;
         case K_ANY:
           jj_consume_token(K_ANY);
-                                returnValue.append("ANY");
+                                operator = ConditionOperator.UnaryOperator.ANY_OPERATOR;
           break;
         default:
           jj_la1[26] = jj_gen;
@@ -983,17 +1011,18 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
         jj_la1[27] = jj_gen;
         ;
       }
-      jj_consume_token(41);
-                        returnValue.append("(");
+      jj_consume_token(40);
       queryData = Query();
-                        returnValue.append(queryData.toString());       //TODO: Fix this!!:.
-
-      jj_consume_token(42);
-                        returnValue.append(")");
+                        returnValue = new QueryConditionData(queryData);
+      jj_consume_token(41);
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
           jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
+                if(operator != null) {
+                        returnValue = new OperationConditionData(operator, returnValue);
+                }
+
+                {if (true) return returnValue;}
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
@@ -1017,32 +1046,31 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String SQLInClause() throws ParseException {
+  static final public ConditionData SQLInClause() throws ParseException {
  /*@bgen(jjtree) SQLInClause */
         ASTSQLInClause jjtn000 = new ASTSQLInClause(null, JJTSQLINCLAUSE);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
-        String expression;
+        jjtn000.jjtSetFirstToken(getToken(1));ConditionData returnValue;
+        ConditionOperator notOperator = null;
+        ConditionOperator inOperator = null;
         QueryData queryData;
     try {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case K_NOT:
         jj_consume_token(K_NOT);
-                        returnValue.append("NOT");
+                        notOperator = ConditionOperator.UnaryOperator.NOT_OPERATOR;
         break;
       default:
         jj_la1[28] = jj_gen;
         ;
       }
       jj_consume_token(K_IN);
-                returnValue.append("IN");
-      jj_consume_token(41);
-                returnValue.append("(");
-      if (jj_2_9(3)) {
+                inOperator = ConditionOperator.BinaryOperator.IN_OPERATOR;
+      jj_consume_token(40);
+      if (jj_2_8(3)) {
         queryData = Query();
-                        returnValue.append(queryData.toString());       //TODO: Fix this!!:.
-
+                        returnValue = new QueryConditionData(queryData);
       } else {
         switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
         case K_EXISTS:
@@ -1053,9 +1081,8 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
         case S_CHAR_LITERAL:
         case 36:
         case 37:
-        case 41:
-          expression = SQLExpressionList();
-                        returnValue.append(expression);
+        case 40:
+          returnValue = SQLExpressionList();
           break;
         default:
           jj_la1[29] = jj_gen;
@@ -1063,12 +1090,17 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
           throw new ParseException();
         }
       }
-      jj_consume_token(42);
-                returnValue.append(")");
+      jj_consume_token(41);
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
           jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
+                returnValue = new OperationConditionData(inOperator, returnValue);
+
+                if(notOperator != null) {
+                        returnValue = new OperationConditionData(notOperator, returnValue);
+                }
+
+                {if (true) return returnValue;}
     } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
@@ -1092,35 +1124,44 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String SQLBetweenClause() throws ParseException {
+  static final public ConditionData SQLBetweenClause() throws ParseException {
  /*@bgen(jjtree) SQLBetweenClause */
         ASTSQLBetweenClause jjtn000 = new ASTSQLBetweenClause(null, JJTSQLBETWEENCLAUSE);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
-        String expression;
+        jjtn000.jjtSetFirstToken(getToken(1));ConditionData returnValue;
+        ConditionData firstCondition;
+        ConditionData secondCondition;
+        ExpressionData expression;
+        ConditionOperator notOperator = null;
+        ConditionOperator betweenOperator = null;
     try {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case K_NOT:
         jj_consume_token(K_NOT);
-                        returnValue.append("NOT");
+                        notOperator = ConditionOperator.UnaryOperator.NOT_OPERATOR;
         break;
       default:
         jj_la1[30] = jj_gen;
         ;
       }
       jj_consume_token(K_BETWEEN);
-                returnValue.append("BETWEEN");
+                betweenOperator = ConditionOperator.BinaryOperator.BETWEEN_OPERATOR;
       expression = SQLSimpleExpression();
-                returnValue.append(expression);
+                firstCondition = new ExpressionConditionData(expression);
       jj_consume_token(K_AND);
-                returnValue.append("AND");
       expression = SQLSimpleExpression();
-                returnValue.append(expression);
+                secondCondition = new ExpressionConditionData(expression);
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
           jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
+                returnValue = new OperationConditionData(betweenOperator, firstCondition, secondCondition);
+
+                if(notOperator != null) {
+                        returnValue = new OperationConditionData(notOperator, returnValue);
+                }
+
+                {if (true) return returnValue;}
     } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
@@ -1144,31 +1185,40 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String SQLLikeClause() throws ParseException {
+  static final public ConditionData SQLLikeClause() throws ParseException {
  /*@bgen(jjtree) SQLLikeClause */
         ASTSQLLikeClause jjtn000 = new ASTSQLLikeClause(null, JJTSQLLIKECLAUSE);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
-        String expression;
+        jjtn000.jjtSetFirstToken(getToken(1));ConditionData returnValue;
+        ExpressionData expression;
+        ExpressionConditionData expressionCondition;
+        ConditionOperator notOperator = null;
+        ConditionOperator likeOperator = null;
     try {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case K_NOT:
         jj_consume_token(K_NOT);
-                        returnValue.append("NOT");
+                        notOperator = ConditionOperator.UnaryOperator.NOT_OPERATOR;
         break;
       default:
         jj_la1[31] = jj_gen;
         ;
       }
       jj_consume_token(K_LIKE);
-                        returnValue.append("LIKE");
+                        likeOperator = ConditionOperator.BinaryOperator.LIKE_OPERATOR;
       expression = SQLSimpleExpression();
-                        returnValue.append(expression);
+                        expressionCondition = new ExpressionConditionData(expression);
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
           jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
+                returnValue = new OperationConditionData(likeOperator, expressionCondition);
+
+                if(notOperator != null) {
+                        returnValue = new OperationConditionData(notOperator, returnValue);
+                }
+
+                {if (true) return returnValue;}
     } catch (Throwable jjte000) {
           if (jjtc000) {
             jjtree.clearNodeScope(jjtn000);
@@ -1192,30 +1242,29 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String IsNullClause() throws ParseException {
+  static final public ConditionOperator IsNullClause() throws ParseException {
  /*@bgen(jjtree) IsNullClause */
         ASTIsNullClause jjtn000 = new ASTIsNullClause(null, JJTISNULLCLAUSE);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));StringBuilder returnValue = new StringBuilder();
+        jjtn000.jjtSetFirstToken(getToken(1));ConditionOperator returnValue;
     try {
       jj_consume_token(K_IS);
-                returnValue.append("IS");
+                returnValue = ConditionOperator.UnaryOperator.IS_NULL_OPERATOR;
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
       case K_NOT:
         jj_consume_token(K_NOT);
-                        returnValue.append("NOT");
+                        returnValue = ConditionOperator.UnaryOperator.IS_NOT_NULL_OPERATOR;
         break;
       default:
         jj_la1[32] = jj_gen;
         ;
       }
       jj_consume_token(K_NULL);
-                returnValue.append("NULL");
           jjtree.closeNodeScope(jjtn000, true);
           jjtc000 = false;
           jjtn000.jjtSetLastToken(getToken(0));
-                {if (true) return returnValue.toString();}
+                {if (true) return returnValue;}
     } finally {
           if (jjtc000) {
             jjtree.closeNodeScope(jjtn000, true);
@@ -1292,10 +1341,10 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
         break;
       default:
         jj_la1[34] = jj_gen;
-        if (jj_2_10(3)) {
-          jj_consume_token(41);
+        if (jj_2_9(3)) {
+          jj_consume_token(40);
           queryData = Query();
-          jj_consume_token(42);
+          jj_consume_token(41);
         } else {
           jj_consume_token(-1);
           throw new ParseException();
@@ -1333,12 +1382,12 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     throw new Error("Missing return statement in function");
   }
 
-  static final public String WhereClause() throws ParseException {
+  static final public ConditionData WhereClause() throws ParseException {
  /*@bgen(jjtree) WhereClause */
         ASTWhereClause jjtn000 = new ASTWhereClause(null, JJTWHERECLAUSE);
         boolean jjtc000 = true;
         jjtree.openNodeScope(jjtn000);
-        jjtn000.jjtSetFirstToken(getToken(1));String returnValue;
+        jjtn000.jjtSetFirstToken(getToken(1));ConditionData returnValue;
     try {
       jj_consume_token(K_WHERE);
       returnValue = SQLExpression();
@@ -1432,113 +1481,47 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     finally { jj_save(8, xla); }
   }
 
-  static private boolean jj_2_10(int xla) {
-    jj_la = xla; jj_lastpos = jj_scanpos = token;
-    try { return !jj_3_10(); }
-    catch(LookaheadSuccess ls) { return true; }
-    finally { jj_save(9, xla); }
-  }
-
-  static private boolean jj_3_1() {
-    if (jj_scan_token(S_IDENTIFIER)) return true;
-    if (jj_scan_token(35)) return true;
+  static private boolean jj_3R_42() {
+    if (jj_scan_token(33)) return true;
     return false;
   }
 
-  static private boolean jj_3R_16() {
-    if (jj_scan_token(K_FROM)) return true;
-    if (jj_3R_52()) return true;
-    Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3R_53()) { jj_scanpos = xsp; break; }
-    }
-    return false;
-  }
-
-  static private boolean jj_3R_38() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_46()) jj_scanpos = xsp;
-    if (jj_scan_token(S_IDENTIFIER)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_66() {
-    if (jj_scan_token(34)) return true;
-    if (jj_3R_48()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_72() {
-    if (jj_scan_token(K_NOT)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_51() {
-    if (jj_scan_token(K_OR)) return true;
-    if (jj_3R_50()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_30() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3_1()) {
-    jj_scanpos = xsp;
-    if (jj_3R_37()) return true;
-    }
-    xsp = jj_scanpos;
-    if (jj_3R_38()) jj_scanpos = xsp;
-    return false;
-  }
-
-  static private boolean jj_3R_31() {
-    if (jj_scan_token(34)) return true;
-    if (jj_3R_30()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_63() {
-    if (jj_3R_48()) return true;
-    Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3R_66()) { jj_scanpos = xsp; break; }
-    }
-    return false;
-  }
-
-  static private boolean jj_3R_68() {
-    if (jj_scan_token(K_IS)) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_72()) jj_scanpos = xsp;
-    if (jj_scan_token(K_NULL)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_48() {
-    if (jj_3R_50()) return true;
-    Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3R_51()) { jj_scanpos = xsp; break; }
-    }
-    return false;
-  }
-
-  static private boolean jj_3R_47() {
-    if (jj_3R_48()) return true;
+  static private boolean jj_3R_45() {
+    if (jj_3R_46()) return true;
     return false;
   }
 
   static private boolean jj_3R_24() {
-    if (jj_3R_30()) return true;
     Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3R_31()) { jj_scanpos = xsp; break; }
+    xsp = jj_scanpos;
+    if (jj_3_1()) {
+    jj_scanpos = xsp;
+    if (jj_3R_27()) return true;
+    }
+    xsp = jj_scanpos;
+    if (jj_3R_28()) jj_scanpos = xsp;
+    return false;
+  }
+
+  static private boolean jj_3R_25() {
+    if (jj_scan_token(34)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_46() {
+    if (jj_3R_47()) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_39() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_42()) {
+    jj_scanpos = xsp;
+    if (jj_3R_43()) {
+    jj_scanpos = xsp;
+    if (jj_3R_44()) return true;
+    }
     }
     return false;
   }
@@ -1548,107 +1531,144 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     return false;
   }
 
-  static private boolean jj_3R_65() {
-    if (jj_3R_68()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_23() {
-    if (jj_scan_token(33)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_22() {
+  static private boolean jj_3R_16() {
     if (jj_scan_token(K_NOT)) return true;
     return false;
   }
 
-  static private boolean jj_3_7() {
-    if (jj_3R_13()) return true;
+  static private boolean jj_3R_18() {
+    if (jj_scan_token(K_NOT)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_50() {
+    if (jj_scan_token(K_NOT)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_22() {
+    if (jj_3R_24()) return true;
+    Token xsp;
+    while (true) {
+      xsp = jj_scanpos;
+      if (jj_3R_25()) { jj_scanpos = xsp; break; }
+    }
+    return false;
+  }
+
+  static private boolean jj_3R_9() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_16()) jj_scanpos = xsp;
+    if (jj_scan_token(K_EXISTS)) return true;
+    if (jj_scan_token(40)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_11() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_18()) jj_scanpos = xsp;
+    if (jj_scan_token(K_BETWEEN)) return true;
+    if (jj_3R_19()) return true;
     return false;
   }
 
   static private boolean jj_3R_15() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_23()) {
-    jj_scanpos = xsp;
-    if (jj_3R_24()) return true;
-    }
+    if (jj_scan_token(K_FROM)) return true;
     return false;
   }
 
-  static private boolean jj_3_6() {
-    if (jj_3R_12()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_45() {
-    if (jj_scan_token(41)) return true;
+  static private boolean jj_3R_37() {
+    if (jj_scan_token(40)) return true;
     Token xsp;
     xsp = jj_scanpos;
     if (jj_3_2()) {
     jj_scanpos = xsp;
-    if (jj_3R_47()) return true;
+    if (jj_3R_45()) return true;
     }
-    if (jj_scan_token(42)) return true;
     return false;
   }
 
-  static private boolean jj_3_5() {
-    if (jj_3R_11()) return true;
+  static private boolean jj_3R_21() {
+    if (jj_scan_token(33)) return true;
     return false;
   }
 
-  static private boolean jj_3R_44() {
+  static private boolean jj_3R_36() {
     if (jj_scan_token(K_NULL)) return true;
     return false;
   }
 
-  static private boolean jj_3R_13() {
+  static private boolean jj_3R_41() {
+    if (jj_scan_token(37)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_23() {
+    if (jj_3R_26()) return true;
     Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_22()) jj_scanpos = xsp;
-    if (jj_scan_token(K_LIKE)) return true;
-    if (jj_3R_10()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_43() {
-    if (jj_scan_token(S_IDENTIFIER)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_62() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_64()) {
-    jj_scanpos = xsp;
-    if (jj_3_5()) {
-    jj_scanpos = xsp;
-    if (jj_3_6()) {
-    jj_scanpos = xsp;
-    if (jj_3_7()) {
-    jj_scanpos = xsp;
-    if (jj_3R_65()) return true;
+    while (true) {
+      xsp = jj_scanpos;
+      if (jj_3R_39()) { jj_scanpos = xsp; break; }
     }
-    }
-    }
-    }
-    return false;
-  }
-
-  static private boolean jj_3R_64() {
-    if (jj_3R_67()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_42() {
-    if (jj_scan_token(S_CHAR_LITERAL)) return true;
     return false;
   }
 
   static private boolean jj_3R_14() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_21()) {
+    jj_scanpos = xsp;
+    if (jj_3R_22()) return true;
+    }
+    return false;
+  }
+
+  static private boolean jj_3R_35() {
+    if (jj_scan_token(S_IDENTIFIER)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_49() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_50()) jj_scanpos = xsp;
+    if (jj_3R_51()) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_40() {
+    if (jj_scan_token(36)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_34() {
+    if (jj_scan_token(S_CHAR_LITERAL)) return true;
+    return false;
+  }
+
+  static private boolean jj_3_8() {
+    if (jj_3R_8()) return true;
+    return false;
+  }
+
+  static private boolean jj_3_3() {
+    if (jj_3R_9()) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_38() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_40()) {
+    jj_scanpos = xsp;
+    if (jj_3R_41()) return true;
+    }
+    return false;
+  }
+
+  static private boolean jj_3R_13() {
     Token xsp;
     xsp = jj_scanpos;
     if (jj_scan_token(6)) {
@@ -1658,163 +1678,37 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     return false;
   }
 
-  static private boolean jj_3R_49() {
-    if (jj_3R_54()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_61() {
-    if (jj_3R_10()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_41() {
+  static private boolean jj_3R_33() {
     if (jj_scan_token(S_NUMBER)) return true;
     return false;
   }
 
-  static private boolean jj_3R_8() {
-    if (jj_scan_token(K_SELECT)) return true;
+  static private boolean jj_3R_48() {
     Token xsp;
     xsp = jj_scanpos;
-    if (jj_3R_14()) jj_scanpos = xsp;
-    if (jj_3R_15()) return true;
-    if (jj_3R_16()) return true;
-    xsp = jj_scanpos;
-    if (jj_3R_49()) jj_scanpos = xsp;
-    return false;
-  }
-
-  static private boolean jj_3R_33() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_41()) {
+    if (jj_3_3()) {
     jj_scanpos = xsp;
-    if (jj_3R_42()) {
-    jj_scanpos = xsp;
-    if (jj_3R_43()) {
-    jj_scanpos = xsp;
-    if (jj_3R_44()) {
-    jj_scanpos = xsp;
-    if (jj_3R_45()) return true;
-    }
-    }
-    }
+    if (jj_3R_49()) return true;
     }
     return false;
   }
 
-  static private boolean jj_3R_21() {
-    if (jj_scan_token(K_NOT)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_12() {
+  static private boolean jj_3R_30() {
     Token xsp;
     xsp = jj_scanpos;
-    if (jj_3R_21()) jj_scanpos = xsp;
-    if (jj_scan_token(K_BETWEEN)) return true;
-    if (jj_3R_10()) return true;
-    if (jj_scan_token(K_AND)) return true;
-    if (jj_3R_10()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_40() {
-    if (jj_scan_token(37)) return true;
-    return false;
-  }
-
-  static private boolean jj_3_4() {
-    if (jj_scan_token(41)) return true;
-    if (jj_3R_10()) return true;
-    if (jj_scan_token(34)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_32() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_39()) {
+    if (jj_3R_33()) {
     jj_scanpos = xsp;
-    if (jj_3R_40()) return true;
-    }
-    return false;
-  }
-
-  static private boolean jj_3R_39() {
-    if (jj_scan_token(36)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_60() {
-    if (jj_scan_token(41)) return true;
-    if (jj_3R_63()) return true;
-    if (jj_scan_token(42)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_71() {
-    if (jj_3R_63()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_36() {
-    if (jj_scan_token(40)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_25() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_32()) jj_scanpos = xsp;
-    if (jj_3R_33()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_35() {
-    if (jj_scan_token(39)) return true;
-    return false;
-  }
-
-  static private boolean jj_3_9() {
-    if (jj_3R_8()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_59() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_60()) {
-    jj_scanpos = xsp;
-    if (jj_3R_61()) return true;
-    }
-    xsp = jj_scanpos;
-    if (jj_3R_62()) jj_scanpos = xsp;
-    return false;
-  }
-
-  static private boolean jj_3R_34() {
-    if (jj_scan_token(33)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_20() {
-    if (jj_scan_token(K_NOT)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_26() {
-    Token xsp;
-    xsp = jj_scanpos;
     if (jj_3R_34()) {
     jj_scanpos = xsp;
     if (jj_3R_35()) {
     jj_scanpos = xsp;
-    if (jj_3R_36()) return true;
+    if (jj_3R_36()) {
+    jj_scanpos = xsp;
+    if (jj_3R_37()) return true;
     }
     }
-    if (jj_3R_25()) return true;
+    }
+    }
     return false;
   }
 
@@ -1823,201 +1717,154 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
     return false;
   }
 
-  static private boolean jj_3R_11() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_20()) jj_scanpos = xsp;
-    if (jj_scan_token(K_IN)) return true;
-    if (jj_scan_token(41)) return true;
-    xsp = jj_scanpos;
-    if (jj_3_9()) {
-    jj_scanpos = xsp;
-    if (jj_3R_71()) return true;
-    }
-    if (jj_scan_token(42)) return true;
+  static private boolean jj_3_6() {
+    if (jj_3R_12()) return true;
     return false;
   }
 
-  static private boolean jj_3R_58() {
+  static private boolean jj_3_5() {
+    if (jj_3R_11()) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_8() {
+    if (jj_scan_token(K_SELECT)) return true;
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_13()) jj_scanpos = xsp;
+    if (jj_3R_14()) return true;
+    if (jj_3R_15()) return true;
+    return false;
+  }
+
+  static private boolean jj_3_4() {
+    if (jj_3R_10()) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_10() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_17()) jj_scanpos = xsp;
+    if (jj_scan_token(K_IN)) return true;
+    if (jj_scan_token(40)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_20() {
     if (jj_scan_token(K_NOT)) return true;
     return false;
   }
 
-  static private boolean jj_3R_9() {
+  static private boolean jj_3R_53() {
+    if (jj_3R_19()) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_19() {
+    if (jj_3R_23()) return true;
+    Token xsp;
+    while (true) {
+      xsp = jj_scanpos;
+      if (jj_3R_38()) { jj_scanpos = xsp; break; }
+    }
+    return false;
+  }
+
+  static private boolean jj_3R_32() {
+    if (jj_scan_token(37)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_52() {
+    if (jj_scan_token(40)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_27() {
+    if (jj_3R_19()) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_47() {
+    if (jj_3R_48()) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_12() {
     Token xsp;
     xsp = jj_scanpos;
-    if (jj_3R_17()) jj_scanpos = xsp;
-    if (jj_scan_token(K_EXISTS)) return true;
-    if (jj_scan_token(41)) return true;
-    if (jj_3R_8()) return true;
-    if (jj_scan_token(42)) return true;
+    if (jj_3R_20()) jj_scanpos = xsp;
+    if (jj_scan_token(K_LIKE)) return true;
+    if (jj_3R_19()) return true;
     return false;
   }
 
   static private boolean jj_3R_29() {
-    if (jj_scan_token(38)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_74() {
-    if (jj_scan_token(K_ANY)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_18() {
-    if (jj_3R_25()) return true;
     Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3R_26()) { jj_scanpos = xsp; break; }
+    xsp = jj_scanpos;
+    if (jj_3R_31()) {
+    jj_scanpos = xsp;
+    if (jj_3R_32()) return true;
+    }
+    return false;
+  }
+
+  static private boolean jj_3R_31() {
+    if (jj_scan_token(36)) return true;
+    return false;
+  }
+
+  static private boolean jj_3_9() {
+    if (jj_scan_token(40)) return true;
+    if (jj_3R_8()) return true;
+    return false;
+  }
+
+  static private boolean jj_3_1() {
+    if (jj_scan_token(S_IDENTIFIER)) return true;
+    if (jj_scan_token(35)) return true;
+    return false;
+  }
+
+  static private boolean jj_3R_51() {
+    Token xsp;
+    xsp = jj_scanpos;
+    if (jj_3R_52()) {
+    jj_scanpos = xsp;
+    if (jj_3R_53()) return true;
     }
     return false;
   }
 
   static private boolean jj_3R_28() {
-    if (jj_scan_token(37)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_73() {
-    if (jj_scan_token(K_ALL)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_70() {
     Token xsp;
     xsp = jj_scanpos;
-    if (jj_3R_73()) {
-    jj_scanpos = xsp;
-    if (jj_3R_74()) return true;
-    }
+    if (jj_scan_token(9)) jj_scanpos = xsp;
+    if (jj_scan_token(S_IDENTIFIER)) return true;
     return false;
   }
 
-  static private boolean jj_3R_27() {
-    if (jj_scan_token(36)) return true;
+  static private boolean jj_3R_44() {
+    if (jj_scan_token(39)) return true;
     return false;
   }
 
-  static private boolean jj_3R_54() {
-    if (jj_scan_token(K_WHERE)) return true;
-    if (jj_3R_48()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_57() {
+  static private boolean jj_3R_26() {
     Token xsp;
     xsp = jj_scanpos;
-    if (jj_3R_58()) jj_scanpos = xsp;
-    if (jj_3R_59()) return true;
+    if (jj_3R_29()) jj_scanpos = xsp;
+    if (jj_3R_30()) return true;
     return false;
   }
 
-  static private boolean jj_3_10() {
-    if (jj_scan_token(41)) return true;
-    if (jj_3R_8()) return true;
-    if (jj_scan_token(42)) return true;
+  static private boolean jj_3R_43() {
+    if (jj_scan_token(38)) return true;
     return false;
   }
 
-  static private boolean jj_3R_19() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_27()) {
-    jj_scanpos = xsp;
-    if (jj_3R_28()) {
-    jj_scanpos = xsp;
-    if (jj_3R_29()) return true;
-    }
-    }
-    if (jj_3R_18()) return true;
-    return false;
-  }
-
-  static private boolean jj_3_3() {
-    if (jj_3R_9()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_55() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3_3()) {
-    jj_scanpos = xsp;
-    if (jj_3R_57()) return true;
-    }
-    return false;
-  }
-
-  static private boolean jj_3R_69() {
-    return false;
-  }
-
-  static private boolean jj_3R_52() {
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_scan_token(28)) {
-    jj_scanpos = xsp;
-    if (jj_3_10()) return true;
-    }
-    return false;
-  }
-
-  static private boolean jj_3R_56() {
-    if (jj_scan_token(K_AND)) return true;
-    if (jj_3R_55()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_10() {
-    if (jj_3R_18()) return true;
-    Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3R_19()) { jj_scanpos = xsp; break; }
-    }
-    return false;
-  }
-
-  static private boolean jj_3R_53() {
-    if (jj_scan_token(34)) return true;
-    if (jj_3R_52()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_46() {
-    if (jj_scan_token(K_AS)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_37() {
-    if (jj_3R_10()) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_67() {
-    if (jj_3R_69()) return true;
-    Token xsp;
-    xsp = jj_scanpos;
-    if (jj_3R_70()) jj_scanpos = xsp;
-    if (jj_scan_token(41)) return true;
-    if (jj_3R_8()) return true;
-    if (jj_scan_token(42)) return true;
-    return false;
-  }
-
-  static private boolean jj_3_8() {
+  static private boolean jj_3_7() {
     if (jj_scan_token(0)) return true;
-    return false;
-  }
-
-  static private boolean jj_3R_50() {
-    if (jj_3R_55()) return true;
-    Token xsp;
-    while (true) {
-      xsp = jj_scanpos;
-      if (jj_3R_56()) { jj_scanpos = xsp; break; }
-    }
     return false;
   }
 
@@ -2044,9 +1891,9 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
       jj_la1_0 = new int[] {0x2040,0x2040,0x800000,0x0,0x91100000,0x91100000,0x200,0x10000200,0x0,0x0,0x0,0x0,0x0,0x0,0x91184000,0x91100000,0x200000,0x80,0x80000,0x91180000,0x80000,0x91100000,0x140,0x20000,0xf0940,0x0,0x140,0x140,0x80000,0x91184000,0x80000,0x80000,0x80000,0x0,0x10000000,};
    }
    private static void jj_la1_init_1() {
-      jj_la1_1 = new int[] {0x0,0x0,0x0,0x4,0x232,0x230,0x0,0x0,0x70,0x70,0x182,0x182,0x30,0x30,0x230,0x200,0x0,0x0,0x0,0x230,0x0,0x230,0x200,0x0,0x200,0x4,0x0,0x0,0x0,0x230,0x0,0x0,0x0,0x4,0x0,};
+      jj_la1_1 = new int[] {0x0,0x0,0x0,0x4,0x132,0x130,0x0,0x0,0x30,0x30,0xc2,0xc2,0x30,0x30,0x130,0x100,0x0,0x0,0x0,0x130,0x0,0x130,0x100,0x0,0x100,0x4,0x0,0x0,0x0,0x130,0x0,0x0,0x0,0x4,0x0,};
    }
-  static final private JJCalls[] jj_2_rtns = new JJCalls[10];
+  static final private JJCalls[] jj_2_rtns = new JJCalls[9];
   static private boolean jj_rescan = false;
   static private int jj_gc = 0;
 
@@ -2254,7 +2101,7 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
   /** Generate ParseException. */
   static public ParseException generateParseException() {
     jj_expentries.clear();
-    boolean[] la1tokens = new boolean[43];
+    boolean[] la1tokens = new boolean[42];
     if (jj_kind >= 0) {
       la1tokens[jj_kind] = true;
       jj_kind = -1;
@@ -2271,7 +2118,7 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
         }
       }
     }
-    for (int i = 0; i < 43; i++) {
+    for (int i = 0; i < 42; i++) {
       if (la1tokens[i]) {
         jj_expentry = new int[1];
         jj_expentry[0] = i;
@@ -2298,7 +2145,7 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
 
   static private void jj_rescan_token() {
     jj_rescan = true;
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 9; i++) {
     try {
       JJCalls p = jj_2_rtns[i];
       do {
@@ -2314,7 +2161,6 @@ public class SqlParser/*@bgen(jjtree)*/implements SqlParserTreeConstants, SqlPar
             case 6: jj_3_7(); break;
             case 7: jj_3_8(); break;
             case 8: jj_3_9(); break;
-            case 9: jj_3_10(); break;
           }
         }
         p = p.next;

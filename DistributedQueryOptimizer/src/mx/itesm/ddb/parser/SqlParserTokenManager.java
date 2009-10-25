@@ -2,11 +2,22 @@
 package mx.itesm.ddb.parser;
 import java.util.List;
 import java.util.ArrayList;
+import mx.itesm.ddb.util.ConditionData;
+import mx.itesm.ddb.util.ConditionOperator;
+import mx.itesm.ddb.util.ExpressionData;
+import mx.itesm.ddb.util.ExpressionOperator;
 import mx.itesm.ddb.util.QueryData;
 import mx.itesm.ddb.util.RelationData;
-import mx.itesm.ddb.util.ConditionData;
-import mx.itesm.ddb.util.impl.SimpleRelationData;
+import mx.itesm.ddb.util.impl.AliasExpressionData;
+import mx.itesm.ddb.util.impl.ConditionExpressionData;
+import mx.itesm.ddb.util.impl.ExpressionConditionData;
+import mx.itesm.ddb.util.impl.OperationConditionData;
+import mx.itesm.ddb.util.impl.OperationExpressionData;
+import mx.itesm.ddb.util.impl.QueryConditionData;
+import mx.itesm.ddb.util.impl.QueryExpressionData;
 import mx.itesm.ddb.util.impl.QueryRelationData;
+import mx.itesm.ddb.util.impl.SimpleExpressionData;
+import mx.itesm.ddb.util.impl.SimpleRelationData;
 
 /** Token Manager. */
 public class SqlParserTokenManager implements SqlParserConstants
@@ -111,9 +122,9 @@ static private int jjMoveStringLiteralDfa0_0()
    switch(curChar)
    {
       case 40:
-         return jjStopAtPos(0, 41);
+         return jjStopAtPos(0, 40);
       case 41:
-         return jjStopAtPos(0, 42);
+         return jjStopAtPos(0, 41);
       case 42:
          return jjStopAtPos(0, 33);
       case 43:
@@ -125,11 +136,11 @@ static private int jjMoveStringLiteralDfa0_0()
       case 46:
          return jjMoveStringLiteralDfa1_0(0x800000000L);
       case 47:
-         return jjStopAtPos(0, 39);
+         return jjStopAtPos(0, 38);
       case 59:
          return jjStopAtPos(0, 32);
       case 61:
-         return jjStopAtPos(0, 40);
+         return jjStopAtPos(0, 39);
       case 65:
       case 97:
          return jjMoveStringLiteralDfa1_0(0x7c0L);
@@ -163,8 +174,6 @@ static private int jjMoveStringLiteralDfa0_0()
       case 87:
       case 119:
          return jjMoveStringLiteralDfa1_0(0x800000L);
-      case 124:
-         return jjMoveStringLiteralDfa1_0(0x4000000000L);
       default :
          return jjMoveNfa_0(2, 0);
    }
@@ -223,10 +232,6 @@ static private int jjMoveStringLiteralDfa1_0(long active0)
       case 88:
       case 120:
          return jjMoveStringLiteralDfa2_0(active0, 0x4000L);
-      case 124:
-         if ((active0 & 0x4000000000L) != 0L)
-            return jjStopAtPos(1, 38);
-         break;
       default :
          break;
    }
@@ -743,15 +748,15 @@ static final int[] jjnextStates = {
 public static final String[] jjstrLiteralImages = {
 "", null, null, null, null, null, null, null, null, null, null, null, null, 
 null, null, null, null, null, null, null, null, null, null, null, null, null, null, 
-null, null, null, null, null, "\73", "\52", "\54", "\56\52", "\53", "\55", 
-"\174\174", "\57", "\75", "\50", "\51", };
+null, null, null, null, null, "\73", "\52", "\54", "\56\52", "\53", "\55", "\57", 
+"\75", "\50", "\51", };
 
 /** Lexer state names. */
 public static final String[] lexStateNames = {
    "DEFAULT",
 };
 static final long[] jjtoToken = {
-   0x7ff91ffffc1L, 
+   0x3ff91ffffc1L, 
 };
 static final long[] jjtoSkip = {
    0x3eL, 
