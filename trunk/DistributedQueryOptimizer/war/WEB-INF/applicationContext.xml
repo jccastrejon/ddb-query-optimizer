@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+            http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+            http://www.springframework.org/schema/aop
+            http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+            http://www.springframework.org/schema/tx
+            http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+            http://www.springframework.org/schema/security
+            http://www.springframework.org/schema/security/spring-security-2.0.4.xsd">
+
+	<!-- Service -->
+	<bean id="optimizerManager" class="mx.itesm.ddb.service.OptimizerManager" />
+
+	<!-- General -->
+	<bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath:jdbc.properties</value>
+			</list>
+		</property>
+	</bean>
+	<!-- Security -->
+
+	<security:http auto-config="true">
+		<security:intercept-url pattern="/login.jsp"
+			access="IS_AUTHENTICATED_ANONYMOUSLY" />
+		<security:intercept-url pattern="/**" access="ROLE_USER" />
+
+		<security:form-login login-page="/login.jsp" />
+	</security:http>
+
+	<security:authentication-provider>
+		<security:user-service>
+			<security:user name="tomcat" password="tomcat"
+				authorities="ROLE_SUPERVISOR, ROLE_USER, ROLE_TELLER" />
+		</security:user-service>
+	</security:authentication-provider>
+
+</beans>
