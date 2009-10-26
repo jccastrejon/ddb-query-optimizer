@@ -6,6 +6,15 @@
 		<fileset dir="${lib.dir}">
 			<include name="**/*.jar" />
 		</fileset>
+		<fileset dir="${web.dir}/WEB-INF/lib">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${appserver.home}/common/lib">
+			<include name="servlet*.jar" />
+		</fileset>
+		<fileset dir="${appserver.lib}">
+			<include name="servlet*.jar" />
+		</fileset>
 		<pathelement path="${build.dir}" />
 	</path>
 
@@ -31,6 +40,11 @@
 			<src path="${src.dir}" />
 			<classpath refid="master-classpath" />
 		</javac>
+		<copy todir="${build.dir}" preservelastmodified="true">
+			<fileset dir="${cfg.dir}">
+				<include name="**/*.properties" />
+			</fileset>
+		</copy>
 	</target>
 
 	<!-- Test -->
@@ -66,6 +80,90 @@
 	            ***********************************************************
 	        </fail>
 	</target>
+
+	<!-- Deploy -->
+	<target name="deploy" depends="build" description="Deploy application">
+		<copy todir="${deploy.path}/${name}" preservelastmodified="true">
+			<fileset dir="${web.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+
+		<copy todir="${deploy.path}/${name}/WEB-INF/classes" preservelastmodified="true">
+			<fileset dir="${build.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="deploywar" depends="build" description="Deploy application as a WAR file">
+		<mkdir dir="${web.dir}/WEB-INF/classes"/>
+		<copy todir="${web.dir}/WEB-INF/classes" preservelastmodified="true">
+			<fileset dir="${build.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</copy>
+		<war destfile="${name}.war" webxml="${web.dir}/WEB-INF/web.xml">
+			<fileset dir="${web.dir}">
+				<include name="**/*.*" />
+			</fileset>
+		</war>
+		<delete dir="${web.dir}/WEB-INF/classes"/>
+		
+		<copy todir="${deploy.path}" preservelastmodified="true">
+			<fileset dir=".">
+				<include name="*.war" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="undeploy" description="Un-Deploy application">
+		<delete>
+			<fileset dir="${deploy.path}/${name}">
+				<include name="**/*.*" />
+			</fileset>
+		</delete>
+	</target>
+
+
+	<!-- Tomcat -->
+	<path id="catalina-ant-classpath">
+		<fileset dir="${appserver.lib}">
+			<include name="catalina-ant.jar" />
+		</fileset>
+	</path>
+	<taskdef name="install" classname="org.apache.catalina.ant.InstallTask">
+		<classpath refid="catalina-ant-classpath" />
+	</taskdef>
+	<taskdef name="reload" classname="org.apache.catalina.ant.ReloadTask">
+		<classpath refid="catalina-ant-classpath" />
+	</taskdef>
+	<taskdef name="list" classname="org.apache.catalina.ant.ListTask">
+		<classpath refid="catalina-ant-classpath" />
+	</taskdef>
+	<taskdef name="start" classname="org.apache.catalina.ant.StartTask">
+		<classpath refid="catalina-ant-classpath" />
+	</taskdef>
+	<taskdef name="stop" classname="org.apache.catalina.ant.StopTask">
+		<classpath refid="catalina-ant-classpath" />
+	</taskdef>
+	<target name="install" description="Install application in Tomcat">
+		<install url="${tomcat.manager.url}" username="${tomcat.manager.username}" password="${tomcat.manager.password}" path="/${name}" war="${name}" />
+	</target>
+	<target name="reload" description="Reload application in Tomcat">
+		<reload url="${tomcat.manager.url}" username="${tomcat.manager.username}" password="${tomcat.manager.password}" path="/${name}" />
+	</target>
+	<target name="start" description="Start Tomcat application">
+		<start url="${tomcat.manager.url}" username="${tomcat.manager.username}" password="${tomcat.manager.password}" path="/${name}" />
+	</target>
+	<target name="stop" description="Stop Tomcat application">
+		<stop url="${tomcat.manager.url}" username="${tomcat.manager.username}" password="${tomcat.manager.password}" path="/${name}" />
+	</target>
+	<target name="list" description="List Tomcat applications">
+		<list url="${tomcat.manager.url}" username="${tomcat.manager.username}" password="${tomcat.manager.password}" />
+	</target>
+	<!-- End Tomcat tasks -->
+
 
 	<!-- Distribute -->
 	<target name="jar" depends="build">
