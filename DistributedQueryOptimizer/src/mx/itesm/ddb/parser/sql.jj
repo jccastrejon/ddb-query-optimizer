@@ -895,16 +895,24 @@ ConditionData SQLRelationalExpression():
         try {
 /*@egen*/
 	(   
-	    (
-	       	"("
-	       	returnValue = SQLExpressionList()
-	       	")"
-	        |
-	        expression = SQLSimpleExpression()
-	        {
-	        	returnValue = new ExpressionConditionData(expression);
-	        }
-	    )
+		(
+			LOOKAHEAD(
+				"("
+				SQLSimpleExpression()
+				","
+			)
+		
+			"("
+			returnValue = SQLExpressionList()
+			")"
+			| 
+			(
+				expression = SQLSimpleExpression()
+				{
+					returnValue = new ExpressionConditionData(expression);
+				}
+			)
+		)
 	    
 	    /* Lookahead(2) is required because of NOT IN,NOT BETWEEN and NOT LIKE */
 	    (
@@ -924,7 +932,7 @@ ConditionData SQLRelationalExpression():
 	{
 		if(nullOperator != null) {
 			returnValue = new OperationConditionData(nullOperator, returnValue);
-		} else if (conditions != null) {
+		} else if (condition != null) {
 			conditions = new ArrayList<ConditionData>();
 	    	conditions.add(returnValue);
 	    	conditions.addAll(((OperationConditionData)condition).getConditions());
