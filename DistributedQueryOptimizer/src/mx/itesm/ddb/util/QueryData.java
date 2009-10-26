@@ -48,11 +48,11 @@ public class QueryData {
 	StringBuilder returnValue;
 
 	// Projections
-	returnValue = new StringBuilder("\u03A0<sub>" + this.attributes + "</sub>(");
+	returnValue = new StringBuilder("&#0928;<sub>" + this.attributes + "</sub>(");
 
 	// Selections
 	if (this.conditions != null) {
-	    returnValue.append("\u03c3<sub>" + this.conditions + "</sub>(");
+	    returnValue.append("&#0963;<sub>" + this.conditions + "</sub>(");
 	}
 
 	// Relations
