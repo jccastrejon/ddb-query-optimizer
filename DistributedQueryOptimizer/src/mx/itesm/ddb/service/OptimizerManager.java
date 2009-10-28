@@ -21,11 +21,6 @@ public class OptimizerManager {
     private static Logger logger = Logger.getLogger(OptimizerManager.class.getName());
 
     /**
-     * Parser for the SQL query.
-     */
-    private SqlParser parser;
-
-    /**
      * Get the Query Object containing the Relational Algebra representation of
      * the SQL query.
      * 
@@ -52,19 +47,14 @@ public class OptimizerManager {
     public void updateRelationalAlgebra(final Query query) {
 	QueryData queryData;
 	String returnValue;
-
-	// TODO: Change to non-static
-	if (parser == null) {
-	    parser = new SqlParser(new StringReader(query.getSql()));
-	} else {
-	    SqlParser.ReInit(new StringReader(query.getSql()));
-	}
+	SqlParser parser;
 
 	try {
-	    queryData = SqlParser.QueryStatement();
+	    parser = new SqlParser(new StringReader(query.getSql()));
+	    queryData = parser.QueryStatement();
 	    returnValue = queryData.toString();
 	} catch (Exception e) {
-	    returnValue = "<font color='red'>Problems while parsing query [" + query + "]</font>";
+	    returnValue = "Problems while parsing query [" + query + "]";
 	    logger.error("Problems while parsing query [" + query + "]", e);
 	}
 

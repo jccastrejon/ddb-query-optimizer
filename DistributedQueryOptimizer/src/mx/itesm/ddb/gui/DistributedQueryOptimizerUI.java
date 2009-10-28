@@ -178,6 +178,8 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
 		this.resultText.setText("");
 		testQueriesResult.append("<html><font size='"
 			+ DistributedQueryOptimizerUI.RESULTS_FONT_SIZE + "'>");
+
+		// Try to parse each query in the file
 		while ((testQuery = testReader.readLine()) != null) {
 		    testQueries.append(testQuery).append("\n");
 		    query.setSql(testQuery);
