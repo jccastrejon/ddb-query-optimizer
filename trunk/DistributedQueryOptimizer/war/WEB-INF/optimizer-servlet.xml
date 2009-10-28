@@ -10,7 +10,9 @@
 		<property name="commandName" value="query" />
 		<property name="commandClass" value="mx.itesm.ddb.service.Query" />
 		<property name="validator">
-			<bean class="mx.itesm.ddb.service.OptimizeValidator" />
+			<bean class="mx.itesm.ddb.service.OptimizeValidator">
+				<property name="optimizerManager" ref="optimizerManager" />
+			</bean>
 		</property>
 		<property name="formView" value="optimize" />
 		<property name="successView" value="optimize" />
