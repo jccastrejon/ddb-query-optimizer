@@ -1,5 +1,5 @@
 options {
-	STATIC=true;
+	STATIC=false;
     MULTI=true;
     NODE_PACKAGE="mx.itesm.ddb.parser";
     TRACK_TOKENS=true;
