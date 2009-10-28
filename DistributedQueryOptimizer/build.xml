@@ -59,6 +59,11 @@
 				<include name="**/*.*" />
 			</fileset>
 		</copy>
+		<copy todir="${build.dir}" preservelastmodified="true">
+			<fileset dir="${cfg.dir}">
+				<include name="**/*.properties" />
+			</fileset>
+		</copy>
 	</target>
 
 	<target name="tests" depends="build, buildTests" description="Run tests">
