@@ -35,7 +35,7 @@
 	
 	<!-- Relational Algebra -->
 	
-	<c:if test="${not empty query.relationalCalculus}">
+	<c:if test="${not empty query.relationalAlgebra}">
 		<div id="algebra">
 			<br/>
 			<br/>
