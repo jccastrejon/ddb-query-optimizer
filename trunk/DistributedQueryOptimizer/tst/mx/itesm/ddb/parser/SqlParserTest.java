@@ -2,14 +2,17 @@ package mx.itesm.ddb.parser;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.StringReader;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import junit.framework.TestCase;
 import mx.itesm.ddb.util.QueryData;
 
+import org.apache.log4j.Logger;
+
 /**
+ * SQL Parser tests.
+ * 
  * @author jccastrejon
  * 
  */
@@ -21,11 +24,12 @@ public class SqlParserTest extends TestCase {
     Logger logger = Logger.getLogger(SqlParserTest.class.getName());
 
     /**
-     * Execute the parser using each query in the /sql/testQueries.sql
+     * Execute the parser using each query in the '/sql/testQueries.sql' file
      * 
-     * @throws Exception
+     * @throws IOException
+     *             If the '/sql/testQueries.sql' cannot be properly read.
      */
-    public void testQuery() throws Exception {
+    public void testQuery() throws IOException {
 	int queryCount;
 	String query;
 	SqlParser parser;
@@ -51,10 +55,9 @@ public class SqlParserTest extends TestCase {
 
 	    try {
 		queryStatement = SqlParser.QueryStatement();
-		System.out.println("\nQuery #" + queryCount + " correctly parsed:\n"
-			+ queryStatement);
+		logger.info("\nQuery #" + queryCount + " correctly parsed:\n" + queryStatement);
 	    } catch (Exception e) {
-		logger.log(Level.INFO, "Problems in query #" + queryCount, e);
+		logger.error("Problems in query #" + queryCount, e);
 		correctQueries = false;
 	    }
 	}
