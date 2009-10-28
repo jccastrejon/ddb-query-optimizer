@@ -1,6 +1,8 @@
 package mx.itesm.ddb.util;
 
 /**
+ * Operator used within a SQL WHERE condition.
+ * 
  * @author jccastrejon
  * 
  */

@@ -8,24 +8,21 @@ import mx.itesm.ddb.service.Query;
 import org.springframework.web.servlet.mvc.SimpleFormController;
 
 /**
+ * Form controller for the Optimize Query process.
+ * 
  * @author jccastrejon
  * 
  */
 public class OptimizeFormController extends SimpleFormController {
 
     /**
-     * 
+     * Query Optimizer Manager.
      */
     OptimizerManager optimizerManager;
 
     @Override
     public void doSubmitAction(Object command) throws ServletException {
-	Query query;
-	String relationalAlgebra;
-
-	query = (Query) command;
-	relationalAlgebra = optimizerManager.executeQuery(query);
-	query.setRelationalAlgebra(relationalAlgebra);
+	optimizerManager.updateRelationalAlgebra((Query) command);
     }
 
     /**

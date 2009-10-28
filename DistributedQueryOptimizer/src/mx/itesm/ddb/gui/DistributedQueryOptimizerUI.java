@@ -8,8 +8,6 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.StringReader;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.BoxLayout;
@@ -21,8 +19,8 @@ import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 
-import mx.itesm.ddb.parser.SqlParser;
-import mx.itesm.ddb.util.QueryData;
+import mx.itesm.ddb.service.OptimizerManager;
+import mx.itesm.ddb.service.Query;
 
 /**
  * Graphic User Interface for the Distributed Query Optimizer.
@@ -88,9 +86,9 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
     private JPanel commandPanel;
 
     /**
-     * Reference to the actual SQL parser.
+     * Query Optimizer Manager.
      */
-    private SqlParser parser;
+    OptimizerManager optimizerManager;
 
     /**
      * Current action event (execute - test)
@@ -107,6 +105,7 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
 	resultScrollPane = new JScrollPane(resultText);
 	executeQueryButton = new JButton("Execute");
 	testQueriesButton = new JButton("Tests");
+	optimizerManager = new OptimizerManager();
 
 	resultText.setContentType("text/html");
 	resultText.setPreferredSize(new Dimension(900, 500));
@@ -154,6 +153,7 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
 
     @Override
     public void run() {
+	Query query;
 	String testQuery;
 	StringBuilder testQueries;
 	StringBuilder testQueriesResult;
@@ -162,7 +162,8 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
 	if (currentEvent.getSource() == executeQueryButton) {
 	    this.resultText.setText("<html><font size='"
 		    + DistributedQueryOptimizerUI.RESULTS_FONT_SIZE + "'>"
-		    + this.executeQuery(queryText.getText()) + "</font></html>");
+		    + optimizerManager.createQuery(queryText.getText()).getRelationalAlgebra()
+		    + "</font></html>");
 	}
 
 	else if (currentEvent.getSource() == testQueriesButton) {
@@ -171,6 +172,7 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
 			DistributedQueryOptimizerUI.TEST_QUERIES));
 		testQueries = new StringBuilder();
 		testQueriesResult = new StringBuilder();
+		query = new Query();
 
 		this.queryText.setText("");
 		this.resultText.setText("");
@@ -178,7 +180,9 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
 			+ DistributedQueryOptimizerUI.RESULTS_FONT_SIZE + "'>");
 		while ((testQuery = testReader.readLine()) != null) {
 		    testQueries.append(testQuery).append("\n");
-		    testQueriesResult.append(this.executeQuery(testQuery)).append("<br/>");
+		    query.setSql(testQuery);
+		    optimizerManager.updateRelationalAlgebra(query);
+		    testQueriesResult.append(query.getRelationalAlgebra()).append("<br/>");
 		}
 		testQueriesResult.append("</font></html>");
 
@@ -195,33 +199,5 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
 	this.executeQueryButton.setEnabled(true);
 	this.testQueriesButton.setEnabled(true);
 	currentEvent = null;
-    }
-
-    /**
-     * Execute a SQL query.
-     * 
-     * @param query
-     *            SQL query.
-     * @return Relational Calculus representation of the query data.
-     */
-    public String executeQuery(String query) {
-	QueryData queryData;
-	String returnValue;
-
-	if (parser == null) {
-	    parser = new SqlParser(new StringReader(query));
-	} else {
-	    SqlParser.ReInit(new StringReader(query));
-	}
-
-	try {
-	    queryData = SqlParser.QueryStatement();
-	    returnValue = queryData.toString();
-	} catch (Exception e) {
-	    returnValue = "<font color='red'>Problems while parsing query [" + query + "]</font>";
-	    logger.log(Level.WARNING, "Problems while parsing query [" + query + "]", e);
-	}
-
-	return returnValue;
     }
 }

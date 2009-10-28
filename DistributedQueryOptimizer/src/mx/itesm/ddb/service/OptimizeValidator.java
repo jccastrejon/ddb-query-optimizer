@@ -4,6 +4,8 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
 /**
+ * Validator for Query instances.
+ * 
  * @author jccastrejon
  * 
  */
@@ -23,5 +25,4 @@ public class OptimizeValidator implements Validator {
 	    errors.rejectValue("sql", "error.queryNotSpecified");
 	}
     }
-
 }
