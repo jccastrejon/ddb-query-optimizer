@@ -2,7 +2,6 @@
 /*@egen*/options {
 	STATIC=true;
                
-                                             
                                        
                       
     IGNORE_CASE=true;

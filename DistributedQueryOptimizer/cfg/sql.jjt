@@ -1,7 +1,6 @@
 options {
 	STATIC=true;
     MULTI=true;
-    NODE_EXTENDS="mx.itesm.ddb.util.SqlNode";
     NODE_PACKAGE="mx.itesm.ddb.parser";
     TRACK_TOKENS=true;
     IGNORE_CASE=true;
