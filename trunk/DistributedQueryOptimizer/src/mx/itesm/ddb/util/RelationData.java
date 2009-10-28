@@ -1,7 +1,7 @@
 package mx.itesm.ddb.util;
 
 /**
- * Holder class for a SQL query relations.
+ * FROM relation in a SQL query.
  * 
  * @author jccastrejon
  * 

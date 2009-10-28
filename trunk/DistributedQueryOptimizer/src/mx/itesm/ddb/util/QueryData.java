@@ -3,8 +3,7 @@ package mx.itesm.ddb.util;
 import java.util.List;
 
 /**
- * Holder class for a SQL query data, that is, projection attributes and
- * relations.
+ * SQL query containing projection attributes, relations and conditions.
  * 
  * @author jccastrejon
  * 
