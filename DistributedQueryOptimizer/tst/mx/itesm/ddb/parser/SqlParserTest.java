@@ -51,14 +51,15 @@ public class SqlParserTest extends TestCase {
 
 	// Try to parse each query in the file
 	while ((testQuery = testReader.readLine()) != null) {
-	    query = optimizerManager.createQuery(testQuery);
 	    queryCount++;
 
-	    // It should start with the Projection symbol
-	    if (!query.getRelationalAlgebra().startsWith("&#0928;")) {
+	    try {
+		query = optimizerManager.createQuery(testQuery);
+		logger.info("Query #" + queryCount + ": " + query.getRelationalAlgebra());
+	    } catch (ParseException e) {
 		correctQueries = false;
 		logger.error("Problems transforming query #" + queryCount + " '" + testQuery
-			+ " into relational algebra: " + query.getRelationalAlgebra());
+			+ " into relational algebra: ", e);
 	    }
 	}
 
