@@ -3,7 +3,6 @@ package mx.itesm.ddb.web;
 import javax.servlet.ServletException;
 
 import mx.itesm.ddb.service.OptimizerManager;
-import mx.itesm.ddb.service.Query;
 
 import org.springframework.web.servlet.mvc.SimpleFormController;
 
@@ -18,11 +17,13 @@ public class OptimizeFormController extends SimpleFormController {
     /**
      * Query Optimizer Manager.
      */
-    OptimizerManager optimizerManager;
+    private OptimizerManager optimizerManager;
 
     @Override
     public void doSubmitAction(Object command) throws ServletException {
-	optimizerManager.updateRelationalAlgebra((Query) command);
+
+	// TODO: Algebra manipulation
+	//Query query = (Query) command;
     }
 
     /**

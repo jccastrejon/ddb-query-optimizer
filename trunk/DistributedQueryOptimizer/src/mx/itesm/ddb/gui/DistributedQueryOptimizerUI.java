@@ -19,6 +19,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 
+import mx.itesm.ddb.parser.ParseException;
 import mx.itesm.ddb.service.OptimizerManager;
 import mx.itesm.ddb.service.Query;
 
@@ -155,14 +156,21 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
     public void run() {
 	Query query;
 	String testQuery;
+	String relationalAlgebra;
 	StringBuilder testQueries;
 	StringBuilder testQueriesResult;
 	BufferedReader testReader;
 
 	if (currentEvent.getSource() == executeQueryButton) {
+	    try {
+		query = optimizerManager.createQuery(queryText.getText());
+		relationalAlgebra = query.getRelationalAlgebra();
+	    } catch (ParseException e) {
+		relationalAlgebra = "Problems while parsing query [" + queryText.getText() + "]";
+	    }
+
 	    this.resultText.setText("<html><font size='"
-		    + DistributedQueryOptimizerUI.RESULTS_FONT_SIZE + "'>"
-		    + optimizerManager.createQuery(queryText.getText()).getRelationalAlgebra()
+		    + DistributedQueryOptimizerUI.RESULTS_FONT_SIZE + "'>" + relationalAlgebra
 		    + "</font></html>");
 	}
 
@@ -183,8 +191,14 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
 		while ((testQuery = testReader.readLine()) != null) {
 		    testQueries.append(testQuery).append("\n");
 		    query.setSql(testQuery);
-		    optimizerManager.updateRelationalAlgebra(query);
-		    testQueriesResult.append(query.getRelationalAlgebra()).append("<br/>");
+		    try {
+			optimizerManager.updateRelationalAlgebra(query);
+			relationalAlgebra = query.getRelationalAlgebra();
+		    } catch (ParseException e) {
+			relationalAlgebra = "Problems while parsing query [" + query.getSql() + "]";
+		    }
+
+		    testQueriesResult.append(relationalAlgebra).append("<br/>");
 		}
 		testQueriesResult.append("</font></html>");
 
