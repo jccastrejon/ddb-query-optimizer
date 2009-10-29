@@ -4,7 +4,7 @@ options {
     NODE_PACKAGE="mx.itesm.ddb.parser";
     TRACK_TOKENS=true;
     IGNORE_CASE=true;
-    VISITOR=true;
+    VISITOR=false;
 }
 
 PARSER_BEGIN(SqlParser)
@@ -170,13 +170,18 @@ ExpressionData SelectItem():
 {
 	ExpressionData returnValue;
 	Token token = null;
+	Token attributeToken = null;
 }
 {
 	(
 	    (
-			LOOKAHEAD(2) token = <S_IDENTIFIER>".*" // table.*
+			LOOKAHEAD(3) token = <S_IDENTIFIER> "." "*" // table.*
 			{
 				returnValue = new SimpleExpressionData(token.image + ".*");
+			}
+			| LOOKAHEAD(2) token = <S_IDENTIFIER> "." attributeToken = <S_IDENTIFIER>
+			{
+				returnValue = new SimpleExpressionData(token.image + "." + attributeToken.image);
 			}
 			| returnValue = SQLSimpleExpression() // column name or expression
 	    )
@@ -308,13 +313,18 @@ ExpressionData SQLPrimaryExpression():
 {
 	ExpressionData returnValue = null;
 	String simpleExpression = null;
-	Token token;
+	Token token = null;
+	Token attributeToken = null;
 	QueryData queryData;
 	ConditionData conditionData;
 }
 {
 	(
-	    token = <S_NUMBER>
+		LOOKAHEAD(2) token = <S_IDENTIFIER> "." attributeToken = <S_IDENTIFIER>
+		{
+			simpleExpression = token.image + "." + attributeToken.image;
+		}
+	    |token = <S_NUMBER>
 	    {
 	    	simpleExpression = token.image;
 	    }
