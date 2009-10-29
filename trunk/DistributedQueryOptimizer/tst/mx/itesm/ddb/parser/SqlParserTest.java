@@ -55,7 +55,7 @@ public class SqlParserTest extends TestCase {
 
 	    try {
 		query = optimizerManager.createQuery(testQuery);
-		logger.info("Query #" + queryCount + ": " + query.getRelationalAlgebra());
+		logger.info("Query #" + queryCount + ": " + query.getQueryData());
 	    } catch (ParseException e) {
 		correctQueries = false;
 		logger.error("Problems transforming query #" + queryCount + " '" + testQuery
