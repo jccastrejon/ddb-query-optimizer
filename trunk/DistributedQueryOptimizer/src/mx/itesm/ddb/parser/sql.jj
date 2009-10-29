@@ -5,7 +5,7 @@
                                        
                       
     IGNORE_CASE=true;
-                 
+                  
 }
 
 PARSER_BEGIN(SqlParser)
@@ -281,15 +281,20 @@ ExpressionData SelectItem():
 /*@egen*/
 	ExpressionData returnValue;
 	Token token = null;
+	Token attributeToken = null;
 }
 {/*@bgen(jjtree) SelectItem */
         try {
 /*@egen*/
 	(
 	    (
-			LOOKAHEAD(2) token = <S_IDENTIFIER>".*" // table.*
+			LOOKAHEAD(3) token = <S_IDENTIFIER> "." "*" // table.*
 			{
 				returnValue = new SimpleExpressionData(token.image + ".*");
+			}
+			| LOOKAHEAD(2) token = <S_IDENTIFIER> "." attributeToken = <S_IDENTIFIER>
+			{
+				returnValue = new SimpleExpressionData(token.image + "." + attributeToken.image);
 			}
 			| returnValue = SQLSimpleExpression() // column name or expression
 	    )
@@ -555,7 +560,8 @@ ExpressionData SQLPrimaryExpression():
 /*@egen*/
 	ExpressionData returnValue = null;
 	String simpleExpression = null;
-	Token token;
+	Token token = null;
+	Token attributeToken = null;
 	QueryData queryData;
 	ConditionData conditionData;
 }
@@ -563,7 +569,11 @@ ExpressionData SQLPrimaryExpression():
         try {
 /*@egen*/
 	(
-	    token = <S_NUMBER>
+		LOOKAHEAD(2) token = <S_IDENTIFIER> "." attributeToken = <S_IDENTIFIER>
+		{
+			simpleExpression = token.image + "." + attributeToken.image;
+		}
+	    |token = <S_NUMBER>
 	    {
 	    	simpleExpression = token.image;
 	    }
