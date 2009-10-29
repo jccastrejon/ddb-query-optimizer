@@ -35,7 +35,7 @@
 	
 	<!-- Relational Algebra -->
 	
-	<c:if test="${not empty query.relationalAlgebra}">
+	<c:if test="${not empty query.queryData}">
 		<div id="algebra">
 			<br/>
 			<br/>
@@ -43,7 +43,7 @@
 			<br/>
 			<br/>
 			<fmt:message key="optimize.relationalAlgebra"/>:</br>
-			<c:out value="${query.relationalAlgebra}" escapeXml="false"/>
+			<c:out value="${query.queryData}" escapeXml="false"/>
 		</div>
 	</c:if>
 </body>
