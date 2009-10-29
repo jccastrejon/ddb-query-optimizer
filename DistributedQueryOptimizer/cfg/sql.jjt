@@ -418,6 +418,7 @@ ConditionData SQLAndExpression():
 ConditionData SQLUnaryLogicalExpression():
 {
 	ConditionData condition;
+	ConditionData returnValue;
 	ConditionOperator operator = null;
 }
 {
@@ -437,7 +438,13 @@ ConditionData SQLUnaryLogicalExpression():
 		)
 	)
 	{
-		return new OperationConditionData(operator, condition);
+		returnValue = condition;
+		
+		if(operator != null) {
+			returnValue = new OperationConditionData(operator, returnValue);
+		}
+		
+		return returnValue;
 	}
 }
 
