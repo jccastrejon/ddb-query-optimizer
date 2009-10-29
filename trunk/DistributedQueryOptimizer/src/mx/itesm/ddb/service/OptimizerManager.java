@@ -29,7 +29,7 @@ public class OptimizerManager {
 	Query returnValue;
 
 	returnValue = new Query(query);
-	this.updateRelationalAlgebra(returnValue);
+	this.parseQuery(returnValue);
 
 	return returnValue;
     }
@@ -42,7 +42,7 @@ public class OptimizerManager {
      * @throws ParseException
      *             If the SQL query cannot be converted to Relational Algebra.
      */
-    public void updateRelationalAlgebra(final Query query) throws ParseException {
+    public void parseQuery(final Query query) throws ParseException {
 	QueryData queryData;
 	String returnValue;
 	SqlParser parser;
