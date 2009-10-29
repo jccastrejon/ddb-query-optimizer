@@ -51,10 +51,9 @@ public class SqlParserTest extends TestCase {
 
 	// Try to parse each query in the file
 	while ((testQuery = testReader.readLine()) != null) {
-	    queryCount++;
-
 	    try {
 		query = optimizerManager.createQuery(testQuery);
+		queryCount++;
 		logger.info("Query #" + queryCount + ": " + query.getQueryData());
 	    } catch (ParseException e) {
 		correctQueries = false;
