@@ -44,13 +44,10 @@ public class OptimizerManager {
      */
     public void parseQuery(final Query query) throws ParseException {
 	QueryData queryData;
-	String returnValue;
 	SqlParser parser;
 
 	parser = new SqlParser(new StringReader(query.getSql()));
 	queryData = parser.QueryStatement();
-	returnValue = queryData.toString();
-
-	query.setRelationalAlgebra(returnValue);
+	query.setQueryData(queryData);
     }
 }
