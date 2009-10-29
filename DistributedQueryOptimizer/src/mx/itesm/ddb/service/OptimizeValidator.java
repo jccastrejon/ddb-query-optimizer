@@ -34,7 +34,7 @@ public class OptimizeValidator implements Validator {
 
 	// Try to get the Relation Algebra representation
 	try {
-	    optimizerManager.updateRelationalAlgebra(query);
+	    optimizerManager.parseQuery(query);
 	} catch (ParseException e) {
 	    errors.rejectValue("sql", "error.parseError", new Object[] { e.getMessage() }, null);
 	}

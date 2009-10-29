@@ -192,7 +192,7 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
 		    testQueries.append(testQuery).append("\n");
 		    query.setSql(testQuery);
 		    try {
-			optimizerManager.updateRelationalAlgebra(query);
+			optimizerManager.parseQuery(query);
 			relationalAlgebra = query.getRelationalAlgebra();
 		    } catch (ParseException e) {
 			relationalAlgebra = "Problems while parsing query [" + query.getSql() + "]";
