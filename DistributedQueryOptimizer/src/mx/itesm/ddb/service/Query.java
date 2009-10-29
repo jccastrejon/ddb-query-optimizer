@@ -1,5 +1,7 @@
 package mx.itesm.ddb.service;
 
+import mx.itesm.ddb.util.QueryData;
+
 /**
  * Holder class for a query SQL and Relational Agebra representation.
  * 
@@ -14,9 +16,9 @@ public class Query {
     private String sql;
 
     /**
-     * Relational Alegbra query.
+     * Parsed Query.
      */
-    private String relationalAlgebra;
+    private QueryData queryData;
 
     /**
      * Default constructor.
@@ -39,12 +41,12 @@ public class Query {
      * 
      * @param sql
      *            SQL Query.
-     * @param relationalAlgebra
-     *            Relational Algebra Query.
+     * @param queryData
+     *            Parsed Query.
      */
-    public Query(final String sql, final String relationalAlgebra) {
+    public Query(final String sql, final QueryData queryData) {
 	this.sql = sql;
-	this.relationalAlgebra = relationalAlgebra;
+	this.queryData = queryData;
     }
 
     /**
@@ -63,17 +65,17 @@ public class Query {
     }
 
     /**
-     * @return the relationalAlgebra
+     * @return the queryData
      */
-    public String getRelationalAlgebra() {
-	return relationalAlgebra;
+    public QueryData getQueryData() {
+	return queryData;
     }
 
     /**
-     * @param relationalAlgebra
-     *            the relationalAlgebra to set
+     * @param queryData
+     *            the queryData to set
      */
-    public void setRelationalAlgebra(String relationalAlgebra) {
-	this.relationalAlgebra = relationalAlgebra;
+    public void setQueryData(QueryData queryData) {
+	this.queryData = queryData;
     }
 }

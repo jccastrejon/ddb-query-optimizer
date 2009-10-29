@@ -164,7 +164,7 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
 	if (currentEvent.getSource() == executeQueryButton) {
 	    try {
 		query = optimizerManager.createQuery(queryText.getText());
-		relationalAlgebra = query.getRelationalAlgebra();
+		relationalAlgebra = query.getQueryData().toString();
 	    } catch (ParseException e) {
 		relationalAlgebra = "Problems while parsing query [" + queryText.getText() + "]";
 	    }
@@ -193,7 +193,7 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
 		    query.setSql(testQuery);
 		    try {
 			optimizerManager.parseQuery(query);
-			relationalAlgebra = query.getRelationalAlgebra();
+			relationalAlgebra = query.getQueryData().toString();
 		    } catch (ParseException e) {
 			relationalAlgebra = "Problems while parsing query [" + query.getSql() + "]";
 		    }
