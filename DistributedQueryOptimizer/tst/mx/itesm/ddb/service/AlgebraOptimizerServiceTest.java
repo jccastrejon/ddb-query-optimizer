@@ -27,5 +27,7 @@ public class AlgebraOptimizerServiceTest extends TestCase {
 	query = parserService
 		.createQuery("Select * from tabla, tabla2 where tabla.attr = tabla2.attr;");
 	algebraOptimizerService.buildOperatorTree(query, new File("img"));
+
+	assertNotNull(query.getOperatorTree());
     }
 }
