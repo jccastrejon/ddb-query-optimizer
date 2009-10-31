@@ -8,9 +8,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import mx.itesm.ddb.service.operatorTree.Node;
-import mx.itesm.ddb.service.operatorTree.OperatorTree;
-import mx.itesm.ddb.service.operatorTree.RelationalOperator;
+import mx.itesm.ddb.service.operator.Node;
+import mx.itesm.ddb.service.operator.OperatorTree;
+import mx.itesm.ddb.service.operator.RelationalOperator;
 import mx.itesm.ddb.util.ConditionData;
 import mx.itesm.ddb.util.ConditionOperator;
 import mx.itesm.ddb.util.ExpressionData;
