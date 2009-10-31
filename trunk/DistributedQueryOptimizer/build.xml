@@ -72,6 +72,7 @@
 			<formatter type="brief" usefile="false" />
 			<batchtest>
 				<fileset dir="${build.dir}">
+					<exclude name="**/*BaseTest.*"/>
 					<include name="**/*Test.*" />
 				</fileset>
 			</batchtest>
@@ -114,7 +115,7 @@
 			</fileset>
 		</war>
 		<delete dir="${web.dir}/WEB-INF/classes"/>
-		
+
 		<copy todir="${deploy.path}" preservelastmodified="true">
 			<fileset dir=".">
 				<include name="*.war" />
