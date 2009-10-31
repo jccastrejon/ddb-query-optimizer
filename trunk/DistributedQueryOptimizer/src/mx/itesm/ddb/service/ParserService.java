@@ -12,7 +12,7 @@ import mx.itesm.ddb.util.QueryData;
  * @author jccastrejon
  * 
  */
-public class OptimizerManager {
+public class ParserService {
 
     /**
      * Get the Query Object containing the Relational Algebra representation of
@@ -29,6 +29,7 @@ public class OptimizerManager {
 	Query returnValue;
 
 	returnValue = new Query(query);
+	returnValue.setId(System.currentTimeMillis());
 	this.parseQuery(returnValue);
 
 	return returnValue;

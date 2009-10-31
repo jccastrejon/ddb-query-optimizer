@@ -1,5 +1,6 @@
 package mx.itesm.ddb.service;
 
+import mx.itesm.ddb.service.operatorTree.OperatorTree;
 import mx.itesm.ddb.util.QueryData;
 
 /**
@@ -11,6 +12,11 @@ import mx.itesm.ddb.util.QueryData;
 public class Query {
 
     /**
+     * 
+     */
+    private long id;
+
+    /**
      * SQL query.
      */
     private String sql;
@@ -19,6 +25,16 @@ public class Query {
      * Parsed Query.
      */
     private QueryData queryData;
+
+    /**
+     * 
+     */
+    private int intermediateOperatorTrees;
+
+    /**
+     * 
+     */
+    private OperatorTree operatorTree;
 
     /**
      * Default constructor.
@@ -50,6 +66,21 @@ public class Query {
     }
 
     /**
+     * @return the id
+     */
+    public long getId() {
+	return id;
+    }
+
+    /**
+     * @param id
+     *            the id to set
+     */
+    public void setId(long id) {
+	this.id = id;
+    }
+
+    /**
      * @return the sql
      */
     public String getSql() {
@@ -77,5 +108,35 @@ public class Query {
      */
     public void setQueryData(QueryData queryData) {
 	this.queryData = queryData;
+    }
+
+    /**
+     * @return the intermediateOperatorTrees
+     */
+    public int getIntermediateOperatorTrees() {
+	return intermediateOperatorTrees;
+    }
+
+    /**
+     * @param intermediateOperatorTrees
+     *            the intermediateOperatorTrees to set
+     */
+    public void setIntermediateOperatorTrees(int intermediateOperatorTrees) {
+	this.intermediateOperatorTrees = intermediateOperatorTrees;
+    }
+
+    /**
+     * @return the operatorTree
+     */
+    public OperatorTree getOperatorTree() {
+	return operatorTree;
+    }
+
+    /**
+     * @param operatorTree
+     *            the operatorTree to set
+     */
+    public void setOperatorTree(OperatorTree operatorTree) {
+	this.operatorTree = operatorTree;
     }
 }

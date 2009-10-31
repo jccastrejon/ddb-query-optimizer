@@ -1,9 +1,15 @@
 package mx.itesm.ddb.web;
 
+import java.io.File;
+import java.io.IOException;
+
 import javax.servlet.ServletException;
 
-import mx.itesm.ddb.service.OptimizerManager;
+import mx.itesm.ddb.service.ParserService;
+import mx.itesm.ddb.service.Query;
+import mx.itesm.ddb.service.AlgebraOptimizerService;
 
+import org.apache.log4j.Logger;
 import org.springframework.web.servlet.mvc.SimpleFormController;
 
 /**
@@ -15,29 +21,68 @@ import org.springframework.web.servlet.mvc.SimpleFormController;
 public class OptimizeFormController extends SimpleFormController {
 
     /**
-     * Query Optimizer Manager.
+     * Class logger.
      */
-    private OptimizerManager optimizerManager;
+    Logger logger = Logger.getLogger(OptimizeFormController.class);
+
+    /**
+     * Parser service.
+     */
+    private ParserService parserService;
+
+    /**
+     * Relational Algebra Optimizer.
+     */
+    AlgebraOptimizerService algebraOptimizerService;
 
     @Override
     public void doSubmitAction(Object command) throws ServletException {
+	Query query;
+	File queryDir;
 
-	// TODO: Algebra manipulation
-	//Query query = (Query) command;
+	query = (Query) command;
+	try {
+	    // Make sure every query has an Id
+	    if (query.getId() == 0L) {
+		query.setId(System.currentTimeMillis());
+	    }
+
+	    queryDir = new File(this.getServletContext().getRealPath("/img/" + query.getId()));
+	    queryDir.mkdirs();
+
+	    algebraOptimizerService.buildOperatorTree(query, queryDir);
+	} catch (IOException e) {
+	    logger.error("Error building operatorTree for: " + query.getSql(), e);
+	}
     }
 
     /**
-     * @return the optimizerManager
+     * @return the parserService
      */
-    public OptimizerManager getOptimizerManager() {
-	return optimizerManager;
+    public ParserService getParserService() {
+	return parserService;
     }
 
     /**
-     * @param optimizerManager
-     *            the optimizerManager to set
+     * @param parserService
+     *            the parserService to set
      */
-    public void setOptimizerManager(OptimizerManager optimizerManager) {
-	this.optimizerManager = optimizerManager;
+    public void setParserService(ParserService parserService) {
+	this.parserService = parserService;
+    }
+
+    /**
+     * @return the algebraOptimizerService
+     */
+    public AlgebraOptimizerService getAlgebraOptimizerService() {
+	return algebraOptimizerService;
+    }
+
+    /**
+     * @param algebraOptimizerService
+     *            the algebraOptimizerService to set
+     */
+    public void setAlgebraOptimizerService(AlgebraOptimizerService algebraOptimizerService) {
+	this.algebraOptimizerService = algebraOptimizerService;
     }
 }

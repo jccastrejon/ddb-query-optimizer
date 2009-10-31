@@ -17,7 +17,7 @@ public class OptimizeValidator implements Validator {
     /**
      * Query Optimizer Manager.
      */
-    private OptimizerManager optimizerManager;
+    private ParserService parserService;
 
     @Override
     public boolean supports(Class clazz) {
@@ -34,24 +34,24 @@ public class OptimizeValidator implements Validator {
 
 	// Try to get the Relation Algebra representation
 	try {
-	    optimizerManager.parseQuery(query);
+	    parserService.parseQuery(query);
 	} catch (ParseException e) {
 	    errors.rejectValue("sql", "error.parseError", new Object[] { e.getMessage() }, null);
 	}
     }
 
     /**
-     * @return the optimizerManager
+     * @return the parserService
      */
-    public OptimizerManager getOptimizerManager() {
-	return optimizerManager;
+    public ParserService getParserService() {
+	return parserService;
     }
 
     /**
-     * @param optimizerManager
-     *            the optimizerManager to set
+     * @param parserService
+     *            the parserService to set
      */
-    public void setOptimizerManager(OptimizerManager optimizerManager) {
-	this.optimizerManager = optimizerManager;
+    public void setParserService(ParserService parserService) {
+	this.parserService = parserService;
     }
 }
