@@ -64,6 +64,7 @@ public class AlgebraOptimizerService {
 	rootNode = this.getRootNode(query.getQueryData().getAttributes());
 	leafNodes = this.getLeafNodes(query.getQueryData().getRelations());
 	this.getConditionNodes(query.getQueryData().getConditions(), leafNodes);
+
 	operatorTree = this.orderNodes(rootNode, leafNodes);
 	currentOperatorTreeImage = new File(imageDir.getAbsolutePath() + "/" + query.getId() + "-"
 		+ (intermediateOperatorTreeCount++) + ".png");
@@ -175,30 +176,32 @@ public class AlgebraOptimizerService {
     private void getConditionNodes(final ConditionData conditionData, final List<Node> leafNodes) {
 	OperationConditionData operationConditionData;
 
-	// [table.attribute = table2.attribute]
-	if (conditionData instanceof ExpressionConditionData) {
-	    this.addConditionNodeFromExpressionConditionData(
-		    (ExpressionConditionData) conditionData, leafNodes);
-	}
+	if (conditionData != null) {
+	    // [table.attribute = table2.attribute]
+	    if (conditionData instanceof ExpressionConditionData) {
+		this.addConditionNodeFromExpressionConditionData(
+			(ExpressionConditionData) conditionData, leafNodes);
+	    }
 
-	// [table.attribute = table2.attribute] and
-	// [table.attribute2 = table3.attribute2]
-	else if (conditionData instanceof OperationConditionData) {
-	    operationConditionData = (OperationConditionData) conditionData;
+	    // [table.attribute = table2.attribute] and
+	    // [table.attribute2 = table3.attribute2]
+	    else if (conditionData instanceof OperationConditionData) {
+		operationConditionData = (OperationConditionData) conditionData;
 
-	    // TODO: Support other operators
-	    if (operationConditionData.getOperator() == ConditionOperator.BinaryOperator.AND_OPERATOR) {
-		for (ConditionData innerConditionData : operationConditionData.getConditions()) {
-		    if (innerConditionData instanceof ExpressionConditionData) {
-			this.addConditionNodeFromExpressionConditionData(
-				(ExpressionConditionData) innerConditionData, leafNodes);
+		// TODO: Support other operators
+		if (operationConditionData.getOperator() == ConditionOperator.BinaryOperator.AND_OPERATOR) {
+		    for (ConditionData innerConditionData : operationConditionData.getConditions()) {
+			if (innerConditionData instanceof ExpressionConditionData) {
+			    this.addConditionNodeFromExpressionConditionData(
+				    (ExpressionConditionData) innerConditionData, leafNodes);
+			}
 		    }
+		} else {
+		    throw new RuntimeException("Unsupported query");
 		}
 	    } else {
 		throw new RuntimeException("Unsupported query");
 	    }
-	} else {
-	    throw new RuntimeException("Unsupported query");
 	}
     }
 
