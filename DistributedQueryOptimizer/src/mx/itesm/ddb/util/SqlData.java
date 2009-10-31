@@ -1,12 +1,11 @@
 package mx.itesm.ddb.util;
 
-
 /**
- * SQL Expression.
+ * SQL Query data.
  * 
  * @author jccastrejon
  * 
  */
-public interface ExpressionData extends SqlData {
+public interface SqlData {
 
 }

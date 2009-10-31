@@ -20,7 +20,7 @@ import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 
 import mx.itesm.ddb.parser.ParseException;
-import mx.itesm.ddb.service.OptimizerManager;
+import mx.itesm.ddb.service.ParserService;
 import mx.itesm.ddb.service.Query;
 
 /**
@@ -89,7 +89,7 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
     /**
      * Query Optimizer Manager.
      */
-    OptimizerManager optimizerManager;
+    ParserService optimizerManager;
 
     /**
      * Current action event (execute - test)
@@ -106,7 +106,7 @@ public class DistributedQueryOptimizerUI extends JFrame implements ActionListene
 	resultScrollPane = new JScrollPane(resultText);
 	executeQueryButton = new JButton("Execute");
 	testQueriesButton = new JButton("Tests");
-	optimizerManager = new OptimizerManager();
+	optimizerManager = new ParserService();
 
 	resultText.setContentType("text/html");
 	resultText.setPreferredSize(new Dimension(900, 500));

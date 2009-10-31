@@ -6,5 +6,5 @@ package mx.itesm.ddb.util;
  * @author jccastrejon
  * 
  */
-public interface ConditionData {
+public interface ConditionData extends SqlData {
 }
