@@ -14,7 +14,11 @@
             http://www.springframework.org/schema/security/spring-security-2.0.4.xsd">
 
 	<!-- Service -->
-	<bean id="optimizerManager" class="mx.itesm.ddb.service.OptimizerManager" />
+	<bean id="parserService" class="mx.itesm.ddb.service.ParserService" />
+	<bean id="algebraOptimizerService" class="mx.itesm.ddb.service.AlgebraOptimizerService">
+		<property name="databaseDictionaryService" ref="databaseDictionaryService" />
+	</bean>
+	<bean id="databaseDictionaryService" class="mx.itesm.ddb.service.DatabaseDictionaryService" />
 
 	<!-- General -->
 	<bean id="propertyConfigurer"
@@ -24,7 +28,7 @@
 				<value>classpath:jdbc.properties</value>
 			</list>
 		</property>
-	</bean>
+	</bean>
 	<!-- Security -->
 
 	<security:http auto-config="true">
