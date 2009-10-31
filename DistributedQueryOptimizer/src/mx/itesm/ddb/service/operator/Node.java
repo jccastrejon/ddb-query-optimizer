@@ -179,9 +179,12 @@ public class Node {
 	    returnValue.append(this.relationalOperator);
 	}
 
-	for (SqlData sqlData : this.sqlData) {
-	    returnValue.append(" " + sqlData + " ");
+	if (this.sqlData != null) {
+	    for (SqlData sqlData : this.sqlData) {
+		returnValue.append(" " + sqlData + " ");
+	    }
 	}
+
 	returnValue.append("\"");
 
 	return returnValue.toString();
