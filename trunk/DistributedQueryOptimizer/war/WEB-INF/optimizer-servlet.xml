@@ -11,12 +11,13 @@
 		<property name="commandClass" value="mx.itesm.ddb.service.Query" />
 		<property name="validator">
 			<bean class="mx.itesm.ddb.service.OptimizeValidator">
-				<property name="optimizerManager" ref="optimizerManager" />
+				<property name="parserService" ref="parserService" />
 			</bean>
 		</property>
 		<property name="formView" value="optimize" />
 		<property name="successView" value="optimize" />
-		<property name="optimizerManager" ref="optimizerManager" />
+		<property name="parserService" ref="parserService" />
+		<property name="algebraOptimizerService" ref="algebraOptimizerService"/>
 	</bean>
 
 
