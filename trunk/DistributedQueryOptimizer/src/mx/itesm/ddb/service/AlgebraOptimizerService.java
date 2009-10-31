@@ -67,6 +67,7 @@ public class AlgebraOptimizerService {
 	operatorTree = this.orderNodes(rootNode, leafNodes);
 	currentOperatorTreeImage = new File(imageDir.getAbsolutePath() + "/" + query.getId() + "-"
 		+ (intermediateOperatorTreeCount++) + ".png");
+	currentOperatorTreeImage.deleteOnExit();
 	this.exportOperatorTreeToPNG(operatorTree, currentOperatorTreeImage);
 
 	query.setOperatorTree(operatorTree);
