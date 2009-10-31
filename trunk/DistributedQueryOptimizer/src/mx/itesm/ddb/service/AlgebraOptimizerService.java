@@ -68,7 +68,7 @@ public class AlgebraOptimizerService {
 	operatorTree = this.orderNodes(rootNode, leafNodes);
 	currentOperatorTreeImage = new File(imageDir.getAbsolutePath() + "/" + query.getId() + "-"
 		+ (intermediateOperatorTreeCount++) + ".png");
-	currentOperatorTreeImage.deleteOnExit();
+	// currentOperatorTreeImage.deleteOnExit();
 	this.exportOperatorTreeToPNG(operatorTree, currentOperatorTreeImage);
 
 	query.setOperatorTree(operatorTree);
@@ -311,7 +311,7 @@ public class AlgebraOptimizerService {
 	returnValue = new OperatorTree(rootNode);
 	if ((leafNodes != null) && (!leafNodes.isEmpty())) {
 	    if (leafNodes.size() > 1) {
-		unionNode = new Node(RelationalOperator.UNION);
+		unionNode = new Node(RelationalOperator.PRODUCT);
 		unionNode.addChildren(leafNodes);
 		rootNode.addChild(unionNode);
 	    } else {

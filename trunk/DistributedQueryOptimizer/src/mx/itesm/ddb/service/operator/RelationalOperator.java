@@ -7,7 +7,7 @@ package mx.itesm.ddb.service.operator;
  * 
  */
 public enum RelationalOperator {
-    SELECT("\u03C3"), JOIN("\u22C8"), UNION("\u22C3"), PROJECTION("\uu03A0");
+    SELECT("\u03C3"), JOIN("\u22C8"), UNION("\u22C3"), PROJECTION("\uu03A0"), PRODUCT("\u00D7");
 
     /**
      * Operator description.
