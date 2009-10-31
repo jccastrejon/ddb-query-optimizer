@@ -1,12 +1,11 @@
-package mx.itesm.ddb.parser;
+package mx.itesm.ddb.service;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
 import junit.framework.TestCase;
-import mx.itesm.ddb.service.OptimizerManager;
-import mx.itesm.ddb.service.Query;
+import mx.itesm.ddb.parser.ParseException;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -18,12 +17,12 @@ import org.apache.log4j.helpers.Loader;
  * @author jccastrejon
  * 
  */
-public class SqlParserTest extends TestCase {
+public class ParserServiceTest extends TestCase {
 
     /**
      * Class logger;
      */
-    Logger logger = Logger.getLogger(SqlParserTest.class.getName());
+    Logger logger = Logger.getLogger(ParserServiceTest.class.getName());
 
     @Override
     public void setUp() {
@@ -42,7 +41,7 @@ public class SqlParserTest extends TestCase {
 	String testQuery;
 	boolean correctQueries;
 	BufferedReader testReader;
-	OptimizerManager optimizerManager = new OptimizerManager();
+	ParserService parserService = new ParserService();
 
 	// Load test file
 	testReader = new BufferedReader(new FileReader("./sql/testQueries.sql"));
@@ -52,7 +51,7 @@ public class SqlParserTest extends TestCase {
 	// Try to parse each query in the file
 	while ((testQuery = testReader.readLine()) != null) {
 	    try {
-		query = optimizerManager.createQuery(testQuery);
+		query = parserService.createQuery(testQuery);
 		queryCount++;
 		logger.info("Query #" + queryCount + ": " + query.getQueryData());
 	    } catch (ParseException e) {
