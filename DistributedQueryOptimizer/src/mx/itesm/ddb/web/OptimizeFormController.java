@@ -49,6 +49,7 @@ public class OptimizeFormController extends SimpleFormController {
 
 	    queryDir = new File(this.getServletContext().getRealPath("/img/" + query.getId()));
 	    queryDir.mkdirs();
+	    queryDir.deleteOnExit();
 
 	    algebraOptimizerService.buildOperatorTree(query, queryDir);
 	} catch (IOException e) {
