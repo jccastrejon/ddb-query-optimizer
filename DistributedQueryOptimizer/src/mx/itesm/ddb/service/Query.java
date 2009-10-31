@@ -1,6 +1,6 @@
 package mx.itesm.ddb.service;
 
-import mx.itesm.ddb.service.operatorTree.OperatorTree;
+import mx.itesm.ddb.service.operator.OperatorTree;
 import mx.itesm.ddb.util.QueryData;
 
 /**
