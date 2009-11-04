@@ -322,8 +322,29 @@ ExpressionData SQLMultiplicativeExpression():
 				}
 				| "="							//TODO: Is this correct here?:.
 				{
-					operator = ExpressionOperator.ArithmeticOperator.EQUALS_OPERATOR;
+					operator = ExpressionOperator.ArithmeticOperator.EQUALS_TO_OPERATOR;
 				}
+				| "!="
+				{
+					operator = ExpressionOperator.ArithmeticOperator.DIFFERENT_THAN_OPERATOR;
+				}
+				| ">"
+				{
+					operator = ExpressionOperator.ArithmeticOperator.GREATER_THAN_OPERATOR;
+				}
+				| "<"
+				{
+					operator = ExpressionOperator.ArithmeticOperator.LESS_THAN_OPERATOR;
+				}
+				| ">="
+				{
+					operator = ExpressionOperator.ArithmeticOperator.GREATER_THAN_OR_EQUALS_OPERATOR;
+				}
+				| "<="
+				{
+					operator = ExpressionOperator.ArithmeticOperator.LESS_THAN_OR_EQUALS_OPERATOR;
+				}
+				
 			)
 			secondExpression = SQLUnaryExpression()
 			{
