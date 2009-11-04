@@ -12,7 +12,6 @@
 	
 	<div id="sql">
 		<h3><fmt:message key="optimize.sqlQuery"/></h3>
-		<br/>
 		<form:form method="post" commandName="query">
 			<form:hidden path="id"/>
 			<form:errors path="sql" cssClass="error"/><br/>
