@@ -47,21 +47,31 @@ public interface SqlParserConstants {
   /** RegularExpression Id. */
   int K_WHERE = 23;
   /** RegularExpression Id. */
-  int S_NUMBER = 24;
+  int K_COUNT = 24;
   /** RegularExpression Id. */
-  int FLOAT = 25;
+  int K_MAX = 25;
   /** RegularExpression Id. */
-  int INTEGER = 26;
+  int K_MIN = 26;
   /** RegularExpression Id. */
-  int DIGIT = 27;
+  int K_AVG = 27;
   /** RegularExpression Id. */
-  int S_IDENTIFIER = 28;
+  int K_SUM = 28;
   /** RegularExpression Id. */
-  int LETTER = 29;
+  int S_NUMBER = 29;
   /** RegularExpression Id. */
-  int SPECIAL_CHARS = 30;
+  int FLOAT = 30;
   /** RegularExpression Id. */
-  int S_CHAR_LITERAL = 31;
+  int INTEGER = 31;
+  /** RegularExpression Id. */
+  int DIGIT = 32;
+  /** RegularExpression Id. */
+  int S_IDENTIFIER = 33;
+  /** RegularExpression Id. */
+  int LETTER = 34;
+  /** RegularExpression Id. */
+  int SPECIAL_CHARS = 35;
+  /** RegularExpression Id. */
+  int S_CHAR_LITERAL = 36;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -92,6 +102,11 @@ public interface SqlParserConstants {
     "\"OR\"",
     "\"SELECT\"",
     "\"WHERE\"",
+    "\"COUNT\"",
+    "\"MAX\"",
+    "\"MIN\"",
+    "\"AVG\"",
+    "\"SUM\"",
     "<S_NUMBER>",
     "<FLOAT>",
     "<INTEGER>",
@@ -103,13 +118,13 @@ public interface SqlParserConstants {
     "\";\"",
     "\"*\"",
     "\",\"",
+    "\"(\"",
     "\".\"",
+    "\")\"",
     "\"+\"",
     "\"-\"",
     "\"/\"",
     "\"=\"",
-    "\"(\"",
-    "\")\"",
   };
 
 }

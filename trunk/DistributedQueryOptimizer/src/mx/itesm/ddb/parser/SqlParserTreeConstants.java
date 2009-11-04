@@ -6,31 +6,33 @@ public interface SqlParserTreeConstants
   public int JJTQUERYSTATEMENT = 0;
   public int JJTQUERY = 1;
   public int JJTSELECTLIST = 2;
-  public int JJTSELECTITEM = 3;
-  public int JJTSQLSIMPLEEXPRESSION = 4;
-  public int JJTSQLMULTIPLICATIVEEXPRESSION = 5;
-  public int JJTSQLUNARYEXPRESSION = 6;
-  public int JJTSQLPRIMARYEXPRESSION = 7;
-  public int JJTSQLEXPRESSION = 8;
-  public int JJTSQLANDEXPRESSION = 9;
-  public int JJTSQLUNARYLOGICALEXPRESSION = 10;
-  public int JJTEXISTSCLAUSE = 11;
-  public int JJTSQLRELATIONALEXPRESSION = 12;
-  public int JJTSQLEXPRESSIONLIST = 13;
-  public int JJTSQLRELATIONALOPERATOREXPRESSION = 14;
-  public int JJTSQLINCLAUSE = 15;
-  public int JJTSQLBETWEENCLAUSE = 16;
-  public int JJTSQLLIKECLAUSE = 17;
-  public int JJTISNULLCLAUSE = 18;
-  public int JJTFROMCLAUSE = 19;
-  public int JJTQUERYTABLEEXPRESSION = 20;
-  public int JJTWHERECLAUSE = 21;
+  public int JJTSQLAGGREGATEFUNCTION = 3;
+  public int JJTSELECTITEM = 4;
+  public int JJTSQLSIMPLEEXPRESSION = 5;
+  public int JJTSQLMULTIPLICATIVEEXPRESSION = 6;
+  public int JJTSQLUNARYEXPRESSION = 7;
+  public int JJTSQLPRIMARYEXPRESSION = 8;
+  public int JJTSQLEXPRESSION = 9;
+  public int JJTSQLANDEXPRESSION = 10;
+  public int JJTSQLUNARYLOGICALEXPRESSION = 11;
+  public int JJTEXISTSCLAUSE = 12;
+  public int JJTSQLRELATIONALEXPRESSION = 13;
+  public int JJTSQLEXPRESSIONLIST = 14;
+  public int JJTSQLRELATIONALOPERATOREXPRESSION = 15;
+  public int JJTSQLINCLAUSE = 16;
+  public int JJTSQLBETWEENCLAUSE = 17;
+  public int JJTSQLLIKECLAUSE = 18;
+  public int JJTISNULLCLAUSE = 19;
+  public int JJTFROMCLAUSE = 20;
+  public int JJTQUERYTABLEEXPRESSION = 21;
+  public int JJTWHERECLAUSE = 22;
 
 
   public String[] jjtNodeName = {
     "QueryStatement",
     "Query",
     "SelectList",
+    "SQLAggregateFunction",
     "SelectItem",
     "SQLSimpleExpression",
     "SQLMultiplicativeExpression",
@@ -52,4 +54,4 @@ public interface SqlParserTreeConstants
     "WhereClause",
   };
 }
-/* JavaCC - OriginalChecksum=922a410bc212138748274b7a11417bb7 (do not edit this line) */
+/* JavaCC - OriginalChecksum=8e4061b146cd66368afcec57f42204b0 (do not edit this line) */

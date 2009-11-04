@@ -78,6 +78,11 @@ TOKEN :
 |   <K_OR:"OR">
 |   <K_SELECT:"SELECT">
 |   <K_WHERE:"WHERE">
+|	<K_COUNT:"COUNT">
+|	<K_MAX:"MAX">
+|	<K_MIN:"MIN">
+|	<K_AVG:"AVG">
+|	<K_SUM:"SUM">
 }
 
 /* Numeric constants */
@@ -227,7 +232,11 @@ List<ExpressionData> SelectList():
 	    "*"
 	    {
 	    	returnValue.add(new SimpleExpressionData("*"));
-	    } 
+	    }
+	    | LOOKAHEAD(2) expression = SQLAggregateFunction()
+	    {
+	    	returnValue.add(expression);
+	    }
 	    | expression = SelectItem()
 	    {
 	    	returnValue.add(expression);
@@ -263,6 +272,77 @@ List<ExpressionData> SelectList():
             throw (ParseException)jjte000;
           }
           throw (Error)jjte000;
+        } finally {
+          if (jjtc000) {
+            jjtree.closeNodeScope(jjtn000, true);
+            jjtn000.jjtSetLastToken(getToken(0));
+          }
+        }
+/*@egen*/
+}
+
+ExpressionData SQLAggregateFunction():
+{/*@bgen(jjtree) SQLAggregateFunction */
+        ASTSQLAggregateFunction jjtn000 = new ASTSQLAggregateFunction(this, JJTSQLAGGREGATEFUNCTION);
+        boolean jjtc000 = true;
+        jjtree.openNodeScope(jjtn000);
+        jjtn000.jjtSetFirstToken(getToken(1));
+/*@egen*/
+	ExpressionData returnValue;
+	ExpressionData expression;
+	Token token = null;
+	Token attributeToken;
+	String function = null;
+}
+{/*@bgen(jjtree) SQLAggregateFunction */
+        try {
+/*@egen*/
+	(
+		"COUNT" "("
+		{
+			function = "COUNT(";
+		}
+		| "MAX" "("
+		{
+			function = "MAX(";
+		}
+		| "MIN" "("
+		{
+			function = "MIN(";
+		}
+		| "AVG" "("
+		{
+			function = "AVG(";
+		}
+		| "SUM" "("
+		{
+			function = "SUM(";
+		}
+	)
+	
+	(
+		LOOKAHEAD(3) token = <S_IDENTIFIER> "." "*" ")" // table.*
+		{
+			returnValue = new SimpleExpressionData(function + token.image + ".*" + ")");
+		}
+		| LOOKAHEAD(2) token = <S_IDENTIFIER> "." attributeToken = <S_IDENTIFIER> ")"
+		{
+			returnValue = new SimpleExpressionData(function + token.image + "." + attributeToken.image + ")");
+		}
+		| token = <S_IDENTIFIER> ")"
+		{
+			returnValue = new SimpleExpressionData(function + token.image + ")");
+		}
+	)/*@bgen(jjtree)*/
+        {
+          jjtree.closeNodeScope(jjtn000, true);
+          jjtc000 = false;
+          jjtn000.jjtSetLastToken(getToken(0));
+        }
+/*@egen*/
+	{
+		return returnValue;
+	}/*@bgen(jjtree)*/
         } finally {
           if (jjtc000) {
             jjtree.closeNodeScope(jjtn000, true);
