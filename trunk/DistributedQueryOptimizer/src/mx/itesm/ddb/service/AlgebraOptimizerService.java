@@ -153,7 +153,7 @@ public class AlgebraOptimizerService {
 	if (imageDir != null) {
 	    currentOperatorTreeImage = new File(imageDir.getAbsolutePath() + "/" + queryId + "-"
 		    + intermediateOperatorTreeCount + ".png");
-	    //currentOperatorTreeImage.deleteOnExit();
+	    // currentOperatorTreeImage.deleteOnExit();
 	    this.exportOperatorTreeToPNG(operatorTree, currentOperatorTreeImage);
 	}
     }
@@ -331,52 +331,52 @@ public class AlgebraOptimizerService {
 	if (expressionData instanceof OperationExpressionData) {
 	    expressionOperator = ((OperationExpressionData) expressionData).getOperator();
 
-	    // TODO: Support other operators
-	    if (expressionOperator == ExpressionOperator.ArithmeticOperator.EQUALS_OPERATOR) {
-		expressions = ((OperationExpressionData) expressionData).getExpressions();
+	    expressions = ((OperationExpressionData) expressionData).getExpressions();
 
-		tables = this.getRequiredTables(expressions, leafNodes);
+	    tables = this.getRequiredTables(expressions, leafNodes);
 
-		if (tables.size() > 1) {
-		    relationalOperator = RelationalOperator.JOIN;
-		} else {
-		    relationalOperator = RelationalOperator.SELECT;
-		}
+	    if (tables.size() > 1) {
+		relationalOperator = RelationalOperator.JOIN;
+	    } else {
+		relationalOperator = RelationalOperator.SELECT;
+	    }
 
-		// Tables involved in the condition
-		newNodeChildren = new ArrayList<Node>();
-		for (String table : tables) {
-		    nodeSearch: for (Node leafNode : leafNodes) {
-			for (SqlData sqlData : leafNode.getSqlData()) {
-			    if (sqlData.toString().contains(table)) {
-				newNodeChildren.add(leafNode);
-				break nodeSearch;
-			    }
+	    // Tables involved in the condition
+	    newNodeChildren = new ArrayList<Node>();
+	    for (String table : tables) {
+		nodeSearch: for (Node leafNode : leafNodes) {
+		    for (SqlData sqlData : leafNode.getSqlData()) {
+			if (sqlData.toString().contains(table)) {
+			    newNodeChildren.add(leafNode);
+			    break nodeSearch;
 			}
 		    }
 		}
-
-		// Differentiate between simple and subquery condition data
-		nodeData = new ArrayList<SqlData>(expressions.size());
-		for (ExpressionData expression : expressions) {
-		    if (expression instanceof SimpleExpressionData) {
-			nodeData.add(expression);
-		    } else if (expression instanceof QueryExpressionData) {
-			operatorTree = this.buildOperatorTree(((QueryExpressionData) expression)
-				.getQueryData());
-			newNodeChildren.add(operatorTree.getRootNode());
-			relationalOperator = RelationalOperator.JOIN;
-		    }
-		}
-
-		newNode = new Node(nodeData.toArray(new SqlData[nodeData.size()]),
-			relationalOperator);
-		newNode.addChildren(newNodeChildren);
-		leafNodes.removeAll(newNodeChildren);
-		leafNodes.add(newNode);
-	    } else {
-		throw new RuntimeException("Unsupported query");
 	    }
+
+	    // Differentiate between simple and subquery condition data
+	    nodeData = new ArrayList<SqlData>(expressions.size());
+	    for (ExpressionData expression : expressions) {
+		if (expression instanceof SimpleExpressionData) {
+		    nodeData.add(expression);
+		    nodeData.add(new SimpleExpressionData(expressionOperator.toString()));
+		} else if (expression instanceof QueryExpressionData) {
+		    operatorTree = this.buildOperatorTree(((QueryExpressionData) expression)
+			    .getQueryData());
+		    newNodeChildren.add(operatorTree.getRootNode());
+		    relationalOperator = RelationalOperator.JOIN;
+		}
+	    }
+
+	    // Remove last operator
+	    if (nodeData.size() > 1) {
+		nodeData.remove(nodeData.size() - 1);
+	    }
+
+	    newNode = new Node(nodeData.toArray(new SqlData[nodeData.size()]), relationalOperator);
+	    newNode.addChildren(newNodeChildren);
+	    leafNodes.removeAll(newNodeChildren);
+	    leafNodes.add(newNode);
 	} else {
 	    throw new RuntimeException("Unsupported query");
 	}

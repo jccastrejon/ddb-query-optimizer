@@ -14,8 +14,9 @@ public interface ExpressionOperator {
      * 
      */
     public enum ArithmeticOperator implements ExpressionOperator {
-	ADD_OPERATOR("+"), SUBSTRACT_OPERATOR("-"), MULTIPLY_OPERATOR("*"), DIVIDE_OPERATOR("/"), EQUALS_OPERATOR(
-		"=");
+	ADD_OPERATOR("+"), SUBSTRACT_OPERATOR("-"), MULTIPLY_OPERATOR("*"), DIVIDE_OPERATOR("/"), EQUALS_TO_OPERATOR(
+		"="), DIFFERENT_THAN_OPERATOR("!="), GREATER_THAN_OPERATOR(">"), LESS_THAN_OPERATOR(
+		"<"), GREATER_THAN_OR_EQUALS_OPERATOR(">="), LESS_THAN_OR_EQUALS_OPERATOR("<=");
 
 	/**
 	 * Operator description.
