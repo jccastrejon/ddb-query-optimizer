@@ -12,4 +12,4 @@ SELECT * FROM tabla WHERE atributo2 in (select * from tabla);
 select * from tabla1, tabla2 where tabla1.atributo = tabla2.atributo;
 select tabla.atributo from tabla;
 select tabla.atributo from tabla1, tabla2 where tabla1.atributo = tabla2.atributo;
-select tabla.atributo from tabla1, tabla2 where tabla1.atributo = (select atributo from tabla2);
+select tabla1.atributo from tabla1, tabla2 where tabla1.atributo = (select atributo from tabla3);
