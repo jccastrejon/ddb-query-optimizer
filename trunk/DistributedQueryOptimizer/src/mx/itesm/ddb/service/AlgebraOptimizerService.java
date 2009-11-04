@@ -15,12 +15,15 @@ import mx.itesm.ddb.util.ConditionData;
 import mx.itesm.ddb.util.ConditionOperator;
 import mx.itesm.ddb.util.ExpressionData;
 import mx.itesm.ddb.util.ExpressionOperator;
+import mx.itesm.ddb.util.QueryData;
 import mx.itesm.ddb.util.RelationData;
 import mx.itesm.ddb.util.SqlData;
 import mx.itesm.ddb.util.impl.ExpressionConditionData;
 import mx.itesm.ddb.util.impl.OperationConditionData;
 import mx.itesm.ddb.util.impl.OperationExpressionData;
+import mx.itesm.ddb.util.impl.QueryRelationData;
 import mx.itesm.ddb.util.impl.SimpleExpressionData;
+import mx.itesm.ddb.util.impl.SimpleRelationData;
 
 import org.apache.log4j.Logger;
 
@@ -43,35 +46,115 @@ public class AlgebraOptimizerService {
     private DatabaseDictionaryService databaseDictionaryService;
 
     /**
-     * Build the Optimal Operator Tree from the given SQL query.
+     * Build the Optimal Operator Tree from the given SQL query and save it in
+     * the query's operatorTree property.
+     * 
+     * @param query
+     *            SQL Query.
+     * @throws IOException
+     *             If an I/O error occurs.
+     */
+    public void buildOperatorTree(final Query query) throws IOException {
+	OperatorTree operatorTree;
+
+	operatorTree = this.buildOperatorTree(query.getQueryData());
+	query.setOperatorTree(operatorTree);
+    }
+
+    /**
+     * Build the Optimal Operator Tree from the given SQL query and save it in
+     * the query's operatorTree property. The intermediate non-optimal operator
+     * trees are saved in a directory with the Query Id as name, in the
+     * specified Image Directory.
      * 
      * @param query
      *            SQL Query.
      * @param imageDir
      *            Directory where to save the temporary operator trees.
      * @throws IOException
-     *             In an I/O error occurs.
+     *             If an I/O error occurs.
      */
     public void buildOperatorTree(final Query query, final File imageDir) throws IOException {
 	OperatorTree operatorTree;
+
+	operatorTree = this.buildOperatorTree(query.getQueryData(), query.getId(), imageDir);
+	query.setOperatorTree(operatorTree);
+    }
+
+    /**
+     * Build the Optimal Operator Tree from the given SQL QueryData.
+     * 
+     * @param queryData
+     *            SQL QueryData.
+     * @return Optimal Operator Tree.
+     * @throws IOException
+     *             If an I/O error occurs.
+     */
+    public OperatorTree buildOperatorTree(final QueryData queryData) throws IOException {
+	return this.buildOperatorTree(queryData, 0L, null);
+    }
+
+    /**
+     * Build the Optimal Operator Tree from the given SQL query and save it in
+     * the query's operatorTree property. The intermediate non-optimal operator
+     * trees are saved in a directory with the Query Id as name, in the
+     * specified Image Directory.
+     * 
+     * @param query
+     *            SQL Query.
+     * @param queryId
+     *            Query Id.
+     * @param imageDir
+     *            Directory where to save the temporary operator trees.
+     * @throws IOException
+     *             If an I/O error occurs.
+     */
+    protected OperatorTree buildOperatorTree(final QueryData queryData, final long queryId,
+	    final File imageDir) throws IOException {
+	OperatorTree returnValue;
 	Node rootNode;
 	List<Node> leafNodes;
-	File currentOperatorTreeImage;
 	int intermediateOperatorTreeCount;
 
 	// TODO: Repeat this till we find the optimal tree
 	intermediateOperatorTreeCount = 0;
-	rootNode = this.getRootNode(query.getQueryData().getAttributes());
-	leafNodes = this.getLeafNodes(query.getQueryData().getRelations());
-	this.getConditionNodes(query.getQueryData().getConditions(), leafNodes);
+	rootNode = this.getRootNode(queryData.getAttributes());
+	leafNodes = this.getLeafNodes(queryData.getRelations());
+	this.getConditionNodes(queryData.getConditions(), leafNodes);
 
-	operatorTree = this.orderNodes(rootNode, leafNodes);
-	currentOperatorTreeImage = new File(imageDir.getAbsolutePath() + "/" + query.getId() + "-"
-		+ (intermediateOperatorTreeCount++) + ".png");
-	// currentOperatorTreeImage.deleteOnExit();
-	this.exportOperatorTreeToPNG(operatorTree, currentOperatorTreeImage);
+	returnValue = this.orderNodes(rootNode, leafNodes);
+	this.saveIntermediateOperatorTree(returnValue, queryId, (intermediateOperatorTreeCount++),
+		imageDir);
+	// End TODO
 
-	query.setOperatorTree(operatorTree);
+	return returnValue;
+    }
+
+    /**
+     * Save an image of the specified intermediate Operator Tree, in a directory
+     * with the Query Id as name, in the specified Image Directory.
+     * 
+     * @param operatorTree
+     *            Intermediate Operator Tree.
+     * @param queryId
+     *            Query Id.
+     * @param intermediateOperatorTreeCount
+     *            Number of intermediate Operator Tree.
+     * @param imageDir
+     *            Directory where to save the temporary operator trees.
+     * @throws IOException
+     *             If an I/O error occurs.
+     */
+    public void saveIntermediateOperatorTree(final OperatorTree operatorTree, final long queryId,
+	    final int intermediateOperatorTreeCount, final File imageDir) throws IOException {
+	File currentOperatorTreeImage;
+
+	if (imageDir != null) {
+	    currentOperatorTreeImage = new File(imageDir.getAbsolutePath() + "/" + queryId + "-"
+		    + intermediateOperatorTreeCount + ".png");
+	    currentOperatorTreeImage.deleteOnExit();
+	    this.exportOperatorTreeToPNG(operatorTree, currentOperatorTreeImage);
+	}
     }
 
     /**
@@ -154,13 +237,25 @@ public class AlgebraOptimizerService {
      * @param relations
      *            RelationData relations.
      * @return Leaf Nodes.
+     * @throws IOException
      */
-    private List<Node> getLeafNodes(final List<RelationData> relations) {
+    private List<Node> getLeafNodes(final List<RelationData> relations) throws IOException {
 	List<Node> returnValue;
+	OperatorTree operatorTree;
 
 	returnValue = new ArrayList<Node>();
 	for (RelationData relationData : relations) {
-	    returnValue.add(new Node(relationData));
+	    // Table
+	    if (relationData instanceof SimpleRelationData) {
+		returnValue.add(new Node(relationData));
+	    }
+
+	    // SubQuery
+	    else if (relationData instanceof QueryRelationData) {
+		operatorTree = this.buildOperatorTree(((QueryRelationData) relationData)
+			.getQueryData());
+		returnValue.add(operatorTree.getRootNode());
+	    }
 	}
 
 	return returnValue;
