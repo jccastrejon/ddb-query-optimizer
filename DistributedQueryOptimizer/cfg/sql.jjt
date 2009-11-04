@@ -74,6 +74,11 @@ TOKEN :
 |   <K_OR:"OR">
 |   <K_SELECT:"SELECT">
 |   <K_WHERE:"WHERE">
+|	<K_COUNT:"COUNT">
+|	<K_MAX:"MAX">
+|	<K_MIN:"MIN">
+|	<K_AVG:"AVG">
+|	<K_SUM:"SUM">
 }
 
 /* Numeric constants */
@@ -148,7 +153,11 @@ List<ExpressionData> SelectList():
 	    "*"
 	    {
 	    	returnValue.add(new SimpleExpressionData("*"));
-	    } 
+	    }
+	    | LOOKAHEAD(2) expression = SQLAggregateFunction()
+	    {
+	    	returnValue.add(expression);
+	    }
 	    | expression = SelectItem()
 	    {
 	    	returnValue.add(expression);
@@ -164,6 +173,57 @@ List<ExpressionData> SelectList():
     {
     	return returnValue;
     }
+}
+
+ExpressionData SQLAggregateFunction():
+{
+	ExpressionData returnValue;
+	ExpressionData expression;
+	Token token = null;
+	Token attributeToken;
+	String function = null;
+}
+{
+	(
+		"COUNT" "("
+		{
+			function = "COUNT(";
+		}
+		| "MAX" "("
+		{
+			function = "MAX(";
+		}
+		| "MIN" "("
+		{
+			function = "MIN(";
+		}
+		| "AVG" "("
+		{
+			function = "AVG(";
+		}
+		| "SUM" "("
+		{
+			function = "SUM(";
+		}
+	)
+	
+	(
+		LOOKAHEAD(3) token = <S_IDENTIFIER> "." "*" ")" // table.*
+		{
+			returnValue = new SimpleExpressionData(function + token.image + ".*" + ")");
+		}
+		| LOOKAHEAD(2) token = <S_IDENTIFIER> "." attributeToken = <S_IDENTIFIER> ")"
+		{
+			returnValue = new SimpleExpressionData(function + token.image + "." + attributeToken.image + ")");
+		}
+		| token = <S_IDENTIFIER> ")"
+		{
+			returnValue = new SimpleExpressionData(function + token.image + ")");
+		}
+	)
+	{
+		return returnValue;
+	}
 }
 
 ExpressionData SelectItem():
