@@ -153,7 +153,7 @@ public class AlgebraOptimizerService {
 	if (imageDir != null) {
 	    currentOperatorTreeImage = new File(imageDir.getAbsolutePath() + "/" + queryId + "-"
 		    + intermediateOperatorTreeCount + ".png");
-	    currentOperatorTreeImage.deleteOnExit();
+	    //currentOperatorTreeImage.deleteOnExit();
 	    this.exportOperatorTreeToPNG(operatorTree, currentOperatorTreeImage);
 	}
     }

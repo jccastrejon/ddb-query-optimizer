@@ -2,6 +2,7 @@ package mx.itesm.ddb.service;
 
 import mx.itesm.ddb.parser.ParseException;
 
+import org.apache.log4j.Logger;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
@@ -13,6 +14,11 @@ import org.springframework.validation.Validator;
  */
 @SuppressWarnings("unchecked")
 public class OptimizeValidator implements Validator {
+
+    /**
+     * 
+     */
+    private final static Logger logger = Logger.getLogger(OptimizeValidator.class);
 
     /**
      * Query Optimizer Manager.
@@ -37,6 +43,7 @@ public class OptimizeValidator implements Validator {
 	    parserService.parseQuery(query);
 	} catch (ParseException e) {
 	    errors.rejectValue("sql", "error.parseError", new Object[] { e.getMessage() }, null);
+	    logger.error("Invalid query", e);
 	}
     }
 
