@@ -33,7 +33,7 @@ public class AlgebraOptimizerServiceTest extends SqlBaseTest {
 	correctQueries = true;
 	imageDir = new File("img");
 	imageDir.mkdir();
-	// imageDir.deleteOnExit();
+	imageDir.deleteOnExit();
 	parserService = new ParserService();
 	algebraOptimizerService = new AlgebraOptimizerService();
 	algebraOptimizerService.setDatabaseDictionaryService(new DatabaseDictionaryService());
