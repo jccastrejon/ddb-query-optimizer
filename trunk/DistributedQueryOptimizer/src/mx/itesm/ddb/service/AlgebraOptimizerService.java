@@ -21,6 +21,7 @@ import mx.itesm.ddb.util.SqlData;
 import mx.itesm.ddb.util.impl.ExpressionConditionData;
 import mx.itesm.ddb.util.impl.OperationConditionData;
 import mx.itesm.ddb.util.impl.OperationExpressionData;
+import mx.itesm.ddb.util.impl.QueryExpressionData;
 import mx.itesm.ddb.util.impl.QueryRelationData;
 import mx.itesm.ddb.util.impl.SimpleExpressionData;
 import mx.itesm.ddb.util.impl.SimpleRelationData;
@@ -267,8 +268,10 @@ public class AlgebraOptimizerService {
      * 
      * @param conditionData
      *            ConditionData.
+     * @throws IOException
      */
-    private void getConditionNodes(final ConditionData conditionData, final List<Node> leafNodes) {
+    private void getConditionNodes(final ConditionData conditionData, final List<Node> leafNodes)
+	    throws IOException {
 	OperationConditionData operationConditionData;
 
 	if (conditionData != null) {
@@ -308,10 +311,14 @@ public class AlgebraOptimizerService {
      *            Expression containing the condition data.
      * @param leafNodes
      *            Leaf Nodes.
+     * @throws IOException
      */
     private void addConditionNodeFromExpressionConditionData(
-	    final ExpressionConditionData expressionConditionData, final List<Node> leafNodes) {
+	    final ExpressionConditionData expressionConditionData, final List<Node> leafNodes)
+	    throws IOException {
 	Set<String> tables;
+	List<SqlData> nodeData;
+	OperatorTree operatorTree;
 	ExpressionData expressionData;
 	List<ExpressionData> expressions;
 	ExpressionOperator expressionOperator;
@@ -336,6 +343,7 @@ public class AlgebraOptimizerService {
 		    relationalOperator = RelationalOperator.SELECT;
 		}
 
+		// Tables involved in the condition
 		newNodeChildren = new ArrayList<Node>();
 		for (String table : tables) {
 		    nodeSearch: for (Node leafNode : leafNodes) {
@@ -348,7 +356,20 @@ public class AlgebraOptimizerService {
 		    }
 		}
 
-		newNode = new Node(expressions.toArray(new SqlData[expressions.size()]),
+		// Differentiate between simple and subquery condition data
+		nodeData = new ArrayList<SqlData>(expressions.size());
+		for (ExpressionData expression : expressions) {
+		    if (expression instanceof SimpleExpressionData) {
+			nodeData.add(expression);
+		    } else if (expression instanceof QueryExpressionData) {
+			operatorTree = this.buildOperatorTree(((QueryExpressionData) expression)
+				.getQueryData());
+			newNodeChildren.add(operatorTree.getRootNode());
+			relationalOperator = RelationalOperator.JOIN;
+		    }
+		}
+
+		newNode = new Node(nodeData.toArray(new SqlData[nodeData.size()]),
 			relationalOperator);
 		newNode.addChildren(newNodeChildren);
 		leafNodes.removeAll(newNodeChildren);
@@ -382,8 +403,6 @@ public class AlgebraOptimizerService {
 		simpleExpressionData = (SimpleExpressionData) expressionData;
 		returnValue.add(databaseDictionaryService
 			.getTableFromExpression(simpleExpressionData.getExpression()));
-	    } else {
-		throw new RuntimeException("Unsupported query");
 	    }
 	}
 
