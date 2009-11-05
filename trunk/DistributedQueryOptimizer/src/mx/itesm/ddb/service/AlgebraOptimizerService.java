@@ -121,7 +121,7 @@ public class AlgebraOptimizerService {
 	intermediateOperatorTreeCount = 0;
 	rootNode = this.getRootNode(queryData.getAttributes());
 	leafNodes = this.getLeafNodes(queryData.getRelations());
-	this.getConditionNodes(queryData.getConditions(), leafNodes);
+	leafNodes = this.getConditionNodes(queryData.getConditions(), leafNodes);
 
 	returnValue = this.orderNodes(rootNode, leafNodes);
 	this.saveIntermediateOperatorTree(returnValue, queryId, (intermediateOperatorTreeCount++),
@@ -270,30 +270,77 @@ public class AlgebraOptimizerService {
      *            ConditionData.
      * @throws IOException
      */
-    private void getConditionNodes(final ConditionData conditionData, final List<Node> leafNodes)
-	    throws IOException {
+    private List<Node> getConditionNodes(final ConditionData conditionData,
+	    final List<Node> leafNodes) throws IOException {
+	List<Node> returnValue;
+	List<Node> newLeafNodes;
+	Node unionConditionNode;
+	Node productConditionNode;
+	List<List<Node>> unionLeafNodes;
 	OperationConditionData operationConditionData;
 
+	returnValue = leafNodes;
 	if (conditionData != null) {
 	    // [table.attribute = table2.attribute]
 	    if (conditionData instanceof ExpressionConditionData) {
-		this.addConditionNodeFromExpressionConditionData(
+		this.getConditionNodeFromExpressionConditionData(
 			(ExpressionConditionData) conditionData, leafNodes);
+		returnValue = leafNodes;
 	    }
 
-	    // [table.attribute = table2.attribute] and
+	    // [table.attribute = table2.attribute] [operator]
 	    // [table.attribute2 = table3.attribute2]
 	    else if (conditionData instanceof OperationConditionData) {
 		operationConditionData = (OperationConditionData) conditionData;
 
-		// TODO: Support other operators
+		// AND
 		if (operationConditionData.getOperator() == ConditionOperator.BinaryOperator.AND_OPERATOR) {
 		    for (ConditionData innerConditionData : operationConditionData.getConditions()) {
 			if (innerConditionData instanceof ExpressionConditionData) {
-			    this.addConditionNodeFromExpressionConditionData(
+			    this.getConditionNodeFromExpressionConditionData(
 				    (ExpressionConditionData) innerConditionData, leafNodes);
 			}
 		    }
+		}
+
+		// OR
+		else if (operationConditionData.getOperator() == ConditionOperator.BinaryOperator.OR_OPERATOR) {
+		    unionLeafNodes = new ArrayList<List<Node>>(operationConditionData
+			    .getConditions().size());
+		    for (ConditionData innerConditionData : operationConditionData.getConditions()) {
+			newLeafNodes = new ArrayList<Node>(leafNodes.size());
+			for (Node leafNode : leafNodes) {
+			    newLeafNodes.add(leafNode.clone());
+			}
+
+			this.getConditionNodeFromExpressionConditionData(
+				(ExpressionConditionData) innerConditionData, newLeafNodes);
+			unionLeafNodes.add(newLeafNodes);
+		    }
+
+		    // Unite the leafNodes set into only one leafNode
+		    unionConditionNode = new Node(RelationalOperator.UNION);
+		    returnValue = new ArrayList<Node>(1);
+		    returnValue.add(unionConditionNode);
+
+		    for (List<Node> condition : unionLeafNodes) {
+			if (condition.size() == 1) {
+			    unionConditionNode.addChild(condition.get(0));
+			} else {
+			    // If there are more than one nodes, group them by
+			    // making the cartesian product before uniting them
+			    productConditionNode = new Node(RelationalOperator.PRODUCT);
+			    unionConditionNode.addChild(productConditionNode);
+			    for (Node innerCondition : condition) {
+				productConditionNode.addChild(innerCondition);
+			    }
+			}
+		    }
+		}
+
+		// NOT
+		else if (operationConditionData.getOperator() == ConditionOperator.UnaryOperator.NOT_OPERATOR) {
+		    // TODO: Implementation!!:.
 		} else {
 		    throw new RuntimeException("Unsupported query");
 		}
@@ -301,6 +348,8 @@ public class AlgebraOptimizerService {
 		throw new RuntimeException("Unsupported query");
 	    }
 	}
+
+	return returnValue;
     }
 
     /**
@@ -313,7 +362,7 @@ public class AlgebraOptimizerService {
      *            Leaf Nodes.
      * @throws IOException
      */
-    private void addConditionNodeFromExpressionConditionData(
+    private void getConditionNodeFromExpressionConditionData(
 	    final ExpressionConditionData expressionConditionData, final List<Node> leafNodes)
 	    throws IOException {
 	Set<String> tables;
@@ -326,15 +375,14 @@ public class AlgebraOptimizerService {
 	List<Node> newNodeChildren;
 	Node newNode;
 
+	// [expression] [condition] [expression]
 	expressionData = expressionConditionData.getExpression();
-
 	if (expressionData instanceof OperationExpressionData) {
 	    expressionOperator = ((OperationExpressionData) expressionData).getOperator();
-
 	    expressions = ((OperationExpressionData) expressionData).getExpressions();
 
+	    // Decide how to join the leafNodes
 	    tables = this.getRequiredTables(expressions, leafNodes);
-
 	    if (tables.size() > 1) {
 		relationalOperator = RelationalOperator.JOIN;
 	    } else {
@@ -373,6 +421,9 @@ public class AlgebraOptimizerService {
 		nodeData.remove(nodeData.size() - 1);
 	    }
 
+	    // Add a new node that represents the link between the previous
+	    // leafNodes involved in the ExpressionConditionData. The previous
+	    // leafNodes are no longer leafNodes
 	    newNode = new Node(nodeData.toArray(new SqlData[nodeData.size()]), relationalOperator);
 	    newNode.addChildren(newNodeChildren);
 	    leafNodes.removeAll(newNodeChildren);
@@ -393,16 +444,21 @@ public class AlgebraOptimizerService {
      */
     private Set<String> getRequiredTables(final List<ExpressionData> expressions,
 	    final List<Node> leafNodes) {
+	String currentTable;
 	Set<String> returnValue;
 	SimpleExpressionData simpleExpressionData;
 
 	returnValue = new HashSet<String>();
-
 	for (ExpressionData expressionData : expressions) {
 	    if (expressionData instanceof SimpleExpressionData) {
 		simpleExpressionData = (SimpleExpressionData) expressionData;
-		returnValue.add(databaseDictionaryService
-			.getTableFromExpression(simpleExpressionData.getExpression()));
+		currentTable = databaseDictionaryService
+			.getTableFromExpression(simpleExpressionData.getExpression());
+
+		// Add the referenced table from the expression
+		if (currentTable != null) {
+		    returnValue.add(currentTable);
+		}
 	    }
 	}
 

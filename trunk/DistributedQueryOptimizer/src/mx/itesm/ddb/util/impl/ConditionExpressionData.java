@@ -4,22 +4,31 @@ import mx.itesm.ddb.util.ConditionData;
 import mx.itesm.ddb.util.ExpressionData;
 
 /**
+ * SQL Expression of the form: [ConditionData]
+ * 
  * @author jccastrejon
  * 
  */
 public class ConditionExpressionData implements ExpressionData {
 
     /**
-     * 
+     * ConditionData.
      */
     ConditionData condition;
 
     /**
+     * Full constructor.
      * 
      * @param condition
+     *            ConditionData.
      */
-    public ConditionExpressionData(ConditionData condition) {
+    public ConditionExpressionData(final ConditionData condition) {
 	this.condition = condition;
+    }
+
+    @Override
+    public ConditionExpressionData clone() {
+	return new ConditionExpressionData(this.condition);
     }
 
     @Override

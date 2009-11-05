@@ -27,6 +27,11 @@ public class QueryRelationData implements RelationData {
     }
 
     @Override
+    public QueryRelationData clone() {
+	return new QueryRelationData(this.queryData);
+    }
+
+    @Override
     public String toString() {
 	return "(" + queryData + ")";
     }

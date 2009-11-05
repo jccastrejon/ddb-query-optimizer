@@ -3,29 +3,39 @@ package mx.itesm.ddb.util.impl;
 import mx.itesm.ddb.util.ExpressionData;
 
 /**
+ * SQL Expression of the form: [Expression] as [alias]
+ * 
  * @author jccastrejon
  * 
  */
 public class AliasExpressionData implements ExpressionData {
 
     /**
-     * 
+     * SQL Expression.
      */
     ExpressionData expression;
 
     /**
-     * 
+     * Expression alias.
      */
     String alias;
 
     /**
+     * Full constructor.
      * 
      * @param expression
+     *            SQL Expression.
      * @param alias
+     *            Expression alias.
      */
-    public AliasExpressionData(ExpressionData expression, String alias) {
+    public AliasExpressionData(final ExpressionData expression, final String alias) {
 	this.expression = expression;
 	this.alias = alias;
+    }
+
+    @Override
+    public AliasExpressionData clone() {
+	return new AliasExpressionData(this.expression, this.alias);
     }
 
     @Override
