@@ -6,6 +6,10 @@ package mx.itesm.ddb.util;
  * @author jccastrejon
  * 
  */
-public interface SqlData {
-
+public interface SqlData extends Cloneable {
+    /**
+     * 
+     * @return
+     */
+    public SqlData clone();
 }

@@ -8,6 +8,8 @@ import mx.itesm.ddb.util.ConditionData;
 import mx.itesm.ddb.util.ConditionOperator;
 
 /**
+ * ConditionData of the form: [ConditionData] [Operator] [ConditionData] ...
+ * 
  * @author jccastrejon
  * 
  */
@@ -32,7 +34,8 @@ public class OperationConditionData implements ConditionData {
      * @param conditions
      *            Conditions logically linked by the operator.
      */
-    public OperationConditionData(ConditionOperator operator, List<ConditionData> conditions) {
+    public OperationConditionData(final ConditionOperator operator,
+	    final List<ConditionData> conditions) {
 	this.operator = operator;
 	this.conditions = conditions;
     }
@@ -46,20 +49,30 @@ public class OperationConditionData implements ConditionData {
      * @param condition
      *            Conditions logically linked by the operator.
      */
-    public OperationConditionData(ConditionOperator operator, ConditionData condition) {
+    public OperationConditionData(final ConditionOperator operator, final ConditionData condition) {
 	this.operator = operator;
 	this.conditions = new ArrayList<ConditionData>(1);
 	this.conditions.add(condition);
     }
 
     /**
+     * Full constructor, receiving multiple conditions affected by the condition
+     * operator.
      * 
      * @param operator
+     *            Condition operator that links the conditions.
      * @param conditions
+     *            Conditions logically linked by the operator.
      */
-    public OperationConditionData(ConditionOperator operator, ConditionData... conditions) {
+    public OperationConditionData(final ConditionOperator operator,
+	    final ConditionData... conditions) {
 	this.operator = operator;
 	this.conditions = Arrays.asList(conditions);
+    }
+
+    @Override
+    public OperationConditionData clone() {
+	return new OperationConditionData(this.operator, this.conditions);
     }
 
     @Override

@@ -11,7 +11,7 @@ import mx.itesm.ddb.util.SqlData;
  * @author jccastrejon
  * 
  */
-public class Node {
+public class Node implements Cloneable {
 
     /**
      * Node data.
@@ -111,6 +111,39 @@ public class Node {
     public Node(SqlData[] sqlData, RelationalOperator relationalOperator, Node parent) {
 	this(sqlData, relationalOperator);
 	this.parent = parent;
+    }
+
+    @Override
+    public Node clone() {
+	Node newNode;
+	List<Node> newChildren;
+	SqlData[] newSqlData;
+	Node returnValue;
+
+	newSqlData = null;
+	newChildren = null;
+	returnValue = new Node(this.relationalOperator);
+
+	if (this.sqlData != null) {
+	    newSqlData = new SqlData[this.sqlData.length];
+	    for (int i = 0; i < this.sqlData.length; i++) {
+		newSqlData[i] = this.sqlData[i].clone();
+	    }
+	}
+
+	if (this.children != null) {
+	    newChildren = new ArrayList<Node>(this.children.size());
+	    for (Node node : this.children) {
+		newNode = node.clone();
+		newNode.setParent(returnValue);
+		newChildren.add(node.clone());
+	    }
+	}
+
+	returnValue.setChildren(newChildren);
+	returnValue.setSqlData(newSqlData);
+
+	return returnValue;
     }
 
     /**

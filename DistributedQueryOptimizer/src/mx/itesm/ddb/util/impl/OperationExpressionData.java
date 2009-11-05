@@ -55,6 +55,11 @@ public class OperationExpressionData implements ExpressionData {
     }
 
     @Override
+    public OperationExpressionData clone() {
+	return new OperationExpressionData(this.operator, this.expressions);
+    }
+
+    @Override
     public String toString() {
 	StringBuilder returnValue = new StringBuilder();
 

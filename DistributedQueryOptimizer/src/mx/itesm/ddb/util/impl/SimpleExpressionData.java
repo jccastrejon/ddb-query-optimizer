@@ -22,8 +22,13 @@ public class SimpleExpressionData implements ExpressionData {
     }
 
     @Override
+    public SimpleExpressionData clone() {
+	return new SimpleExpressionData(this.expression);
+    }
+
+    @Override
     public String toString() {
-	return this.expression;
+	return this.expression.replace('"', '\'');
     }
 
     /**

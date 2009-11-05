@@ -24,7 +24,12 @@ public class SimpleRelationData implements RelationData {
     public SimpleRelationData(String relationName) {
 	this.relationName = relationName;
     }
-    
+
+    @Override
+    public SimpleRelationData clone() {
+	return new SimpleRelationData(this.relationName);
+    }
+
     @Override
     public String toString() {
 	return this.relationName;

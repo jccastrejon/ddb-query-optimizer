@@ -25,6 +25,11 @@ public class QueryConditionData implements ConditionData {
     }
 
     @Override
+    public QueryConditionData clone() {
+	return new QueryConditionData(this.queryData);
+    }
+
+    @Override
     public String toString() {
 	return "(" + queryData + ")";
     }

@@ -23,6 +23,11 @@ public class QueryExpressionData implements ExpressionData {
     }
 
     @Override
+    public QueryExpressionData clone() {
+	return new QueryExpressionData(this.queryData);
+    }
+
+    @Override
     public String toString() {
 	return "(" + queryData + ")";
     }
