@@ -284,9 +284,8 @@ public class AlgebraOptimizerService {
 	if (conditionData != null) {
 	    // [table.attribute = table2.attribute]
 	    if (conditionData instanceof ExpressionConditionData) {
-		this.getConditionNodeFromExpressionConditionData(
+		returnValue = this.getConditionNodeFromExpressionConditionData(
 			(ExpressionConditionData) conditionData, leafNodes);
-		returnValue = leafNodes;
 	    }
 
 	    // [table.attribute = table2.attribute] [operator]
@@ -298,7 +297,7 @@ public class AlgebraOptimizerService {
 		if (operationConditionData.getOperator() == ConditionOperator.BinaryOperator.AND_OPERATOR) {
 		    for (ConditionData innerConditionData : operationConditionData.getConditions()) {
 			if (innerConditionData instanceof ExpressionConditionData) {
-			    this.getConditionNodeFromExpressionConditionData(
+			    returnValue = this.getConditionNodeFromExpressionConditionData(
 				    (ExpressionConditionData) innerConditionData, leafNodes);
 			}
 		    }
@@ -314,7 +313,7 @@ public class AlgebraOptimizerService {
 			    newLeafNodes.add(leafNode.clone());
 			}
 
-			this.getConditionNodeFromExpressionConditionData(
+			newLeafNodes = this.getConditionNodeFromExpressionConditionData(
 				(ExpressionConditionData) innerConditionData, newLeafNodes);
 			unionLeafNodes.add(newLeafNodes);
 		    }
@@ -363,18 +362,19 @@ public class AlgebraOptimizerService {
      *            Leaf Nodes.
      * @throws IOException
      */
-    private void getConditionNodeFromExpressionConditionData(
+    private List<Node> getConditionNodeFromExpressionConditionData(
 	    final ExpressionConditionData expressionConditionData, final List<Node> leafNodes)
 	    throws IOException {
+	Node newNode;
 	Set<String> tables;
+	List<Node> returnValue;
 	List<SqlData> nodeData;
 	OperatorTree operatorTree;
+	List<Node> newNodeChildren;
 	ExpressionData expressionData;
 	List<ExpressionData> expressions;
 	ExpressionOperator expressionOperator;
 	RelationalOperator relationalOperator;
-	List<Node> newNodeChildren;
-	Node newNode;
 
 	// Expression to analyze
 	expressionData = expressionConditionData.getExpression();
@@ -431,14 +431,33 @@ public class AlgebraOptimizerService {
 	    newNode.addChildren(newNodeChildren);
 	    leafNodes.removeAll(newNodeChildren);
 	    leafNodes.add(newNode);
+	    returnValue = leafNodes;
 	}
 
 	// ( [condition] [operator] [condition] [operator] ... )
 	else if (expressionData instanceof ConditionExpressionData) {
+	    returnValue = new ArrayList<Node>(1);
+	    newNodeChildren = this.getConditionNodes(((ConditionExpressionData) expressionData)
+		    .getCondition(), leafNodes);
 
+	    // If the operator was an OR, there should be only one parent node
+	    // with the UNION operator
+	    if (newNodeChildren.size() == 1) {
+		returnValue.add(newNodeChildren.get(0));
+	    } else {
+		// If there are more than one nodes, group them by
+		// making the cartesian product before uniting them
+		newNode = new Node(RelationalOperator.PRODUCT);
+		returnValue.add(newNode);
+		for (Node innerChild : newNodeChildren) {
+		    newNode.addChild(innerChild);
+		}
+	    }
 	} else {
 	    throw new RuntimeException("Unsupported query");
 	}
+
+	return returnValue;
     }
 
     /**
