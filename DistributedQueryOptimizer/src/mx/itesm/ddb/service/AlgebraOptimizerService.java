@@ -18,6 +18,7 @@ import mx.itesm.ddb.util.ExpressionOperator;
 import mx.itesm.ddb.util.QueryData;
 import mx.itesm.ddb.util.RelationData;
 import mx.itesm.ddb.util.SqlData;
+import mx.itesm.ddb.util.impl.ConditionExpressionData;
 import mx.itesm.ddb.util.impl.ExpressionConditionData;
 import mx.itesm.ddb.util.impl.OperationConditionData;
 import mx.itesm.ddb.util.impl.OperationExpressionData;
@@ -293,7 +294,7 @@ public class AlgebraOptimizerService {
 	    else if (conditionData instanceof OperationConditionData) {
 		operationConditionData = (OperationConditionData) conditionData;
 
-		// AND
+		// operator = AND
 		if (operationConditionData.getOperator() == ConditionOperator.BinaryOperator.AND_OPERATOR) {
 		    for (ConditionData innerConditionData : operationConditionData.getConditions()) {
 			if (innerConditionData instanceof ExpressionConditionData) {
@@ -303,7 +304,7 @@ public class AlgebraOptimizerService {
 		    }
 		}
 
-		// OR
+		// operator = OR
 		else if (operationConditionData.getOperator() == ConditionOperator.BinaryOperator.OR_OPERATOR) {
 		    unionLeafNodes = new ArrayList<List<Node>>(operationConditionData
 			    .getConditions().size());
@@ -338,7 +339,7 @@ public class AlgebraOptimizerService {
 		    }
 		}
 
-		// NOT
+		// operator = NOT
 		else if (operationConditionData.getOperator() == ConditionOperator.UnaryOperator.NOT_OPERATOR) {
 		    // TODO: Implementation!!:.
 		} else {
@@ -375,8 +376,10 @@ public class AlgebraOptimizerService {
 	List<Node> newNodeChildren;
 	Node newNode;
 
-	// [expression] [condition] [expression]
+	// Expression to analyze
 	expressionData = expressionConditionData.getExpression();
+
+	// [expression] [operator] [expression]
 	if (expressionData instanceof OperationExpressionData) {
 	    expressionOperator = ((OperationExpressionData) expressionData).getOperator();
 	    expressions = ((OperationExpressionData) expressionData).getExpressions();
@@ -428,6 +431,11 @@ public class AlgebraOptimizerService {
 	    newNode.addChildren(newNodeChildren);
 	    leafNodes.removeAll(newNodeChildren);
 	    leafNodes.add(newNode);
+	}
+
+	// ( [condition] [operator] [condition] [operator] ... )
+	else if (expressionData instanceof ConditionExpressionData) {
+
 	} else {
 	    throw new RuntimeException("Unsupported query");
 	}
