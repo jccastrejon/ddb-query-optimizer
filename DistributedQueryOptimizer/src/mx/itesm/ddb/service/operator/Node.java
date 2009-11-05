@@ -14,24 +14,29 @@ import mx.itesm.ddb.util.SqlData;
 public class Node implements Cloneable {
 
     /**
+     * Node Id.
+     */
+    private String id;
+
+    /**
      * Node data.
      */
-    SqlData[] sqlData;
+    private SqlData[] sqlData;
 
     /**
      * Relational Operator.
      */
-    RelationalOperator relationalOperator;
+    private RelationalOperator relationalOperator;
 
     /**
      * Parent node.
      */
-    Node parent;
+    private Node parent;
 
     /**
      * Children nodes.
      */
-    List<Node> children;
+    private List<Node> children;
 
     /**
      * Initialize only with data.
@@ -41,6 +46,7 @@ public class Node implements Cloneable {
      */
     public Node(final SqlData sqlData) {
 	this.sqlData = new SqlData[] { sqlData };
+	this.id = this.generateId();
     }
 
     /**
@@ -51,6 +57,7 @@ public class Node implements Cloneable {
      */
     public Node(final RelationalOperator relationalOperator) {
 	this.relationalOperator = relationalOperator;
+	this.id = this.generateId();
     }
 
     /**
@@ -92,8 +99,8 @@ public class Node implements Cloneable {
      *            Relational Operator.
      */
     public Node(SqlData[] sqlData, RelationalOperator relationalOperator) {
+	this(relationalOperator);
 	this.sqlData = sqlData;
-	this.relationalOperator = relationalOperator;
 	this.parent = null;
 	this.children = new ArrayList<Node>();
     }
@@ -111,39 +118,6 @@ public class Node implements Cloneable {
     public Node(SqlData[] sqlData, RelationalOperator relationalOperator, Node parent) {
 	this(sqlData, relationalOperator);
 	this.parent = parent;
-    }
-
-    @Override
-    public Node clone() {
-	Node newNode;
-	List<Node> newChildren;
-	SqlData[] newSqlData;
-	Node returnValue;
-
-	newSqlData = null;
-	newChildren = null;
-	returnValue = new Node(this.relationalOperator);
-
-	if (this.sqlData != null) {
-	    newSqlData = new SqlData[this.sqlData.length];
-	    for (int i = 0; i < this.sqlData.length; i++) {
-		newSqlData[i] = this.sqlData[i].clone();
-	    }
-	}
-
-	if (this.children != null) {
-	    newChildren = new ArrayList<Node>(this.children.size());
-	    for (Node node : this.children) {
-		newNode = node.clone();
-		newNode.setParent(returnValue);
-		newChildren.add(node.clone());
-	    }
-	}
-
-	returnValue.setChildren(newChildren);
-	returnValue.setSqlData(newSqlData);
-
-	return returnValue;
     }
 
     /**
@@ -207,7 +181,7 @@ public class Node implements Cloneable {
     public String getDescription() {
 	StringBuilder returnValue;
 
-	returnValue = new StringBuilder("\"");
+	returnValue = new StringBuilder();
 	if (this.relationalOperator != null) {
 	    returnValue.append(this.relationalOperator);
 	}
@@ -218,8 +192,6 @@ public class Node implements Cloneable {
 	    }
 	}
 
-	returnValue.append("\"");
-
 	return returnValue.toString();
     }
 
@@ -227,25 +199,72 @@ public class Node implements Cloneable {
     public String toString() {
 	StringBuilder returnValue;
 
-	returnValue = new StringBuilder("\n" + this.getDescription() + " -> ");
+	// Node Id and label
+	returnValue = new StringBuilder("\n\"" + this.getId() + "\" [label=\""
+		+ this.getDescription() + "\"]");
 
+	// Children Nodes
+	returnValue.append("\"" + this.getId() + "\" -> ");
 	if (this.children != null) {
-	    // Links to children
+	    // Links to children nodes
 	    returnValue.append("{ ");
 	    for (Node child : this.children) {
-		returnValue.append(child.getDescription() + ";");
+		returnValue.append("\"" + child.getId() + "\";");
 	    }
 	    returnValue.append(" }");
 
-	    // Children definitions
+	    // Children nodes definitions
 	    for (Node child : this.children) {
 		returnValue.append(child.toString());
 	    }
 	} else {
+	    // Leaf Node
 	    returnValue.append("{};\n");
 	}
 
 	return returnValue.toString();
+    }
+
+    @Override
+    public Node clone() {
+	Node newNode;
+	List<Node> newChildren;
+	SqlData[] newSqlData;
+	Node returnValue;
+
+	newSqlData = null;
+	newChildren = null;
+	returnValue = new Node(this.relationalOperator);
+
+	if (this.sqlData != null) {
+	    newSqlData = new SqlData[this.sqlData.length];
+	    for (int i = 0; i < this.sqlData.length; i++) {
+		newSqlData[i] = this.sqlData[i].clone();
+	    }
+	}
+
+	if (this.children != null) {
+	    newChildren = new ArrayList<Node>(this.children.size());
+	    for (Node node : this.children) {
+		newNode = node.clone();
+		newNode.setParent(returnValue);
+		newChildren.add(node.clone());
+	    }
+	}
+
+	returnValue.setChildren(newChildren);
+	returnValue.setSqlData(newSqlData);
+
+	return returnValue;
+    }
+
+    /**
+     * Generate an Id for this node with the current time and a random double.
+     * 
+     * @return Id.
+     */
+    private String generateId() {
+	return System.currentTimeMillis() + "-" + Math.random();
     }
 
     /**
@@ -306,5 +325,20 @@ public class Node implements Cloneable {
      */
     public void setChildren(List<Node> children) {
 	this.children = children;
+    }
+
+    /**
+     * @return the id
+     */
+    public String getId() {
+	return id;
+    }
+
+    /**
+     * @param id
+     *            the id to set
+     */
+    public void setId(String id) {
+	this.id = id;
     }
 }
