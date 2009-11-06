@@ -188,7 +188,7 @@ public class AlgebraOptimizerService {
 
 	// Build dot file
 	dotDescription = new StringBuilder("digraph \"" + fileName
-		+ "\" {\n\tnode[shape=box, fontsize=8];\n");
+		+ "\" {\n\tnode[shape=box, fontsize=8, height=.1, width=.1];\n");
 	dotDescription.append(operatorTree.getRootNode().toString());
 	dotDescription.append("}");
 
