@@ -175,6 +175,42 @@ public class Node implements Cloneable {
     }
 
     /**
+     * Checks if this a leaf node identified by the specified SQL Data, or if
+     * it's contained in one of its children.
+     * 
+     * @param id
+     *            Leaf Node's SQL Data.
+     * @return <em>true</em> if the leaf node is defined within this node
+     *         hierarchy.
+     */
+    public boolean containsLeafNode(final String sqlData) {
+	boolean returnValue;
+
+	// Check if the data is in this node
+	returnValue = false;
+	if (this.children == null) {
+	    for (SqlData data : this.sqlData) {
+		if (data.toString().toLowerCase().equals(sqlData.toLowerCase())) {
+		    returnValue = true;
+		    break;
+		}
+	    }
+	}
+
+	// Check if the data is in one of my children
+	else {
+	    for (Node child : this.children) {
+		if (child.containsLeafNode(sqlData)) {
+		    returnValue = true;
+		    break;
+		}
+	    }
+	}
+
+	return returnValue;
+    }
+
+    /**
      * Get the Node's description, containing it's operator and data.
      * 
      * @return Node's description.

@@ -296,9 +296,16 @@ public class AlgebraOptimizerService {
 		// operator = AND
 		if (operationConditionData.getOperator() == ConditionOperator.BinaryOperator.AND_OPERATOR) {
 		    for (ConditionData innerConditionData : operationConditionData.getConditions()) {
+			// AND [expression]
 			if (innerConditionData instanceof ExpressionConditionData) {
 			    returnValue = this.getConditionNodeFromExpressionConditionData(
 				    (ExpressionConditionData) innerConditionData, leafNodes);
+			}
+
+			// AND [expression] AND [expression] AND ...
+			else if (innerConditionData instanceof OperationConditionData) {
+			    returnValue = this.getConditionNodes(
+				    (OperationConditionData) innerConditionData, leafNodes);
 			}
 		    }
 		}
@@ -392,15 +399,13 @@ public class AlgebraOptimizerService {
 		relationalOperator = RelationalOperator.SELECT;
 	    }
 
-	    // Tables involved in the condition
+	    // Find the nodes that contains the related tables
 	    newNodeChildren = new ArrayList<Node>();
 	    for (String table : tables) {
-		nodeSearch: for (Node leafNode : leafNodes) {
-		    for (SqlData sqlData : leafNode.getSqlData()) {
-			if (sqlData.toString().contains(table)) {
-			    newNodeChildren.add(leafNode);
-			    break nodeSearch;
-			}
+		for (Node leafNode : leafNodes) {
+		    if (leafNode.containsLeafNode(table)) {
+			newNodeChildren.add(leafNode);
+			break;
 		    }
 		}
 	    }
