@@ -10,13 +10,13 @@ import java.util.Set;
 
 import mx.itesm.ddb.service.operator.Node;
 import mx.itesm.ddb.service.operator.OperatorTree;
-import mx.itesm.ddb.service.operator.RelationalOperator;
 import mx.itesm.ddb.util.ConditionData;
 import mx.itesm.ddb.util.ConditionOperator;
 import mx.itesm.ddb.util.ExpressionData;
 import mx.itesm.ddb.util.ExpressionOperator;
 import mx.itesm.ddb.util.QueryData;
 import mx.itesm.ddb.util.RelationData;
+import mx.itesm.ddb.util.RelationalOperator;
 import mx.itesm.ddb.util.SqlData;
 import mx.itesm.ddb.util.impl.ConditionExpressionData;
 import mx.itesm.ddb.util.impl.ExpressionConditionData;

@@ -2,6 +2,7 @@ package mx.itesm.ddb.util;
 
 import java.util.List;
 
+
 /**
  * SQL query containing projection attributes, relations and conditions.
  * 
@@ -13,17 +14,17 @@ public class QueryData {
     /**
      * Query projection attributes.
      */
-    List<ExpressionData> attributes;
+    private List<ExpressionData> attributes;
 
     /**
      * Query relations.
      */
-    List<RelationData> relations;
+    private List<RelationData> relations;
 
     /**
      * Query conditions.
      */
-    ConditionData conditions;
+    private ConditionData conditions;
 
     /**
      * Full constructor.
@@ -35,7 +36,7 @@ public class QueryData {
      * @param conditions
      *            Query conditions.
      */
-    public QueryData(List<ExpressionData> attributes, List<RelationData> relations,
+    public QueryData(final List<ExpressionData> attributes, final List<RelationData> relations,
 	    ConditionData conditions) {
 	this.attributes = attributes;
 	this.relations = relations;
@@ -44,18 +45,40 @@ public class QueryData {
 
     @Override
     public String toString() {
+	int counter;
 	StringBuilder returnValue;
 
 	// Projections
-	returnValue = new StringBuilder("&#0928;<sub>" + this.attributes + "</sub>(");
+	returnValue = new StringBuilder(RelationalOperator.PROJECTION.getHtmlCode());
+	returnValue.append("<sub>");
+	counter = 0;
+	for (ExpressionData attribute : this.attributes) {
+	    returnValue.append(attribute);
+
+	    if ((++counter) < this.attributes.size()) {
+		returnValue.append(", ");
+	    }
+	}
+	returnValue.append("</sub>(");
 
 	// Selections
 	if (this.conditions != null) {
-	    returnValue.append("&#0963;<sub>" + this.conditions + "</sub>(");
+	    returnValue.append(RelationalOperator.SELECT.getHtmlCode());
+	    returnValue.append("<sub>");
+	    returnValue.append(this.conditions);
+	    returnValue.append("</sub>(");
 	}
 
 	// Relations
-	returnValue.append(this.relations + ")");
+	counter = 0;
+	for (RelationData relation : this.relations) {
+	    returnValue.append(relation);
+
+	    if ((++counter) < this.relations.size()) {
+		returnValue.append(RelationalOperator.PRODUCT.getHtmlCode());
+	    }
+	}
+	returnValue.append(")");
 
 	// Close parenthesis in case of selections
 	if (this.conditions != null) {
