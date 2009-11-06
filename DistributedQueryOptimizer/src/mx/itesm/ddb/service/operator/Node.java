@@ -3,6 +3,7 @@ package mx.itesm.ddb.service.operator;
 import java.util.ArrayList;
 import java.util.List;
 
+import mx.itesm.ddb.util.RelationalOperator;
 import mx.itesm.ddb.util.SqlData;
 
 /**

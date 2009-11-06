@@ -84,7 +84,7 @@ public class OperationConditionData implements ConditionData {
 	}
 
 	for (int i = 0; i < conditions.size(); i++) {
-	    returnValue.append(conditions.get(i));
+	    returnValue.append("(" + conditions.get(i) + ")");
 
 	    if ((!(operator instanceof ConditionOperator.UnaryOperator))
 		    && (i != conditions.size() - 1)) {
