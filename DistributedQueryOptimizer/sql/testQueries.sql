@@ -10,6 +10,8 @@ SELECT * FROM tabla WHERE tabla.atributo=1;
 SELECT * FROM tabla WHERE tabla.atributo=1 and tabla.atributo2=2;
 SELECT * FROM tabla WHERE tabla.atributo=1 or tabla.atributo2=2;
 select * from tabla1, tabla2 where tabla1.atributo = tabla2.atributo;
+select tabla.nombre, tabla.apellido from tabla where tabla.nombre = "juan";
+select tabla.nombre, tabla.apellido from tabla where tabla.nombre = "juan" and tabla.atributo=1 and tabla.atributo2=2;
 select tabla.atributo from tabla;
 select tabla.atributo from tabla1, tabla2 where tabla1.atributo = tabla2.atributo;
 select tabla1.atributo from tabla1, tabla2 where tabla1.atributo = (select max(atributo) from tabla3);
