@@ -42,11 +42,6 @@ public class OptimizeFormController extends SimpleFormController {
 
 	query = (Query) command;
 	try {
-	    // Make sure every query has an Id
-	    if (query.getId() == 0L) {
-		query.setId(System.currentTimeMillis());
-	    }
-
 	    queryDir = new File(this.getServletContext().getRealPath("/img/" + query.getId()));
 	    queryDir.mkdirs();
 	    queryDir.deleteOnExit();

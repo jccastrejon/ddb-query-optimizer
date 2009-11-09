@@ -29,7 +29,6 @@ public class ParserService {
 	Query returnValue;
 
 	returnValue = new Query(query);
-	returnValue.setId(System.currentTimeMillis());
 	this.parseQuery(returnValue);
 
 	return returnValue;

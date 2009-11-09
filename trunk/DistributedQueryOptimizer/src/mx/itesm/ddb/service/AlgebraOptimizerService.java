@@ -59,8 +59,26 @@ public class AlgebraOptimizerService {
     public void buildOperatorTree(final Query query) throws IOException {
 	OperatorTree operatorTree;
 
-	operatorTree = this.buildOperatorTree(query.getQueryData());
+	operatorTree = this.buildOperatorTree(query.getQueryData(), query.getId(), null);
 	query.setOperatorTree(operatorTree);
+    }
+
+    /**
+     * Build the Optimal Operator Tree from the given SQL QueryData.
+     * 
+     * @param queryData
+     *            SQL QueryData.
+     * @return Optimal Operator Tree.
+     * @throws IOException
+     *             If an I/O error occurs.
+     */
+    public OperatorTree buildOperatorTree(final QueryData queryData) throws IOException {
+	Query returnValue;
+
+	returnValue = new Query(queryData);
+	this.buildOperatorTree(returnValue, null);
+
+	return returnValue.getOperatorTree();
     }
 
     /**
@@ -84,19 +102,6 @@ public class AlgebraOptimizerService {
     }
 
     /**
-     * Build the Optimal Operator Tree from the given SQL QueryData.
-     * 
-     * @param queryData
-     *            SQL QueryData.
-     * @return Optimal Operator Tree.
-     * @throws IOException
-     *             If an I/O error occurs.
-     */
-    public OperatorTree buildOperatorTree(final QueryData queryData) throws IOException {
-	return this.buildOperatorTree(queryData, 0L, null);
-    }
-
-    /**
      * Build the Optimal Operator Tree from the given SQL query and save it in
      * the query's operatorTree property. The intermediate non-optimal operator
      * trees are saved in a directory with the Query Id as name, in the
@@ -111,7 +116,7 @@ public class AlgebraOptimizerService {
      * @throws IOException
      *             If an I/O error occurs.
      */
-    protected OperatorTree buildOperatorTree(final QueryData queryData, final long queryId,
+    protected OperatorTree buildOperatorTree(final QueryData queryData, final String queryId,
 	    final File imageDir) throws IOException {
 	OperatorTree returnValue;
 	Node rootNode;
@@ -147,7 +152,7 @@ public class AlgebraOptimizerService {
      * @throws IOException
      *             If an I/O error occurs.
      */
-    public void saveIntermediateOperatorTree(final OperatorTree operatorTree, final long queryId,
+    public void saveIntermediateOperatorTree(final OperatorTree operatorTree, final String queryId,
 	    final int intermediateOperatorTreeCount, final File imageDir) throws IOException {
 	File currentOperatorTreeImage;
 

@@ -12,9 +12,9 @@ import mx.itesm.ddb.util.QueryData;
 public class Query {
 
     /**
-     * 
+     * Query Id.
      */
-    private long id;
+    private String id;
 
     /**
      * SQL query.
@@ -27,12 +27,13 @@ public class Query {
     private QueryData queryData;
 
     /**
-     * 
+     * Number of intermediate operator trees generated before the optimal
+     * operator tree.
      */
     private int intermediateOperatorTrees;
 
     /**
-     * 
+     * Optimal Operator Tree.
      */
     private OperatorTree operatorTree;
 
@@ -40,6 +41,7 @@ public class Query {
      * Default constructor.
      */
     public Query() {
+	this.id = this.generateId();
     }
 
     /**
@@ -49,7 +51,19 @@ public class Query {
      *            SQL Query.
      */
     public Query(final String sql) {
+	this();
 	this.sql = sql;
+    }
+
+    /**
+     * Initialize the query with the given QueryData.
+     * 
+     * @param queryData
+     *            Parsed Query.
+     */
+    public Query(final QueryData queryData) {
+	this();
+	this.queryData = queryData;
     }
 
     /**
@@ -61,14 +75,23 @@ public class Query {
      *            Parsed Query.
      */
     public Query(final String sql, final QueryData queryData) {
-	this.sql = sql;
+	this(sql);
 	this.queryData = queryData;
+    }
+
+    /**
+     * Generate an Id for this Query with the current time and a random double.
+     * 
+     * @return Id.
+     */
+    private String generateId() {
+	return System.currentTimeMillis() + "-" + Math.random();
     }
 
     /**
      * @return the id
      */
-    public long getId() {
+    public String getId() {
 	return id;
     }
 
@@ -76,7 +99,7 @@ public class Query {
      * @param id
      *            the id to set
      */
-    public void setId(long id) {
+    public void setId(String id) {
 	this.id = id;
     }
 
