@@ -27,12 +27,6 @@ public class Query {
     private QueryData queryData;
 
     /**
-     * Number of intermediate operator trees generated before the optimal
-     * operator tree.
-     */
-    private int intermediateOperatorTrees;
-
-    /**
      * Optimal Operator Tree.
      */
     private OperatorTree operatorTree;
@@ -131,21 +125,6 @@ public class Query {
      */
     public void setQueryData(QueryData queryData) {
 	this.queryData = queryData;
-    }
-
-    /**
-     * @return the intermediateOperatorTrees
-     */
-    public int getIntermediateOperatorTrees() {
-	return intermediateOperatorTrees;
-    }
-
-    /**
-     * @param intermediateOperatorTrees
-     *            the intermediateOperatorTrees to set
-     */
-    public void setIntermediateOperatorTrees(int intermediateOperatorTrees) {
-	this.intermediateOperatorTrees = intermediateOperatorTrees;
     }
 
     /**
