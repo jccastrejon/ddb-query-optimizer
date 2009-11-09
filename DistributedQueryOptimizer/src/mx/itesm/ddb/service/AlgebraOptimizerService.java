@@ -147,6 +147,14 @@ public class AlgebraOptimizerService {
 		    (intermediateOperatorTreeCount++), imageDir);
 	}
 
+	operatorTreeUpdated = rewritingService.commuteSelectionWithProjection(returnValue
+		.getRootNode());
+
+	if (operatorTreeUpdated) {
+	    this.saveIntermediateOperatorTree(returnValue, queryId,
+		    (intermediateOperatorTreeCount++), imageDir);
+	}
+
 	// End TODO
 
 	// Update the rewriting steps needed to generate the Operator Tree
