@@ -29,10 +29,10 @@
 			<c:out value="${query.queryData}" escapeXml="false"/>
 		</div>
 
-		<!-- Rewriting -->
+		<!-- Rewriting Steps -->
 		<div id="operatorTrees">
 			<h3><fmt:message key="optimize.operatorTrees"/></h3></br>
-			<c:forEach var="intermediateOperatorTree" begin="0" end="${query.intermediateOperatorTrees}">
+			<c:forEach var="intermediateOperatorTree" begin="0" end="${query.operatorTree.rewritingSteps}">
 				<img src="img/${query.id}/${query.id}-${intermediateOperatorTree}.png"/>
 			</c:forEach>
 		</div>
