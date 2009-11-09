@@ -17,6 +17,10 @@
 	<bean id="parserService" class="mx.itesm.ddb.service.ParserService" />
 	<bean id="algebraOptimizerService" class="mx.itesm.ddb.service.AlgebraOptimizerService">
 		<property name="databaseDictionaryService" ref="databaseDictionaryService" />
+		<property name="rewritingService" ref="rewritingService" />
+	</bean>
+	<bean id="rewritingService" class="mx.itesm.ddb.service.RewritingService">
+		<property name="databaseDictionaryService" ref="databaseDictionaryService" />
 	</bean>
 	<bean id="databaseDictionaryService" class="mx.itesm.ddb.service.DatabaseDictionaryService" />
 
