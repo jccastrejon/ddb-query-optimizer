@@ -48,6 +48,11 @@ public class AlgebraOptimizerService {
     private DatabaseDictionaryService databaseDictionaryService;
 
     /**
+     * 
+     */
+    private RewritingService rewritingService;
+
+    /**
      * Build the Optimal Operator Tree from the given SQL query and save it in
      * the query's operatorTree property.
      * 
@@ -118,9 +123,10 @@ public class AlgebraOptimizerService {
      */
     protected OperatorTree buildOperatorTree(final QueryData queryData, final String queryId,
 	    final File imageDir) throws IOException {
-	OperatorTree returnValue;
 	Node rootNode;
 	List<Node> leafNodes;
+	OperatorTree returnValue;
+	boolean operatorTreeUpdated;
 	int intermediateOperatorTreeCount;
 
 	// TODO: Repeat this till we find the optimal tree
@@ -132,8 +138,19 @@ public class AlgebraOptimizerService {
 	returnValue = this.orderNodes(rootNode, leafNodes);
 	this.saveIntermediateOperatorTree(returnValue, queryId, (intermediateOperatorTreeCount++),
 		imageDir);
+
+	operatorTreeUpdated = rewritingService.idempotenceOfUnaryOperators(returnValue
+		.getRootNode());
+
+	if (operatorTreeUpdated) {
+	    this.saveIntermediateOperatorTree(returnValue, queryId,
+		    (intermediateOperatorTreeCount++), imageDir);
+	}
+
 	// End TODO
 
+	// Update the rewriting steps needed to generate the Operator Tree
+	returnValue.setRewritingSteps(--intermediateOperatorTreeCount);
 	return returnValue;
     }
 
@@ -160,7 +177,8 @@ public class AlgebraOptimizerService {
 	    currentOperatorTreeImage = new File(imageDir.getAbsolutePath() + "/" + queryId + "-"
 		    + intermediateOperatorTreeCount + ".png");
 	    // currentOperatorTreeImage.deleteOnExit();
-	    this.exportOperatorTreeToPNG(operatorTree, currentOperatorTreeImage);
+	    this.exportOperatorTreeToPNG(operatorTree, intermediateOperatorTreeCount,
+		    currentOperatorTreeImage);
 	}
     }
 
@@ -169,13 +187,15 @@ public class AlgebraOptimizerService {
      * 
      * @param operatorTree
      *            Operator Tree.
+     * @param intermediateOperatorTreeCount
+     *            Number of intermediate Operator Tree.
      * @param imageFile
      *            Image File where the image will be saved.
      * @throws IOException
      *             In an I/O error occurs.
      */
-    public void exportOperatorTreeToPNG(final OperatorTree operatorTree, final File imageFile)
-	    throws IOException {
+    public void exportOperatorTreeToPNG(final OperatorTree operatorTree,
+	    final int intermediateOperatorTreeCount, final File imageFile) throws IOException {
 	File dotFile;
 	int processCode;
 	Process process;
@@ -192,8 +212,12 @@ public class AlgebraOptimizerService {
 	dotFile = new File(imageFile.getParent() + "/" + fileName + ".dot");
 
 	// Build dot file
-	dotDescription = new StringBuilder("digraph \"" + fileName
-		+ "\" {\n\tnode[shape=box, fontsize=8, height=.1, width=.1];\n");
+	dotDescription = new StringBuilder(
+		"digraph \""
+			+ fileName
+			+ "\" {\n\tfontsize=8;\n\tlabel=\"Step #"
+			+ intermediateOperatorTreeCount
+			+ "\\n\\n\";\n\tlabelloc=\"t\";\n\tnode[shape=box, fontsize=8, height=.1, width=.1];\n");
 	dotDescription.append(operatorTree.getRootNode().toString());
 	dotDescription.append("}");
 
@@ -544,5 +568,20 @@ public class AlgebraOptimizerService {
      */
     public void setDatabaseDictionaryService(DatabaseDictionaryService databaseDictionaryManager) {
 	this.databaseDictionaryService = databaseDictionaryManager;
+    }
+
+    /**
+     * @return the rewritingService
+     */
+    public RewritingService getRewritingService() {
+	return rewritingService;
+    }
+
+    /**
+     * @param rewritingService
+     *            the rewritingService to set
+     */
+    public void setRewritingService(RewritingService rewritingService) {
+	this.rewritingService = rewritingService;
     }
 }

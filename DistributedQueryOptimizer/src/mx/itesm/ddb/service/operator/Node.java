@@ -223,6 +223,19 @@ public class Node implements Cloneable {
 	    returnValue.append(this.relationalOperator);
 	}
 
+	returnValue.append(this.getSqlDataDescription());
+	return returnValue.toString();
+    }
+
+    /**
+     * Get the Node's SqlData description.
+     * 
+     * @return SqlData description.
+     */
+    public String getSqlDataDescription() {
+	StringBuilder returnValue;
+
+	returnValue = new StringBuilder();
 	if (this.sqlData != null) {
 	    for (SqlData sqlData : this.sqlData) {
 		returnValue.append(" " + sqlData + " ");
@@ -241,7 +254,7 @@ public class Node implements Cloneable {
 		+ this.getDescription() + "\"]");
 
 	// Children Nodes
-	returnValue.append("\"" + this.getId() + "\" -> ");
+	returnValue.append("\n\"" + this.getId() + "\" -> ");
 	if (this.children != null) {
 	    // Links to children nodes
 	    returnValue.append("{ ");

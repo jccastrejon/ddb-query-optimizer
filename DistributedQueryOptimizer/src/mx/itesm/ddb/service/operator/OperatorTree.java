@@ -6,12 +6,18 @@ package mx.itesm.ddb.service.operator;
  * @author jccastrejon
  * 
  */
-public class OperatorTree {
+public class OperatorTree implements Cloneable {
+
+    /**
+     * Number of rewriting steps that were needed to generate this Operator
+     * Tree.
+     */
+    private int rewritingSteps;
 
     /**
      * Operator Tree's Root Node.
      */
-    Node rootNode;
+    private Node rootNode;
 
     /**
      * Full constructor.
@@ -21,6 +27,16 @@ public class OperatorTree {
      */
     public OperatorTree(final Node rootNode) {
 	this.rootNode = rootNode;
+    }
+
+    @Override
+    public OperatorTree clone() {
+	return new OperatorTree(this.rootNode.clone());
+    }
+
+    @Override
+    public String toString() {
+	return rootNode.toString();
     }
 
     /**
@@ -38,8 +54,18 @@ public class OperatorTree {
 	this.rootNode = rootNode;
     }
 
-    @Override
-    public String toString() {
-	return rootNode.toString();
+    /**
+     * @return the rewritingSteps
+     */
+    public int getRewritingSteps() {
+	return rewritingSteps;
+    }
+
+    /**
+     * @param rewritingSteps
+     *            the rewritingSteps to set
+     */
+    public void setRewritingSteps(int rewritingSteps) {
+	this.rewritingSteps = rewritingSteps;
     }
 }
