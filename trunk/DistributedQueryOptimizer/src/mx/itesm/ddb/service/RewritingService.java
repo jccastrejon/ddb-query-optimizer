@@ -1,6 +1,7 @@
 package mx.itesm.ddb.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import mx.itesm.ddb.service.operator.Node;
@@ -40,14 +41,14 @@ public class RewritingService {
      * <li>Several subsequent selections on the same relation may be grouped</li>
      * </ul>
      * 
-     * @param operatorTree
-     *            Operator Tree to analyze.
+     * @param currentNode
+     *            Starting node for the analysis.
      * @return true if any of the scenarios were found in the specified Node
      *         hierarchy, false otherwise.
      */
     public boolean idempotenceOfUnaryOperators(final Node currentNode) {
 	boolean returnValue;
-	String testRelation;
+	String childRelation;
 	String currentRelation;
 	boolean childReturnValue;
 	List<ConditionData> groupedConditions;
@@ -64,37 +65,44 @@ public class RewritingService {
 
 	    // Group selections
 	    if (currentNode.getRelationalOperator().equals(RelationalOperator.SELECT)) {
-		currentRelation = databaseDictionaryService.getTableFromExpression(currentNode
-			.getSqlData()[0].toString());
+		currentRelation = databaseDictionaryService.getTableFromSqlData(currentNode
+			.getSqlData());
 
 		// See if any of the chilidren is also a selection on the same
 		// relation
-		for (Node child : currentNode.getChildren()) {
-		    if ((child.getRelationalOperator() != null)
-			    && (child.getRelationalOperator().equals(RelationalOperator.SELECT))) {
-			testRelation = databaseDictionaryService.getTableFromExpression(child
-				.getSqlData()[0].toString());
+		if ((currentRelation != null) && (currentNode.getChildren() != null)) {
+		    for (Node child : currentNode.getChildren()) {
+			if ((child.getRelationalOperator() != null)
+				&& (child.getRelationalOperator().equals(RelationalOperator.SELECT))) {
+			    childRelation = databaseDictionaryService.getTableFromSqlData(child
+				    .getSqlData());
 
-			// Group the nodes
-			if (currentRelation.equals(testRelation)) {
-			    // Join conditions
-			    groupedConditions = new ArrayList<ConditionData>(2);
-			    groupedConditions.add(new ExpressionConditionData(
-				    new SimpleExpressionData(currentNode.getSqlDataDescription())));
-			    groupedConditions.add(new ExpressionConditionData(
-				    new SimpleExpressionData(child.getSqlDataDescription())));
-			    groupedConditionData = new OperationConditionData(
-				    ConditionOperator.BinaryOperator.AND_OPERATOR,
-				    groupedConditions);
+			    // Group nodes
+			    if (currentRelation.equals(childRelation)) {
+				logger.debug("Grouping <" + child.getDescription() + "> with <"
+					+ currentNode.getDescription() + ">");
 
-			    // Update currentNode with grouped selections and
-			    // new children. This includes deletion of the child
-			    child.setParent(null);
-			    currentNode.getChildren().remove(child);
-			    currentNode.addChildren(child.getChildren());
-			    currentNode.setSqlData(new SqlData[] { groupedConditionData });
+				// Join conditions
+				groupedConditions = new ArrayList<ConditionData>(2);
+				groupedConditions.add(new ExpressionConditionData(
+					new SimpleExpressionData(currentNode
+						.getSqlDataDescription())));
+				groupedConditions.add(new ExpressionConditionData(
+					new SimpleExpressionData(child.getSqlDataDescription())));
+				groupedConditionData = new OperationConditionData(
+					ConditionOperator.BinaryOperator.AND_OPERATOR,
+					groupedConditions);
 
-			    returnValue = true;
+				// Update currentNode with grouped selections
+				// and new children. This includes deletion of
+				// the child
+				child.setParent(null);
+				currentNode.getChildren().remove(child);
+				currentNode.addChildren(child.getChildren());
+				currentNode.setSqlData(new SqlData[] { groupedConditionData });
+
+				returnValue = true;
+			    }
 			}
 		    }
 		}
@@ -121,12 +129,82 @@ public class RewritingService {
      * <li>Selection and projection on the same relation can be commuted</li>
      * </ul>
      * 
-     * @param operatorTree
-     *            Operator Tree to analyze.
-     * @return Rewritten Operator Tree.
+     * @param currentNode
+     *            Starting node for the analysis.
+     * @return true if any of the scenarios were found in the specified Node
+     *         hierarchy, false otherwise.
      */
-    public OperatorTree commuteSelectionWithProjection(final OperatorTree operatorTree) {
-	return null;
+    public boolean commuteSelectionWithProjection(final Node currentNode) {
+	boolean returnValue;
+	Node projectionNode;
+	String childRelation;
+	String currentRelation;
+	boolean childReturnValue;
+	List<String> selectionAttributes;
+	List<SqlData> projectionAttributes;
+
+	// Look for a projection followed by a selection on the same relation
+	returnValue = false;
+	if (currentNode.getRelationalOperator() != null) {
+	    if (currentNode.getRelationalOperator().equals(RelationalOperator.PROJECTION)) {
+		currentRelation = databaseDictionaryService.getTableFromSqlData(currentNode
+			.getSqlData());
+
+		if ((currentRelation != null) && (currentNode.getChildren() != null)) {
+		    for (Node child : currentNode.getChildren()) {
+			if ((child.getRelationalOperator() != null)
+				&& (child.getRelationalOperator().equals(RelationalOperator.SELECT))) {
+			    childRelation = databaseDictionaryService.getTableFromSqlData(child
+				    .getSqlData());
+
+			    // Group nodes
+			    if (currentRelation.equals(childRelation)) {
+				selectionAttributes = databaseDictionaryService
+					.getAttributesFromSqlData(child.getSqlData());
+
+				logger.warn("Grouping <" + child.getDescription() + "> with <"
+					+ currentNode.getDescription()
+					+ ">. Selection attributes: " + selectionAttributes);
+
+				// The projection attributes include the
+				// original projection attributes and the
+				// attributes needed by the selection
+				projectionAttributes = new ArrayList<SqlData>(Arrays
+					.asList(currentNode.getSqlData()));
+
+				for (String expression : selectionAttributes) {
+				    projectionAttributes.add(new SimpleExpressionData(expression));
+				}
+
+				// Add the new projection node as a child of the
+				// current child node
+				projectionNode = new Node(projectionAttributes
+					.toArray(new SqlData[projectionAttributes.size()]),
+					RelationalOperator.PROJECTION);
+				projectionNode.setChildren(child.getChildren());
+				child.setChildren(null);
+				child.addChild(projectionNode);
+
+				returnValue = true;
+			    }
+			}
+		    }
+		}
+	    }
+	}
+
+	// Test the same for every child
+	if (currentNode.getChildren() != null) {
+	    for (Node child : currentNode.getChildren()) {
+		childReturnValue = this.commuteSelectionWithProjection(child);
+
+		if (childReturnValue) {
+		    returnValue = true;
+		}
+	    }
+	}
+
+	return returnValue;
     }
 
     /**
