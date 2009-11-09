@@ -27,16 +27,22 @@ public class AlgebraOptimizerServiceTest extends SqlBaseTest {
 	int queryCount;
 	boolean correctQueries;
 	ParserService parserService;
+	RewritingService rewritingService;
 	AlgebraOptimizerService algebraOptimizerService;
+	DatabaseDictionaryService databaseDictionaryService;
 
 	queryCount = 0;
 	correctQueries = true;
 	imageDir = new File("img");
 	imageDir.mkdir();
-	//imageDir.deleteOnExit();
+	// imageDir.deleteOnExit();
 	parserService = new ParserService();
+	rewritingService = new RewritingService();
 	algebraOptimizerService = new AlgebraOptimizerService();
-	algebraOptimizerService.setDatabaseDictionaryService(new DatabaseDictionaryService());
+	databaseDictionaryService = new DatabaseDictionaryService();
+	algebraOptimizerService.setRewritingService(rewritingService);
+	rewritingService.setDatabaseDictionaryService(databaseDictionaryService);
+	algebraOptimizerService.setDatabaseDictionaryService(databaseDictionaryService);
 
 	// Try to parse each query in the test file
 	for (String testQuery : this.getTestQueries()) {
