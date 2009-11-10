@@ -68,7 +68,8 @@ public class DatabaseDictionaryService {
 	    // first one
 	    if ((conditions != null) && (!conditions.isEmpty())) {
 		expression = (ExpressionConditionData) conditions.get(0);
-		returnValue = new StringBuilder(expression.getExpression().toString());
+		returnValue = new StringBuilder(expression.getExpression().toString().replace('(',
+			' ').replace(')', ' '));
 	    }
 	}
 
