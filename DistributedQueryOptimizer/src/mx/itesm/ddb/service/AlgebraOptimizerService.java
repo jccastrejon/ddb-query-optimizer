@@ -1,7 +1,6 @@
 package mx.itesm.ddb.service;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -48,7 +47,7 @@ public class AlgebraOptimizerService {
     private DatabaseDictionaryService databaseDictionaryService;
 
     /**
-     * 
+     * Rewriting Service.
      */
     private RewritingService rewritingService;
 
@@ -82,7 +81,6 @@ public class AlgebraOptimizerService {
 
 	returnValue = new Query(queryData);
 	this.buildOperatorTree(returnValue, null);
-
 	return returnValue.getOperatorTree();
     }
 
@@ -124,133 +122,22 @@ public class AlgebraOptimizerService {
     protected OperatorTree buildOperatorTree(final QueryData queryData, final String queryId,
 	    final File imageDir) throws IOException {
 	Node rootNode;
+	int rewritingSteps;
 	List<Node> leafNodes;
 	OperatorTree returnValue;
-	boolean operatorTreeUpdated;
-	int intermediateOperatorTreeCount;
 
-	// TODO: Repeat this till we find the optimal tree
-	intermediateOperatorTreeCount = 0;
 	rootNode = this.getRootNode(queryData.getAttributes());
 	leafNodes = this.getLeafNodes(queryData.getRelations());
 	leafNodes = this.getConditionNodes(queryData.getConditions(), leafNodes);
 
 	returnValue = this.orderNodes(rootNode, leafNodes);
-	this.saveIntermediateOperatorTree(returnValue, queryId, (intermediateOperatorTreeCount++),
-		imageDir);
-
-	operatorTreeUpdated = rewritingService.idempotenceOfUnaryOperators(returnValue
-		.getRootNode());
-
-	if (operatorTreeUpdated) {
-	    this.saveIntermediateOperatorTree(returnValue, queryId,
-		    (intermediateOperatorTreeCount++), imageDir);
-	}
-
-	operatorTreeUpdated = rewritingService.commuteSelectionWithProjection(returnValue
-		.getRootNode());
-
-	if (operatorTreeUpdated) {
-	    this.saveIntermediateOperatorTree(returnValue, queryId,
-		    (intermediateOperatorTreeCount++), imageDir);
-	}
-
-	// End TODO
+	logger.debug("Operator Tree before rewriting: " + returnValue);
+	rewritingSteps = rewritingService.rewriteOperatorTree(returnValue, queryId, imageDir);
+	logger.debug("Operator Tree after rewriting: " + returnValue);
 
 	// Update the rewriting steps needed to generate the Operator Tree
-	returnValue.setRewritingSteps(--intermediateOperatorTreeCount);
+	returnValue.setRewritingSteps(rewritingSteps);
 	return returnValue;
-    }
-
-    /**
-     * Save an image of the specified intermediate Operator Tree, in a directory
-     * with the Query Id as name, in the specified Image Directory.
-     * 
-     * @param operatorTree
-     *            Intermediate Operator Tree.
-     * @param queryId
-     *            Query Id.
-     * @param intermediateOperatorTreeCount
-     *            Number of intermediate Operator Tree.
-     * @param imageDir
-     *            Directory where to save the temporary operator trees.
-     * @throws IOException
-     *             If an I/O error occurs.
-     */
-    public void saveIntermediateOperatorTree(final OperatorTree operatorTree, final String queryId,
-	    final int intermediateOperatorTreeCount, final File imageDir) throws IOException {
-	File currentOperatorTreeImage;
-
-	if (imageDir != null) {
-	    currentOperatorTreeImage = new File(imageDir.getAbsolutePath() + "/" + queryId + "-"
-		    + intermediateOperatorTreeCount + ".png");
-	    // currentOperatorTreeImage.deleteOnExit();
-	    this.exportOperatorTreeToPNG(operatorTree, intermediateOperatorTreeCount,
-		    currentOperatorTreeImage);
-	}
-    }
-
-    /**
-     * Export the given Operator Tree to the specified PNG file.
-     * 
-     * @param operatorTree
-     *            Operator Tree.
-     * @param intermediateOperatorTreeCount
-     *            Number of intermediate Operator Tree.
-     * @param imageFile
-     *            Image File where the image will be saved.
-     * @throws IOException
-     *             In an I/O error occurs.
-     */
-    public void exportOperatorTreeToPNG(final OperatorTree operatorTree,
-	    final int intermediateOperatorTreeCount, final File imageFile) throws IOException {
-	File dotFile;
-	int processCode;
-	Process process;
-	String fileName;
-	String dotCommand;
-	FileWriter fileWriter;
-	StringBuilder dotDescription;
-
-	if ((imageFile == null) || (!imageFile.getAbsolutePath().endsWith(".png"))) {
-	    throw new IllegalArgumentException("Not an png file: " + imageFile.getAbsolutePath());
-	}
-
-	fileName = imageFile.getName().substring(0, imageFile.getName().indexOf('.'));
-	dotFile = new File(imageFile.getParent() + "/" + fileName + ".dot");
-
-	// Build dot file
-	dotDescription = new StringBuilder(
-		"digraph \""
-			+ fileName
-			+ "\" {\n\tfontsize=8;\n\tlabel=\"Step #"
-			+ intermediateOperatorTreeCount
-			+ "\\n\\n\";\n\tlabelloc=\"t\";\n\tnode[shape=box, fontsize=8, height=.1, width=.1];\n");
-	dotDescription.append(operatorTree.getRootNode().toString());
-	dotDescription.append("}");
-
-	// Save dot file
-	fileWriter = new FileWriter(dotFile, false);
-	fileWriter.write(dotDescription.toString());
-	fileWriter.close();
-
-	// Execute dot command
-	try {
-	    dotCommand = "dot -Tpng " + dotFile.getAbsolutePath() + " -o "
-		    + imageFile.getAbsolutePath();
-	    process = Runtime.getRuntime().exec(dotCommand);
-	    processCode = process.waitFor();
-	    dotFile.delete();
-
-	    if (processCode != 0) {
-		throw new RuntimeException("An error ocurred while executing: " + dotCommand);
-	    }
-
-	} catch (Exception e) {
-	    logger.error("Error creating image file: " + imageFile.getAbsolutePath(), e);
-	    throw new RuntimeException("Error creating image file: " + imageFile.getAbsolutePath(),
-		    e);
-	}
     }
 
     /**
@@ -266,7 +153,6 @@ public class AlgebraOptimizerService {
 
 	returnValue = new Node(attributes.toArray(new SqlData[attributes.size()]),
 		RelationalOperator.PROJECTION);
-
 	return returnValue;
     }
 

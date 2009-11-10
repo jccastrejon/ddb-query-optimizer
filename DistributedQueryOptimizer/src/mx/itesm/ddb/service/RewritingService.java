@@ -1,5 +1,7 @@
 package mx.itesm.ddb.service;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +35,58 @@ public class RewritingService {
      * Database Dictionary Service.
      */
     DatabaseDictionaryService databaseDictionaryService;
+
+    /**
+     * Graphic Export Service.
+     */
+    GraphicExportService graphicExportService;
+
+    /**
+     * Rewrite the Operator Tree by applying Transformation Rules.
+     * 
+     * @param operatorTree
+     *            Operator Tree.
+     * @param queryId
+     *            Query Id.
+     * @param imageDir
+     *            Directory where to save the temporary Operator Tree.
+     * @return Number of steps needed to build the final Operator Tree.
+     * @throws IOException
+     *             If an I/O error occurs.
+     */
+    public int rewriteOperatorTree(final OperatorTree operatorTree, final String queryId,
+	    final File imageDir) throws IOException {
+	int returnValue;
+	boolean rewriteTree;
+	List<Boolean> returnValues;
+
+	// Export original tree before rewriting
+	returnValue = 0;
+	graphicExportService.saveIntermediateOperatorTree(operatorTree, queryId, returnValue,
+		"Initial", imageDir);
+
+	// Refine the operator tree till no more changes are found
+	returnValues = new ArrayList<Boolean>();
+	do {
+	    returnValues.clear();
+
+	    do {
+		rewriteTree = this.idempotenceOfUnaryOperators(operatorTree.getRootNode());
+		returnValues.add(rewriteTree);
+		returnValue = this.exportTemporaryTree(operatorTree, queryId, rewriteTree,
+			returnValue, "IdempotenceOfUnaryOperators", imageDir);
+	    } while (rewriteTree);
+
+	    do {
+		rewriteTree = this.commuteSelectionWithProjection(operatorTree.getRootNode());
+		returnValues.add(rewriteTree);
+		returnValue = this.exportTemporaryTree(operatorTree, queryId, rewriteTree,
+			returnValue, "CommuteSelectionWithProjection", imageDir);
+	    } while (rewriteTree);
+	} while (returnValues.contains(Boolean.TRUE));
+
+	return returnValue;
+    }
 
     /**
      * Check if any of these scenarios apply:
@@ -79,7 +133,8 @@ public class RewritingService {
 
 			    // Group nodes
 			    if (currentRelation.equals(childRelation)) {
-				logger.debug("Grouping <" + child.getDescription() + "> with <"
+				logger.debug("idempotenceOfUnaryOperators: Grouping <"
+					+ child.getDescription() + "> with <"
 					+ currentNode.getDescription() + ">");
 
 				// Join conditions
@@ -138,6 +193,7 @@ public class RewritingService {
 	boolean returnValue;
 	Node projectionNode;
 	String childRelation;
+	boolean previousMatch;
 	String currentRelation;
 	boolean childReturnValue;
 	List<String> selectionAttributes;
@@ -145,6 +201,7 @@ public class RewritingService {
 
 	// Look for a projection followed by a selection on the same relation
 	returnValue = false;
+	previousMatch = false;
 	if (currentNode.getRelationalOperator() != null) {
 	    if (currentNode.getRelationalOperator().equals(RelationalOperator.PROJECTION)) {
 		currentRelation = databaseDictionaryService.getTableFromSqlData(currentNode
@@ -159,10 +216,45 @@ public class RewritingService {
 
 			    // Group nodes
 			    if (currentRelation.equals(childRelation)) {
+
+				// Before grouping nodes, verify if this is a
+				// previous found case, that is, a projection
+				// already exists after the selection with the
+				// required attributes
+				for (Node innerChild : child.getChildren()) {
+				    if ((innerChild.getRelationalOperator() != null)
+					    && (innerChild.getRelationalOperator()
+						    .equals(RelationalOperator.PROJECTION))) {
+					selectionAttributes = databaseDictionaryService
+						.getAttributesFromSqlData(innerChild.getSqlData());
+
+					// If the inner child contains all the
+					// projection attributes, this case was
+					// previously evaluated
+					previousMatch = true;
+					for (SqlData data : currentNode.getSqlData()) {
+					    if (!selectionAttributes.contains(data.toString())) {
+						previousMatch = false;
+					    }
+					}
+
+					// Don't evaluate the same case twice
+					if (previousMatch) {
+					    break;
+					}
+				    }
+				}
+
+				// Don't evaluate the same case twice
+				if (previousMatch) {
+				    break;
+				}
+
 				selectionAttributes = databaseDictionaryService
 					.getAttributesFromSqlData(child.getSqlData());
 
-				logger.warn("Grouping <" + child.getDescription() + "> with <"
+				logger.warn("commuteSelectionWithProjection: Grouping <"
+					+ child.getDescription() + "> with <"
 					+ currentNode.getDescription()
 					+ ">. Selection attributes: " + selectionAttributes);
 
@@ -242,6 +334,42 @@ public class RewritingService {
     }
 
     /**
+     * Export a temporary Operator Tree to an image in the given Image
+     * Directory.
+     * 
+     * @param operatorTree
+     *            Operator Tree to be exported.
+     * @param queryId
+     *            Query Id.
+     * @param rewriteTree
+     *            Flag that indicates wheter this tree should be exported or
+     *            not.
+     * @param currentStep
+     *            Current rewriting step that generated this intermediate
+     *            Operator Tree.
+     * @param label
+     *            Image Label.
+     * @param imageDir
+     *            Directory where to save the temporary Operator Tree.
+     * @return Current number of rewriting step.
+     * @throws IOException
+     *             If an I/O error occurs.
+     */
+    private int exportTemporaryTree(final OperatorTree operatorTree, final String queryId,
+	    final boolean rewriteTree, final int currentStep, final String label,
+	    final File imageDir) throws IOException {
+	int returnValue;
+
+	returnValue = currentStep;
+	if (rewriteTree) {
+	    graphicExportService.saveIntermediateOperatorTree(operatorTree, queryId,
+		    (++returnValue), label, imageDir);
+	}
+
+	return returnValue;
+    }
+
+    /**
      * @return the databaseDictionaryService
      */
     public DatabaseDictionaryService getDatabaseDictionaryService() {
@@ -254,5 +382,20 @@ public class RewritingService {
      */
     public void setDatabaseDictionaryService(DatabaseDictionaryService databaseDictionaryService) {
 	this.databaseDictionaryService = databaseDictionaryService;
+    }
+
+    /**
+     * @return the graphicExportService
+     */
+    public GraphicExportService getGraphicExportService() {
+	return graphicExportService;
+    }
+
+    /**
+     * @param graphicExportService
+     *            the graphicExportService to set
+     */
+    public void setGraphicExportService(GraphicExportService graphicExportService) {
+	this.graphicExportService = graphicExportService;
     }
 }
