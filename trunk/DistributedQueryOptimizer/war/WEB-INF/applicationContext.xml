@@ -14,14 +14,16 @@
             http://www.springframework.org/schema/security/spring-security-2.0.4.xsd">
 
 	<!-- Service -->
-	<bean id="parserService" class="mx.itesm.ddb.service.ParserService" />
 	<bean id="algebraOptimizerService" class="mx.itesm.ddb.service.AlgebraOptimizerService">
 		<property name="databaseDictionaryService" ref="databaseDictionaryService" />
 		<property name="rewritingService" ref="rewritingService" />
 	</bean>
 	<bean id="rewritingService" class="mx.itesm.ddb.service.RewritingService">
 		<property name="databaseDictionaryService" ref="databaseDictionaryService" />
+		<property name="graphicExportService" ref="graphicExportService" />
 	</bean>
+	<bean id="parserService" class="mx.itesm.ddb.service.ParserService" />
+	<bean id="graphicExportService" class="mx.itesm.ddb.service.GraphicExportService" />
 	<bean id="databaseDictionaryService" class="mx.itesm.ddb.service.DatabaseDictionaryService" />
 
 	<!-- General -->
@@ -33,8 +35,8 @@
 			</list>
 		</property>
 	</bean>
-	<!-- Security -->
 
+	<!-- Security -->
 	<security:http auto-config="true">
 		<security:intercept-url pattern="/login.jsp"
 			access="IS_AUTHENTICATED_ANONYMOUSLY" />
