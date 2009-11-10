@@ -28,6 +28,7 @@ public class AlgebraOptimizerServiceTest extends SqlBaseTest {
 	boolean correctQueries;
 	ParserService parserService;
 	RewritingService rewritingService;
+	GraphicExportService graphicExportService;
 	AlgebraOptimizerService algebraOptimizerService;
 	DatabaseDictionaryService databaseDictionaryService;
 
@@ -38,9 +39,11 @@ public class AlgebraOptimizerServiceTest extends SqlBaseTest {
 	// imageDir.deleteOnExit();
 	parserService = new ParserService();
 	rewritingService = new RewritingService();
+	graphicExportService = new GraphicExportService();
 	algebraOptimizerService = new AlgebraOptimizerService();
 	databaseDictionaryService = new DatabaseDictionaryService();
 	algebraOptimizerService.setRewritingService(rewritingService);
+	rewritingService.setGraphicExportService(graphicExportService);
 	rewritingService.setDatabaseDictionaryService(databaseDictionaryService);
 	algebraOptimizerService.setDatabaseDictionaryService(databaseDictionaryService);
 
