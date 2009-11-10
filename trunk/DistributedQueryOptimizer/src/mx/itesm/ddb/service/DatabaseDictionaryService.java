@@ -44,14 +44,32 @@ public class DatabaseDictionaryService {
      */
     public String getTableFromSqlData(final SqlData[] sqlData) {
 	StringBuilder returnValue;
+	List<ConditionData> conditions;
+	ExpressionConditionData expression;
 
-	returnValue = new StringBuilder();
-	for (SqlData data : sqlData) {
-	    if (data.toString().trim().equals("=")) {
-		break;
+	returnValue = null;
+	// [expression = value]
+	if (sqlData[0] instanceof SimpleExpressionData) {
+	    returnValue = new StringBuilder();
+	    for (SqlData data : sqlData) {
+		if (data.toString().trim().equals("=")) {
+		    break;
+		}
+
+		returnValue.append(data);
 	    }
+	}
 
-	    returnValue.append(data);
+	// [expression = value] and [expression = value]
+	else if (sqlData[0] instanceof OperationConditionData) {
+	    conditions = ((OperationConditionData) sqlData[0]).getConditions();
+
+	    // All the conditions refer to the same relation, so we take the
+	    // first one
+	    if ((conditions != null) && (!conditions.isEmpty())) {
+		expression = (ExpressionConditionData) conditions.get(0);
+		returnValue = new StringBuilder(expression.getExpression().toString());
+	    }
 	}
 
 	return this.getTableFromExpression(returnValue.toString().trim());
@@ -65,6 +83,7 @@ public class DatabaseDictionaryService {
      * @return Array of referenced attributes.
      */
     public List<String> getAttributesFromSqlData(final SqlData[] sqlData) {
+	String expression;
 	List<String> returnValue;
 	SimpleExpressionData simpleExpression;
 	OperationConditionData operationConditionData;
@@ -88,7 +107,11 @@ public class DatabaseDictionaryService {
 	    for (ConditionData condition : operationConditionData.getConditions()) {
 		expressionConditionData = (ExpressionConditionData) condition;
 		simpleExpression = (SimpleExpressionData) expressionConditionData.getExpression();
-		returnValue.add(this.getTableFromExpression(simpleExpression.toString()));
+
+		// table.attribute = value
+		expression = simpleExpression.toString().substring(0,
+			simpleExpression.getExpression().toString().indexOf('=')).trim();
+		returnValue.add(expression);
 	    }
 	}
 
