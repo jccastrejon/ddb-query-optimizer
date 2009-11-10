@@ -32,9 +32,19 @@
 		<!-- Rewriting Steps -->
 		<div id="operatorTrees">
 			<h3><fmt:message key="optimize.operatorTrees"/></h3></br>
-			<c:forEach var="intermediateOperatorTree" begin="0" end="${query.operatorTree.rewritingSteps}">
-				<img src="img/${query.id}/${query.id}-${intermediateOperatorTree}.png"/>
-			</c:forEach>
+			<table width="100%" border="1">
+				<tr>
+				<c:forEach var="step" begin="0" end="${query.operatorTree.rewritingSteps}">
+					<c:if test="${(step gt 0) and ((step mod 2) eq 0)}">
+						</tr>
+						<tr>
+					</c:if>				
+					<td width="50%" align="center">
+						<img src="img/${query.id}/${query.id}-${step}.png" />
+					</td>
+				</c:forEach>
+				</tr>
+			</table>
 		</div>
 	</c:if>
 </body>
