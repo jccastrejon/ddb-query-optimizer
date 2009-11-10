@@ -261,11 +261,22 @@ public class RewritingService {
 				// The projection attributes include the
 				// original projection attributes and the
 				// attributes needed by the selection
+				previousMatch = false;
 				projectionAttributes = new ArrayList<SqlData>(Arrays
 					.asList(currentNode.getSqlData()));
 
 				for (String expression : selectionAttributes) {
-				    projectionAttributes.add(new SimpleExpressionData(expression));
+				    for (SqlData sqlData : projectionAttributes) {
+					if (sqlData.toString().trim().equals(expression.trim())) {
+					    previousMatch = true;
+					    break;
+					}
+				    }
+
+				    if (!previousMatch) {
+					projectionAttributes.add(new SimpleExpressionData(
+						expression));
+				    }
 				}
 
 				// Add the new projection node as a child of the
