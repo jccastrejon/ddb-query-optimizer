@@ -10,6 +10,8 @@ import mx.itesm.ddb.util.impl.OperationConditionData;
 import mx.itesm.ddb.util.impl.SimpleExpressionData;
 
 /**
+ * Database Dictionary Service.
+ * 
  * @author jccastrejon
  * 
  */
@@ -85,6 +87,7 @@ public class DatabaseDictionaryService {
      */
     public List<String> getAttributesFromSqlData(final SqlData[] sqlData) {
 	String expression;
+	String[] expressions;
 	List<String> returnValue;
 	SimpleExpressionData simpleExpression;
 	OperationConditionData operationConditionData;
@@ -109,10 +112,23 @@ public class DatabaseDictionaryService {
 		expressionConditionData = (ExpressionConditionData) condition;
 		simpleExpression = (SimpleExpressionData) expressionConditionData.getExpression();
 
+		// (table.attribute = value AND ...)
+		if (simpleExpression.toString().indexOf("AND") > 0) {
+		    expressions = simpleExpression.toString().split("AND");
+
+		    for (String conditionExpression : expressions) {
+			returnValue.add(conditionExpression.substring(0,
+				conditionExpression.indexOf('=')).replace('(', ' ').replace(')',
+				' ').trim());
+		    }
+		}
+
 		// table.attribute = value
-		expression = simpleExpression.toString().substring(0,
-			simpleExpression.getExpression().toString().indexOf('=')).trim();
-		returnValue.add(expression);
+		else {
+		    expression = simpleExpression.toString().substring(0,
+			    simpleExpression.getExpression().toString().indexOf('=')).trim();
+		    returnValue.add(expression);
+		}
 	    }
 	}
 
