@@ -69,6 +69,7 @@ public class RewritingService {
 	do {
 	    returnValues.clear();
 
+	    // idempotenceOfUnaryOperators
 	    do {
 		rewriteTree = this.idempotenceOfUnaryOperators(operatorTree.getRootNode());
 		returnValues.add(rewriteTree);
@@ -76,11 +77,20 @@ public class RewritingService {
 			returnValue, "IdempotenceOfUnaryOperators", imageDir);
 	    } while (rewriteTree);
 
+	    // commuteSelectionWithProjection
 	    do {
 		rewriteTree = this.commuteSelectionWithProjection(operatorTree.getRootNode());
 		returnValues.add(rewriteTree);
 		returnValue = this.exportTemporaryTree(operatorTree, queryId, rewriteTree,
 			returnValue, "CommuteSelectionWithProjection", imageDir);
+	    } while (rewriteTree);
+
+	    // commuteSelectionWithBinaryOperators
+	    do {
+		rewriteTree = this.commuteSelectionWithBinaryOperators(operatorTree.getRootNode());
+		returnValues.add(rewriteTree);
+		returnValue = this.exportTemporaryTree(operatorTree, queryId, rewriteTree,
+			returnValue, "CommuteSelectionWithBinaryOperators", imageDir);
 	    } while (rewriteTree);
 	} while (returnValues.contains(Boolean.TRUE));
 
@@ -134,8 +144,8 @@ public class RewritingService {
 				// Update currentNode with grouped selections
 				// and new children. This includes deletion of
 				// the child
-				child.setParent(null);
-				currentNode.getChildren().remove(child);
+				child.getParent().removeChild(child);
+				currentNode.removeChild(child);
 				currentNode.addChildren(child.getChildren());
 				currentNode.setSqlData(currentNode.getSqlData()
 					+ child.getSqlData());
@@ -180,8 +190,8 @@ public class RewritingService {
 				// Update currentNode with grouped selections
 				// and new children. This includes deletion of
 				// the child
-				child.setParent(null);
-				currentNode.getChildren().remove(child);
+				child.getParent().removeChild(child);
+				currentNode.removeChild(child);
 				currentNode.addChildren(child.getChildren());
 				currentNode.setSqlData(groupedConditionData.toString());
 
@@ -312,7 +322,7 @@ public class RewritingService {
 				projectionNode = new Node(projectionAttributes
 					.toArray(new String[projectionAttributes.size()]),
 					RelationalOperator.PROJECTION);
-				projectionNode.setChildren(child.getChildren());
+				projectionNode.addChildren(child.getChildren());
 				child.setChildren(null);
 				child.addChild(projectionNode);
 
@@ -351,8 +361,79 @@ public class RewritingService {
      *            Operator Tree to analyze.
      * @return Rewritten Operator Tree.
      */
-    public OperatorTree commuteSelectionWithBinaryOperators(final OperatorTree operatorTree) {
-	return null;
+    public boolean commuteSelectionWithBinaryOperators(final Node currentNode) {
+	boolean returnValue;
+	String currentRelation;
+	boolean childReturnValue;
+	List<Node> currentChildren;
+
+	returnValue = false;
+	currentChildren = currentNode.getChildren();
+	if (currentNode.getRelationalOperator() != null) {
+
+	    // Selection and Cartesian product
+	    if (currentNode.getRelationalOperator().equals(RelationalOperator.SELECT)) {
+		currentRelation = databaseDictionaryService.getTableFromSqlData(currentNode
+			.getSqlData());
+
+		if ((currentRelation != null) && (currentNode.getChildren() != null)) {
+		    for (Node child : currentNode.getChildren()) {
+			if ((child.getRelationalOperator() != null)
+				&& (child.getRelationalOperator()
+					.equals(RelationalOperator.PRODUCT))) {
+
+			    // Try to commute operators
+			    returnValue = this.addSelectionBeforeLeafNode(currentRelation,
+				    currentNode, child, currentChildren);
+
+			    // Commuting done
+			    if (returnValue) {
+				break;
+			    }
+			}
+		    }
+		}
+	    }
+
+	    // Selection and Join
+	    if (currentNode.getRelationalOperator().equals(RelationalOperator.SELECT)) {
+		currentRelation = databaseDictionaryService.getTableFromSqlData(currentNode
+			.getSqlData());
+
+		if ((currentRelation != null) && (currentNode.getChildren() != null)) {
+		    for (Node child : currentNode.getChildren()) {
+			if ((child.getRelationalOperator() != null)
+				&& (child.getRelationalOperator().equals(RelationalOperator.JOIN))) {
+
+			    // Try to commute operators
+			    returnValue = this.addSelectionBeforeLeafNode(currentRelation,
+				    currentNode, child, currentChildren);
+
+			    // Commuting done
+			    if (returnValue) {
+				break;
+			    }
+			}
+		    }
+		}
+	    }
+	}
+
+	// Test the same for every child only if we haven't find a matching
+	// case, because if we did, the operator tree has already changed for
+	// the children nodes
+	if (currentChildren != null) {
+	    for (Node child : currentChildren) {
+		childReturnValue = this.commuteSelectionWithBinaryOperators(child);
+
+		if (childReturnValue) {
+		    returnValue = true;
+		    break;
+		}
+	    }
+	}
+
+	return returnValue;
     }
 
     /**
@@ -436,5 +517,76 @@ public class RewritingService {
      */
     public void setGraphicExportService(GraphicExportService graphicExportService) {
 	this.graphicExportService = graphicExportService;
+    }
+
+    /**
+     * Try to add the Selection Node just before the Leaf Node that contains the
+     * selection relation.
+     * 
+     * @param relation
+     *            Relation that identifies the Lead Node.
+     * @param selectionNode
+     *            Selection Node.
+     * @param selectionChildNode
+     *            Child of the Selection Node whose hierarchy contains the Leaf
+     *            Node.
+     * @param currentChildren
+     *            Current children of the Selection Node.
+     * @return <em>true</em> if the Selection Node is correctly added just
+     *         before the Leaf Node, <em>false</em> otherwise.
+     */
+    private boolean addSelectionBeforeLeafNode(final String relation, final Node selectionNode,
+	    final Node selectionChildNode, final List<Node> currentChildren) {
+	Node leafNode;
+	boolean returnValue;
+
+	// Look for the child of the selectionChildNode that
+	// contains the relation (leafNode) in order to apply
+	// the selection there
+	returnValue = false;
+	for (Node innerChild : selectionChildNode.getChildren()) {
+	    leafNode = innerChild.getLeafNode(relation);
+
+	    if (leafNode != null) {
+		// Disassociate selectionNode with its
+		// children
+		selectionNode.removeAllChildren();
+
+		// Intermediary node
+		if (selectionNode.getParent() != null) {
+		    // The former children of the selectionNode are now children
+		    // of the former parent of the selectionNode
+		    selectionNode.getParent().addChildren(currentChildren);
+		    selectionNode.getParent().removeChild(selectionNode);
+		}
+
+		// Root node
+		else {
+		    // If currentNode is the rootNode and there
+		    // is more than one child, associate them
+		    // with a Cartesian product
+		    if (currentChildren.size() > 1) {
+			logger
+				.warn("Root Node has been deleted, a cartesian product should be added as the new rootNode, associating nodes: "
+					+ currentChildren);
+		    }
+		}
+
+		// The selectionNode is added between the Leaf Node and the
+		// leaf's parent
+		if (leafNode.getParent() != null) {
+		    leafNode.getParent().addChild(selectionNode);
+		    leafNode.getParent().removeChild(leafNode);
+		}
+
+		// Add the leaf node just after the selection node
+		selectionNode.addChild(leafNode);
+
+		returnValue = true;
+		break;
+	    }
+	}
+
+	return returnValue;
     }
 }

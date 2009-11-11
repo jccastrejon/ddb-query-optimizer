@@ -86,7 +86,8 @@ public class Node implements Cloneable {
      * @param parent
      *            Parent Node.
      */
-    public Node(SqlData sqlData, RelationalOperator relationalOperator, Node parent) {
+    public Node(final SqlData sqlData, final RelationalOperator relationalOperator,
+	    final Node parent) {
 	this(sqlData, relationalOperator);
 	this.parent = parent;
     }
@@ -99,7 +100,7 @@ public class Node implements Cloneable {
      * @param relationalOperator
      *            Relational Operator.
      */
-    public Node(SqlData[] sqlData, RelationalOperator relationalOperator) {
+    public Node(final SqlData[] sqlData, final RelationalOperator relationalOperator) {
 	this(relationalOperator);
 	StringBuilder newSqlData;
 
@@ -145,7 +146,8 @@ public class Node implements Cloneable {
      * @param parent
      *            Parent Node.
      */
-    public Node(SqlData[] sqlData, RelationalOperator relationalOperator, Node parent) {
+    public Node(final SqlData[] sqlData, final RelationalOperator relationalOperator,
+	    final Node parent) {
 	this(sqlData, relationalOperator);
 	this.parent = parent;
     }
@@ -156,13 +158,15 @@ public class Node implements Cloneable {
      * @param node
      *            Child Node.
      */
-    public void addChild(Node node) {
+    public void addChild(final Node node) {
 	if (this.children == null) {
 	    this.children = new ArrayList<Node>();
 	}
 
-	node.setParent(this);
-	this.children.add(node);
+	if (node != null) {
+	    node.setParent(this);
+	    this.children.add(node);
+	}
     }
 
     /**
@@ -171,26 +175,31 @@ public class Node implements Cloneable {
      * @param children
      *            Children Nodes.
      */
-    public void addChildren(List<Node> children) {
+    public void addChildren(final List<Node> children) {
 	if (this.children == null) {
 	    this.children = new ArrayList<Node>();
 	}
 
-	for (Node node : children) {
-	    node.setParent(this);
-	}
+	if (children != null) {
+	    for (Node node : children) {
+		node.setParent(this);
+	    }
 
-	this.children.addAll(children);
+	    this.children.addAll(children);
+	}
     }
 
     /**
      * Remove a node from the children nodes.
      * 
      * @param node
-     *            Child Node.
+     *            Child node.
      */
-    public void removeChild(Node node) {
-	this.children.remove(node);
+    public void removeChild(final Node node) {
+	if ((this.children != null) && (node != null)) {
+	    this.children.remove(node);
+	    node.setParent(null);
+	}
     }
 
     /**
@@ -199,35 +208,70 @@ public class Node implements Cloneable {
      * @param children
      *            Children Nodes.
      */
-    public void removeChildren(List<Node> children) {
-	this.children.removeAll(children);
+    public void removeChildren(final List<Node> children) {
+	if ((this.children != null) && (children != null)) {
+	    for (Node child : children) {
+		this.removeChild(child);
+	    }
+	}
+    }
+
+    /**
+     * Remove all the children nodes from this node.
+     */
+    public void removeAllChildren() {
+	for (Node child : this.children) {
+	    child.setParent(null);
+	}
+
+	this.children = null;
     }
 
     /**
      * Checks if this a leaf node identified by the specified SQL Data, or if
      * it's contained in one of its children.
      * 
-     * @param id
+     * @param sqlData
      *            Leaf Node's SQL Data.
      * @return <em>true</em> if the leaf node is defined within this node
-     *         hierarchy.
+     *         hierarchy, <em>false</em> otherwise.
      */
     public boolean containsLeafNode(final String sqlData) {
 	boolean returnValue;
 
-	// Check if the data is in this node
 	returnValue = false;
+	if (this.getLeafNode(sqlData) != null) {
+	    returnValue = true;
+	}
+
+	return returnValue;
+    }
+
+    /**
+     * Look for the leaf node identified by the specified SQL Data in this
+     * Node's hierarchy.
+     * 
+     * @param sqlData
+     *            Leaf Node's SQL Data.
+     * @return The leaf Node if it's indeed in this Node's hierarchy,
+     *         <em>null</em> otherwise.
+     */
+    public Node getLeafNode(final String sqlData) {
+	Node returnValue;
+
+	// Check if the data is in this node
+	returnValue = null;
 	if (this.children == null) {
 	    if (this.sqlData.toLowerCase().equals(sqlData.toLowerCase())) {
-		returnValue = true;
+		returnValue = this;
 	    }
 	}
 
 	// Check if the data is in one of my children
 	else {
 	    for (Node child : this.children) {
-		if (child.containsLeafNode(sqlData)) {
-		    returnValue = true;
+		returnValue = child.getLeafNode(sqlData);
+		if (returnValue != null) {
 		    break;
 		}
 	    }
@@ -304,28 +348,22 @@ public class Node implements Cloneable {
     @Override
     public Node clone() {
 	Node newNode;
-	List<Node> newChildren;
 	String newSqlData;
 	Node returnValue;
 
 	newSqlData = null;
-	newChildren = null;
 	returnValue = new Node(this.relationalOperator);
 
 	newSqlData = new String(this.sqlData);
 
 	if (this.children != null) {
-	    newChildren = new ArrayList<Node>(this.children.size());
 	    for (Node node : this.children) {
 		newNode = node.clone();
-		newNode.setParent(returnValue);
-		newChildren.add(node.clone());
+		returnValue.addChild(newNode);
 	    }
 	}
 
-	returnValue.setChildren(newChildren);
 	returnValue.setSqlData(newSqlData);
-
 	return returnValue;
     }
 
