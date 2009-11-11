@@ -33,6 +33,15 @@ public interface ExpressionOperator {
 	    this.description = description;
 	}
 
+	/**
+	 * Get the Operator's description.
+	 * 
+	 * @return Operator's description.
+	 */
+	public String getDescription() {
+	    return this.description;
+	}
+
 	@Override
 	public String toString() {
 	    return " " + this.description + " ";

@@ -22,7 +22,7 @@ public class Node implements Cloneable {
     /**
      * Node data.
      */
-    private SqlData[] sqlData;
+    private String sqlData;
 
     /**
      * Relational Operator.
@@ -46,7 +46,7 @@ public class Node implements Cloneable {
      *            Node data.
      */
     public Node(final SqlData sqlData) {
-	this.sqlData = new SqlData[] { sqlData };
+	this.sqlData = sqlData.toString();
 	this.id = this.generateId();
     }
 
@@ -101,9 +101,38 @@ public class Node implements Cloneable {
      */
     public Node(SqlData[] sqlData, RelationalOperator relationalOperator) {
 	this(relationalOperator);
-	this.sqlData = sqlData;
+	StringBuilder newSqlData;
+
+	newSqlData = new StringBuilder();
+	for (SqlData data : sqlData) {
+	    newSqlData.append(data.toString()).append(" ");
+	}
+
 	this.parent = null;
 	this.children = new ArrayList<Node>();
+	this.sqlData = newSqlData.toString();
+    }
+
+    /**
+     * Initialize with a collection of data and relational operator.
+     * 
+     * @param sqlData
+     *            Node data.
+     * @param relationalOperator
+     *            Relational Operator.
+     */
+    public Node(final String[] sqlData, final RelationalOperator relationalOperator) {
+	this(relationalOperator);
+	StringBuilder newSqlData;
+
+	newSqlData = new StringBuilder();
+	for (String data : sqlData) {
+	    newSqlData.append(data).append(" ");
+	}
+
+	this.parent = null;
+	this.children = new ArrayList<Node>();
+	this.sqlData = newSqlData.toString();
     }
 
     /**
@@ -189,11 +218,8 @@ public class Node implements Cloneable {
 	// Check if the data is in this node
 	returnValue = false;
 	if (this.children == null) {
-	    for (SqlData data : this.sqlData) {
-		if (data.toString().toLowerCase().equals(sqlData.toLowerCase())) {
-		    returnValue = true;
-		    break;
-		}
+	    if (this.sqlData.toLowerCase().equals(sqlData.toLowerCase())) {
+		returnValue = true;
 	    }
 	}
 
@@ -223,26 +249,20 @@ public class Node implements Cloneable {
 	    returnValue.append(this.relationalOperator);
 	}
 
-	returnValue.append(this.getSqlDataDescription());
+	if (this.sqlData != null) {
+	    returnValue.append(this.sqlData);
+	}
+
 	return returnValue.toString();
     }
 
     /**
-     * Get the Node's SqlData description.
+     * Get the Node's SqlData elements.
      * 
-     * @return SqlData description.
+     * @return Array containing SqlData elements.
      */
-    public String getSqlDataDescription() {
-	StringBuilder returnValue;
-
-	returnValue = new StringBuilder();
-	if (this.sqlData != null) {
-	    for (SqlData sqlData : this.sqlData) {
-		returnValue.append(" " + sqlData + " ");
-	    }
-	}
-
-	return returnValue.toString();
+    public String[] getSqlDataElements() {
+	return this.sqlData.trim().split(" ");
     }
 
     @Override
@@ -279,19 +299,14 @@ public class Node implements Cloneable {
     public Node clone() {
 	Node newNode;
 	List<Node> newChildren;
-	SqlData[] newSqlData;
+	String newSqlData;
 	Node returnValue;
 
 	newSqlData = null;
 	newChildren = null;
 	returnValue = new Node(this.relationalOperator);
 
-	if (this.sqlData != null) {
-	    newSqlData = new SqlData[this.sqlData.length];
-	    for (int i = 0; i < this.sqlData.length; i++) {
-		newSqlData[i] = this.sqlData[i].clone();
-	    }
-	}
+	newSqlData = new String(this.sqlData);
 
 	if (this.children != null) {
 	    newChildren = new ArrayList<Node>(this.children.size());
@@ -320,7 +335,7 @@ public class Node implements Cloneable {
     /**
      * @return the sqlData
      */
-    public SqlData[] getSqlData() {
+    public String getSqlData() {
 	return sqlData;
     }
 
@@ -328,7 +343,7 @@ public class Node implements Cloneable {
      * @param sqlData
      *            the sqlData to set
      */
-    public void setSqlData(SqlData[] sqlData) {
+    public void setSqlData(String sqlData) {
 	this.sqlData = sqlData;
     }
 
