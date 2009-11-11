@@ -5,6 +5,7 @@ SELECT tabla.nombre, tabla.nombre2 FROM tabla;
 SELECT tabla.*, nombre FROM tabla;
 SELECT MAX(tabla.atributo) from tabla;
 SELECT tabla.*, nombre FROM tabla, tabla2;
+SELECT * FROM tabla, tabla2 where tabla.atributo = tabla2.atributo and tabla.atributo = "1";
 SELECT tabla.*, nombre FROM (SELECT * FROM tabla);
 SELECT * FROM tabla WHERE tabla.atributo=1;
 SELECT * FROM tabla WHERE tabla.atributo=1 and tabla.atributo2=2;
