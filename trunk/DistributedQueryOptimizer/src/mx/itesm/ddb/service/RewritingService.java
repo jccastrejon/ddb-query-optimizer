@@ -350,7 +350,7 @@ public class RewritingService {
      * @param queryId
      *            Query Id.
      * @param rewriteTree
-     *            Flag that indicates wheter this tree should be exported or
+     *            Flag that indicates whether this tree should be exported or
      *            not.
      * @param currentStep
      *            Current rewriting step that generated this intermediate

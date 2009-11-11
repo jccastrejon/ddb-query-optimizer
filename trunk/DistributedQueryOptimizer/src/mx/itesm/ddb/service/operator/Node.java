@@ -242,6 +242,7 @@ public class Node implements Cloneable {
      * @return Node's description.
      */
     public String getDescription() {
+	String sqlData;
 	StringBuilder returnValue;
 
 	returnValue = new StringBuilder();
@@ -250,7 +251,12 @@ public class Node implements Cloneable {
 	}
 
 	if (this.sqlData != null) {
-	    returnValue.append(this.sqlData);
+	    sqlData = this.sqlData;
+	    if ((this.relationalOperator != null) && (this.relationalOperator.isCompoundOperator())) {
+		sqlData = sqlData.trim().replace(" ", ", ");
+	    }
+
+	    returnValue.append(sqlData);
 	}
 
 	return returnValue.toString();
