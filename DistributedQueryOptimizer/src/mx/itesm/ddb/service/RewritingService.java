@@ -109,11 +109,42 @@ public class RewritingService {
 
 	returnValue = false;
 	if (currentNode.getRelationalOperator() != null) {
+
 	    // Group projections
 	    if (currentNode.getRelationalOperator().equals(RelationalOperator.PROJECTION)) {
-		// TODO: Projection grouping:.
-		logger.warn("Projection grouping should be checked in: "
-			+ currentNode.getDescription());
+		currentRelation = databaseDictionaryService.getTableFromSqlData(currentNode
+			.getSqlData());
+
+		// See if any of the chilidren is also a projection on the same
+		// relation
+		if ((currentRelation != null) && (currentNode.getChildren() != null)) {
+		    for (Node child : currentNode.getChildren()) {
+			if ((child.getRelationalOperator() != null)
+				&& (child.getRelationalOperator()
+					.equals(RelationalOperator.PROJECTION))) {
+			    childRelation = databaseDictionaryService.getTableFromSqlData(child
+				    .getSqlData());
+
+			    // Group nodes
+			    if (currentRelation.equals(childRelation)) {
+				logger.debug("idempotenceOfUnaryOperators: Grouping <"
+					+ child.getDescription() + "> with <"
+					+ currentNode.getDescription() + ">");
+
+				// Update currentNode with grouped selections
+				// and new children. This includes deletion of
+				// the child
+				child.setParent(null);
+				currentNode.getChildren().remove(child);
+				currentNode.addChildren(child.getChildren());
+				currentNode.setSqlData(currentNode.getSqlData()
+					+ child.getSqlData());
+
+				returnValue = true;
+			    }
+			}
+		    }
+		}
 	    }
 
 	    // Group selections
