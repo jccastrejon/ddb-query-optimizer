@@ -32,6 +32,15 @@ public interface ConditionOperator {
 	    this.description = description;
 	}
 
+	/**
+	 * Get the Operator's description.
+	 * 
+	 * @return Operator's description.
+	 */
+	public String getDescription() {
+	    return this.description;
+	}
+
 	@Override
 	public String toString() {
 	    return " " + this.description + " ";
@@ -60,6 +69,15 @@ public interface ConditionOperator {
 	 */
 	private BinaryOperator(String description) {
 	    this.description = description;
+	}
+
+	/**
+	 * Get the Operator's description.
+	 * 
+	 * @return Operator's description.
+	 */
+	public String getDescription() {
+	    return this.description;
 	}
 
 	@Override

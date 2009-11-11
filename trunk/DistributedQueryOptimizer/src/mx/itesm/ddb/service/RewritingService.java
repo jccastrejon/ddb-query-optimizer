@@ -11,7 +11,6 @@ import mx.itesm.ddb.service.operator.OperatorTree;
 import mx.itesm.ddb.util.ConditionData;
 import mx.itesm.ddb.util.ConditionOperator;
 import mx.itesm.ddb.util.RelationalOperator;
-import mx.itesm.ddb.util.SqlData;
 import mx.itesm.ddb.util.impl.ExpressionConditionData;
 import mx.itesm.ddb.util.impl.OperationConditionData;
 import mx.itesm.ddb.util.impl.SimpleExpressionData;
@@ -140,10 +139,9 @@ public class RewritingService {
 				// Join conditions
 				groupedConditions = new ArrayList<ConditionData>(2);
 				groupedConditions.add(new ExpressionConditionData(
-					new SimpleExpressionData(currentNode
-						.getSqlDataDescription())));
+					new SimpleExpressionData(currentNode.getSqlData())));
 				groupedConditions.add(new ExpressionConditionData(
-					new SimpleExpressionData(child.getSqlDataDescription())));
+					new SimpleExpressionData(child.getSqlData())));
 				groupedConditionData = new OperationConditionData(
 					ConditionOperator.BinaryOperator.AND_OPERATOR,
 					groupedConditions);
@@ -154,7 +152,7 @@ public class RewritingService {
 				child.setParent(null);
 				currentNode.getChildren().remove(child);
 				currentNode.addChildren(child.getChildren());
-				currentNode.setSqlData(new SqlData[] { groupedConditionData });
+				currentNode.setSqlData(groupedConditionData.toString());
 
 				returnValue = true;
 			    }
@@ -197,7 +195,7 @@ public class RewritingService {
 	String currentRelation;
 	boolean childReturnValue;
 	List<String> selectionAttributes;
-	List<SqlData> projectionAttributes;
+	List<String> projectionAttributes;
 
 	// Look for a projection followed by a selection on the same relation
 	returnValue = false;
@@ -232,8 +230,8 @@ public class RewritingService {
 					// projection attributes, this case was
 					// previously evaluated
 					previousMatch = true;
-					for (SqlData data : currentNode.getSqlData()) {
-					    if (!selectionAttributes.contains(data.toString())) {
+					for (String data : currentNode.getSqlDataElements()) {
+					    if (!selectionAttributes.contains(data)) {
 						previousMatch = false;
 					    }
 					}
@@ -262,11 +260,11 @@ public class RewritingService {
 				// original projection attributes and the
 				// attributes needed by the selection
 				previousMatch = false;
-				projectionAttributes = new ArrayList<SqlData>(Arrays
-					.asList(currentNode.getSqlData()));
+				projectionAttributes = new ArrayList<String>(Arrays
+					.asList(currentNode.getSqlDataElements()));
 
 				for (String expression : selectionAttributes) {
-				    for (SqlData sqlData : projectionAttributes) {
+				    for (String sqlData : projectionAttributes) {
 					if (sqlData.toString().trim().equals(expression.trim())) {
 					    previousMatch = true;
 					    break;
@@ -274,15 +272,14 @@ public class RewritingService {
 				    }
 
 				    if (!previousMatch) {
-					projectionAttributes.add(new SimpleExpressionData(
-						expression));
+					projectionAttributes.add(expression);
 				    }
 				}
 
 				// Add the new projection node as a child of the
 				// current child node
 				projectionNode = new Node(projectionAttributes
-					.toArray(new SqlData[projectionAttributes.size()]),
+					.toArray(new String[projectionAttributes.size()]),
 					RelationalOperator.PROJECTION);
 				projectionNode.setChildren(child.getChildren());
 				child.setChildren(null);

@@ -1,13 +1,10 @@
 package mx.itesm.ddb.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-import mx.itesm.ddb.util.ConditionData;
-import mx.itesm.ddb.util.SqlData;
-import mx.itesm.ddb.util.impl.ExpressionConditionData;
-import mx.itesm.ddb.util.impl.OperationConditionData;
-import mx.itesm.ddb.util.impl.SimpleExpressionData;
+import mx.itesm.ddb.util.ConditionOperator;
 
 /**
  * Database Dictionary Service.
@@ -44,38 +41,27 @@ public class DatabaseDictionaryService {
      *            SqlData.
      * @return Table name.
      */
-    public String getTableFromSqlData(final SqlData[] sqlData) {
-	StringBuilder returnValue;
-	List<ConditionData> conditions;
-	ExpressionConditionData expression;
+    public String getTableFromSqlData(final String sqlData) {
+	String returnValue;
 
 	returnValue = null;
 	// [expression = value]
-	if (sqlData[0] instanceof SimpleExpressionData) {
-	    returnValue = new StringBuilder();
-	    for (SqlData data : sqlData) {
-		if (data.toString().trim().equals("=")) {
-		    break;
-		}
-
-		returnValue.append(data);
+	if (sqlData.indexOf(ConditionOperator.BinaryOperator.AND_OPERATOR.getDescription()) == -1) {
+	    returnValue = sqlData;
+	    if (returnValue.indexOf('=') > 0) {
+		returnValue = sqlData.substring(0, sqlData.indexOf('='));
 	    }
 	}
 
 	// [expression = value] and [expression = value]
-	else if (sqlData[0] instanceof OperationConditionData) {
-	    conditions = ((OperationConditionData) sqlData[0]).getConditions();
-
+	else {
 	    // All the conditions refer to the same relation, so we take the
 	    // first one
-	    if ((conditions != null) && (!conditions.isEmpty())) {
-		expression = (ExpressionConditionData) conditions.get(0);
-		returnValue = new StringBuilder(expression.getExpression().toString().replace('(',
-			' ').replace(')', ' '));
-	    }
+	    returnValue = sqlData.substring(0, sqlData
+		    .indexOf(ConditionOperator.BinaryOperator.AND_OPERATOR.getDescription()));
 	}
 
-	return this.getTableFromExpression(returnValue.toString().trim());
+	return this.getTableFromExpression(this.getValidExpression(returnValue));
     }
 
     /**
@@ -85,53 +71,48 @@ public class DatabaseDictionaryService {
      *            Array of SqlData elements to be analyzed.
      * @return Array of referenced attributes.
      */
-    public List<String> getAttributesFromSqlData(final SqlData[] sqlData) {
+    public List<String> getAttributesFromSqlData(final String sqlData) {
 	String expression;
 	String[] expressions;
 	List<String> returnValue;
-	SimpleExpressionData simpleExpression;
-	OperationConditionData operationConditionData;
-	ExpressionConditionData expressionConditionData;
 
 	returnValue = new ArrayList<String>();
 	// [expression = value]
-	if (sqlData[0] instanceof SimpleExpressionData) {
-	    for (SqlData data : sqlData) {
-		if (data.toString().trim().equals("=")) {
-		    break;
-		}
-
-		returnValue.add(data.toString().trim());
+	if (sqlData.indexOf(ConditionOperator.BinaryOperator.AND_OPERATOR.toString().trim()) == -1) {
+	    expression = sqlData;
+	    if (expression.indexOf('=') > 0) {
+		expression = sqlData.substring(0, sqlData.indexOf('='));
 	    }
+
+	    returnValue = Arrays.asList(expression.trim().split(" "));
 	}
 
 	// [expression = value] and [expression = value]
-	else if (sqlData[0] instanceof OperationConditionData) {
-	    operationConditionData = ((OperationConditionData) sqlData[0]);
-	    for (ConditionData condition : operationConditionData.getConditions()) {
-		expressionConditionData = (ExpressionConditionData) condition;
-		simpleExpression = (SimpleExpressionData) expressionConditionData.getExpression();
+	else {
+	    expressions = sqlData.split(ConditionOperator.BinaryOperator.AND_OPERATOR
+		    .getDescription());
 
-		// (table.attribute = value AND ...)
-		if (simpleExpression.toString().indexOf("AND") > 0) {
-		    expressions = simpleExpression.toString().split("AND");
-
-		    for (String conditionExpression : expressions) {
-			returnValue.add(conditionExpression.substring(0,
-				conditionExpression.indexOf('=')).replace('(', ' ').replace(')',
-				' ').trim());
-		    }
+	    returnValue = new ArrayList<String>(expressions.length);
+	    for (String innerExpression : expressions) {
+		if (innerExpression.indexOf('=') > 0) {
+		    innerExpression = innerExpression.substring(0, innerExpression.indexOf('='));
 		}
 
-		// table.attribute = value
-		else {
-		    expression = simpleExpression.toString().substring(0,
-			    simpleExpression.getExpression().toString().indexOf('=')).trim();
-		    returnValue.add(expression);
-		}
+		returnValue.add(this.getValidExpression(innerExpression));
 	    }
 	}
 
 	return returnValue;
+    }
+
+    /**
+     * Get a valid expression value.
+     * 
+     * @param expression
+     *            Expression to analyze.
+     * @return Valid expression.
+     */
+    private String getValidExpression(final String expression) {
+	return expression.replace('(', ' ').replace(')', ' ').trim();
     }
 }
