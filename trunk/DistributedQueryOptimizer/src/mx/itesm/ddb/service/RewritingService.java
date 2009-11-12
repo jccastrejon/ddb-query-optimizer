@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import mx.itesm.ddb.service.operator.Node;
 import mx.itesm.ddb.service.operator.OperatorTree;
@@ -505,12 +506,6 @@ public class RewritingService {
 				    returnValue = true;
 				}
 			    }
-
-			    // Remove original projection node
-			    if (currentNode.getParent() != null) {
-				currentNode.getParent().addChildren(currentChildren);
-				currentNode.getParent().removeChild(currentNode);
-			    }
 			}
 		    }
 		}
@@ -618,7 +613,7 @@ public class RewritingService {
 	boolean returnValue;
 	List<Node> leafNodes;
 	Node newOperationNode;
-	List<String> operationSqlDataElements;
+	Set<String> operationSqlDataElements;
 
 	// Look for the child of the operationChildNode that
 	// contains the relation (leafNode) in order to apply
