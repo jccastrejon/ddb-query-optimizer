@@ -45,9 +45,19 @@ public class Node implements Cloneable {
      * @param sqlData
      *            Node data.
      */
-    public Node(final SqlData sqlData) {
-	this.sqlData = sqlData.toString();
+    public Node(final String sqlData) {
+	this.sqlData = sqlData;
 	this.id = this.generateId();
+    }
+
+    /**
+     * Initialize only with data.
+     * 
+     * @param sqlData
+     *            Node data.
+     */
+    public Node(final SqlData sqlData) {
+	this(sqlData.toString());
     }
 
     /**
@@ -69,11 +79,23 @@ public class Node implements Cloneable {
      * @param relationalOperator
      *            Relational Operator.
      */
-    public Node(final SqlData sqlData, final RelationalOperator relationalOperator) {
+    public Node(final String sqlData, final RelationalOperator relationalOperator) {
 	this(sqlData);
 	this.relationalOperator = relationalOperator;
 	this.parent = null;
 	this.children = new ArrayList<Node>();
+    }
+
+    /**
+     * Initialize with data and relational operator.
+     * 
+     * @param sqlData
+     *            Node data.
+     * @param relationalOperator
+     *            Relational Operator.
+     */
+    public Node(final SqlData sqlData, final RelationalOperator relationalOperator) {
+	this(sqlData.toString(), relationalOperator);
     }
 
     /**
@@ -220,11 +242,13 @@ public class Node implements Cloneable {
      * Remove all the children nodes from this node.
      */
     public void removeAllChildren() {
-	for (Node child : this.children) {
-	    child.setParent(null);
-	}
+	if (this.children != null) {
+	    for (Node child : this.children) {
+		child.setParent(null);
+	    }
 
-	this.children = null;
+	    this.children = null;
+	}
     }
 
     /**
