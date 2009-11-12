@@ -31,6 +31,13 @@ public class RewritingService {
     public final static Logger logger = Logger.getLogger(RewritingService.class);
 
     /**
+     * Binary operators that can be commuted either with Selection or with
+     * Projection.
+     */
+    private final static List<RelationalOperator> commutableOperators = Arrays.asList(
+	    RelationalOperator.PRODUCT, RelationalOperator.JOIN, RelationalOperator.UNION);;
+
+    /**
      * Database Dictionary Service.
      */
     DatabaseDictionaryService databaseDictionaryService;
@@ -371,39 +378,17 @@ public class RewritingService {
 	currentChildren = currentNode.getChildren();
 	if (currentNode.getRelationalOperator() != null) {
 
-	    // Selection and Cartesian product
+	    // Selection
 	    if (currentNode.getRelationalOperator().equals(RelationalOperator.SELECT)) {
 		currentRelation = databaseDictionaryService.getTableFromSqlData(currentNode
 			.getSqlData());
 
+		// Cartesian product, Join or Union operators
 		if ((currentRelation != null) && (currentNode.getChildren() != null)) {
 		    for (Node child : currentNode.getChildren()) {
 			if ((child.getRelationalOperator() != null)
-				&& (child.getRelationalOperator()
-					.equals(RelationalOperator.PRODUCT))) {
-
-			    // Try to commute operators
-			    returnValue = this.addSelectionBeforeLeafNode(currentRelation,
-				    currentNode, child, currentChildren);
-
-			    // Commuting done
-			    if (returnValue) {
-				break;
-			    }
-			}
-		    }
-		}
-	    }
-
-	    // Selection and Join
-	    if (currentNode.getRelationalOperator().equals(RelationalOperator.SELECT)) {
-		currentRelation = databaseDictionaryService.getTableFromSqlData(currentNode
-			.getSqlData());
-
-		if ((currentRelation != null) && (currentNode.getChildren() != null)) {
-		    for (Node child : currentNode.getChildren()) {
-			if ((child.getRelationalOperator() != null)
-				&& (child.getRelationalOperator().equals(RelationalOperator.JOIN))) {
+				&& (RewritingService.commutableOperators.contains(child
+					.getRelationalOperator()))) {
 
 			    // Try to commute operators
 			    returnValue = this.addSelectionBeforeLeafNode(currentRelation,
