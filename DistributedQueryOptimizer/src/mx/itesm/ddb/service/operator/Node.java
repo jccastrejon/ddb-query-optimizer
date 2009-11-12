@@ -1,7 +1,10 @@
 package mx.itesm.ddb.service.operator;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import mx.itesm.ddb.util.RelationalOperator;
 import mx.itesm.ddb.util.SqlData;
@@ -304,11 +307,11 @@ public class Node implements Cloneable {
      * @return List of attributes used in this Node's hierarchy up to the
      *         specified Root Node.
      */
-    public List<String> getRelationAttributes(final String sqlData, final Node rootNode) {
+    public Set<String> getRelationAttributes(final String sqlData, final Node rootNode) {
 	String[] dataElements;
-	List<String> returnValue;
+	Set<String> returnValue;
 
-	returnValue = new ArrayList<String>();
+	returnValue = new HashSet<String>();
 	dataElements = this.getSqlDataElements();
 	if (dataElements != null) {
 	    for (String attribute : dataElements) {
@@ -463,7 +466,7 @@ public class Node implements Cloneable {
      * @param sqlData
      *            the sqlData to set
      */
-    public void setSqlData(final List<String> sqlData) {
+    public void setSqlData(final Collection<String> sqlData) {
 	StringBuilder newSqlData;
 
 	newSqlData = new StringBuilder();
