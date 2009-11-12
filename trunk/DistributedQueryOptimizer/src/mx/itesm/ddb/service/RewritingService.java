@@ -435,7 +435,8 @@ public class RewritingService {
      * Check if any of these scenarios apply:
      * <ul>
      * <li>Projection and Cartesian product can be commuted</li>
-     * <li>Projection and Join can also be commuted</li>
+     * <li>Projection and Join can be commuted</li>
+     * <li>Projection and Union can be commuted</li>
      * <li></li>
      * </ul>
      * 
