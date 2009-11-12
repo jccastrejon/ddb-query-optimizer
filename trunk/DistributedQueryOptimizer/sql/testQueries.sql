@@ -4,7 +4,7 @@ SELECT tabla.* FROM tabla;
 SELECT tabla.nombre, tabla.nombre2 FROM tabla;
 SELECT tabla.*, nombre FROM tabla;
 SELECT MAX(tabla.atributo) from tabla;
-SELECT tabla.*, nombre FROM tabla, tabla2;
+SELECT tabla.*, tabla2.nombre FROM tabla, tabla2;
 SELECT * FROM tabla, tabla2 where tabla.atributo = tabla2.atributo and tabla.atributo = "1";
 SELECT tabla.*, nombre FROM (SELECT * FROM tabla);
 SELECT * FROM tabla WHERE tabla.atributo=1;
