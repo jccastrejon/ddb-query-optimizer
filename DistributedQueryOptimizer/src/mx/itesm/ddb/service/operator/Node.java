@@ -146,16 +146,9 @@ public class Node implements Cloneable {
      */
     public Node(final String[] sqlData, final RelationalOperator relationalOperator) {
 	this(relationalOperator);
-	StringBuilder newSqlData;
-
-	newSqlData = new StringBuilder();
-	for (String data : sqlData) {
-	    newSqlData.append(data).append(" ");
-	}
-
 	this.parent = null;
 	this.children = new ArrayList<Node>();
-	this.sqlData = newSqlData.toString();
+	this.setSqlData(sqlData);
     }
 
     /**
@@ -303,6 +296,37 @@ public class Node implements Cloneable {
     }
 
     /**
+     * Get the attributes of the given relation that are used starting from this
+     * Node up to the specified Root Node.
+     * 
+     * @param sqlData
+     *            Relation's SqlData.
+     * @return List of attributes used in this Node's hierarchy up to the
+     *         specified Root Node.
+     */
+    public List<String> getRelationAttributes(final String sqlData, final Node rootNode) {
+	String[] dataElements;
+	List<String> returnValue;
+
+	returnValue = new ArrayList<String>();
+	dataElements = this.getSqlDataElements();
+	if (dataElements != null) {
+	    for (String attribute : dataElements) {
+		attribute = attribute.toLowerCase().replace('(', ' ').replace(')', ' ').trim();
+		if (attribute.startsWith(sqlData.toLowerCase() + ".")) {
+		    returnValue.add(attribute);
+		}
+	    }
+	}
+
+	if ((this != rootNode) && (this.parent != null)) {
+	    returnValue.addAll(this.parent.getRelationAttributes(sqlData, rootNode));
+	}
+
+	return returnValue;
+    }
+
+    /**
      * Get the Node's description, containing it's operator and data.
      * 
      * @return Node's description.
@@ -334,7 +358,14 @@ public class Node implements Cloneable {
      * @return Array containing SqlData elements.
      */
     public String[] getSqlDataElements() {
-	return this.sqlData.trim().split(" ");
+	String[] returnValue;
+
+	returnValue = null;
+	if (this.sqlData != null) {
+	    returnValue = this.sqlData.trim().split(" ");
+	}
+
+	return returnValue;
     }
 
     @Override
@@ -411,6 +442,36 @@ public class Node implements Cloneable {
      */
     public void setSqlData(String sqlData) {
 	this.sqlData = sqlData;
+    }
+
+    /**
+     * @param sqlData
+     *            the sqlData to set
+     */
+    public void setSqlData(final String[] sqlData) {
+	StringBuilder newSqlData;
+
+	newSqlData = new StringBuilder();
+	for (String data : sqlData) {
+	    newSqlData.append(data).append(" ");
+	}
+
+	this.sqlData = newSqlData.toString();
+    }
+
+    /**
+     * @param sqlData
+     *            the sqlData to set
+     */
+    public void setSqlData(final List<String> sqlData) {
+	StringBuilder newSqlData;
+
+	newSqlData = new StringBuilder();
+	for (String data : sqlData) {
+	    newSqlData.append(data).append(" ");
+	}
+
+	this.sqlData = newSqlData.toString();
     }
 
     /**

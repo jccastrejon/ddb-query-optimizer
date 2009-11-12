@@ -115,7 +115,6 @@ public class DatabaseDictionaryService {
      * @return Referenced attributes, grouped by relations.
      */
     public Map<String, String> getGroupedAttributesFromSqlData(final String sqlData) {
-	int counter;
 	String currentRelation;
 	List<String> attributes;
 	String currentGroup;
@@ -123,7 +122,6 @@ public class DatabaseDictionaryService {
 
 	attributes = this.getAttributesFromSqlData(sqlData);
 	returnValue = new HashMap<String, String>();
-	counter = 0;
 	for (String attribute : attributes) {
 	    if (attribute.indexOf('.') > 0) {
 		currentRelation = attribute.substring(0, attribute.indexOf('.'));
@@ -132,11 +130,7 @@ public class DatabaseDictionaryService {
 		    currentGroup = "";
 		}
 
-		currentGroup += attribute;
-		if ((++counter) < attributes.size()) {
-		    currentGroup += ", ";
-		}
-
+		currentGroup += attribute + " ";
 		returnValue.put(currentRelation, currentGroup);
 	    }
 	}

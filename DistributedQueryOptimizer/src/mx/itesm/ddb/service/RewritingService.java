@@ -510,7 +510,6 @@ public class RewritingService {
 				currentNode.getParent().addChildren(currentChildren);
 				currentNode.getParent().removeChild(currentNode);
 			    }
-
 			}
 		    }
 		}
@@ -618,6 +617,7 @@ public class RewritingService {
 	boolean returnValue;
 	List<Node> leafNodes;
 	Node newOperationNode;
+	List<String> operationSqlDataElements;
 
 	// Look for the child of the operationChildNode that
 	// contains the relation (leafNode) in order to apply
@@ -644,6 +644,19 @@ public class RewritingService {
 	    for (Node leafNode : leafNodes) {
 		newOperationNode = operationNode.clone();
 		if (leafNode.getParent() != null) {
+		    // In case of compund operators, all the intermediary
+		    // attributes used in the Node's hierarchy, before reaching
+		    // the leaf node (for joins, selections, etc.), need to be
+		    // added to the operationNode SqlData
+		    if ((operationNode.getRelationalOperator() != null)
+			    && (operationNode.getRelationalOperator().isCompoundOperator())) {
+			operationSqlDataElements = leafNode.getRelationAttributes(relation,
+				operationChildNode);
+			operationSqlDataElements.addAll(Arrays.asList(newOperationNode
+				.getSqlDataElements()));
+			newOperationNode.setSqlData(operationSqlDataElements);
+		    }
+
 		    leafNode.getParent().addChild(newOperationNode);
 		    leafNode.getParent().removeChild(leafNode);
 		}
