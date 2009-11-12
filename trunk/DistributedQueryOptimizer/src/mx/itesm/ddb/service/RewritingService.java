@@ -391,7 +391,7 @@ public class RewritingService {
 					.getRelationalOperator()))) {
 
 			    // Try to commute operators
-			    returnValue = this.addSelectionBeforeLeafNode(currentRelation,
+			    returnValue = this.addOperationNodeBeforeLeafNode(currentRelation,
 				    currentNode, child, currentChildren);
 
 			    // Commuting done
@@ -505,67 +505,59 @@ public class RewritingService {
     }
 
     /**
-     * Try to add the Selection Node just before the Leaf Node that contains the
-     * selection relation.
+     * Try to add the Operation Node just before the Leaf Nodes that contain the
+     * operation relation.
      * 
      * @param relation
-     *            Relation that identifies the Lead Node.
-     * @param selectionNode
-     *            Selection Node.
-     * @param selectionChildNode
-     *            Child of the Selection Node whose hierarchy contains the Leaf
+     *            Relation that identifies the Leaf Nodes.
+     * @param operationNode
+     *            Operation Node.
+     * @param operationChildNode
+     *            Child of the Operation Node whose hierarchy contains the Leaf
      *            Node.
      * @param currentChildren
-     *            Current children of the Selection Node.
-     * @return <em>true</em> if the Selection Node is correctly added just
-     *         before the Leaf Node, <em>false</em> otherwise.
+     *            Current children of the Operation Node.
+     * @return <em>true</em> if the Operation Node is correctly added just
+     *         before the Leaf Nodes, <em>false</em> otherwise.
      */
-    private boolean addSelectionBeforeLeafNode(final String relation, final Node selectionNode,
-	    final Node selectionChildNode, final List<Node> currentChildren) {
-	Node leafNode;
+    private boolean addOperationNodeBeforeLeafNode(final String relation, final Node operationNode,
+	    final Node operationChildNode, final List<Node> currentChildren) {
 	boolean returnValue;
+	List<Node> leafNodes;
+	Node newOperationNode;
 
-	// Look for the child of the selectionChildNode that
+	// Look for the child of the operationChildNode that
 	// contains the relation (leafNode) in order to apply
-	// the selection there
+	// the operation there
 	returnValue = false;
-	for (Node innerChild : selectionChildNode.getChildren()) {
-	    leafNode = innerChild.getLeafNode(relation);
+	for (Node innerChild : operationChildNode.getChildren()) {
+	    leafNodes = innerChild.getLeafNodes(relation);
 
-	    if (leafNode != null) {
-		// Disassociate selectionNode with its
+	    if (!leafNodes.isEmpty()) {
+		// Disassociate operationNode with its
 		// children
-		selectionNode.removeAllChildren();
+		operationNode.removeAllChildren();
 
 		// Intermediary node
-		if (selectionNode.getParent() != null) {
-		    // The former children of the selectionNode are now children
-		    // of the former parent of the selectionNode
-		    selectionNode.getParent().addChildren(currentChildren);
-		    selectionNode.getParent().removeChild(selectionNode);
+		if (operationNode.getParent() != null) {
+		    // The former children of the operationNode are now children
+		    // of the former parent of the operationNode
+		    operationNode.getParent().addChildren(currentChildren);
+		    operationNode.getParent().removeChild(operationNode);
 		}
 
-		// Root node
-		else {
-		    // If currentNode is the rootNode and there
-		    // is more than one child, associate them
-		    // with a Cartesian product
-		    if (currentChildren.size() > 1) {
-			logger
-				.warn("Root Node has been deleted, a cartesian product should be added as the new rootNode, associating nodes: "
-					+ currentChildren);
-		    }
-		}
-
-		// The selectionNode is added between the Leaf Node and the
+		// The operationNode is added between the Leaf Node and the
 		// leaf's parent
-		if (leafNode.getParent() != null) {
-		    leafNode.getParent().addChild(selectionNode);
-		    leafNode.getParent().removeChild(leafNode);
-		}
+		for (Node leafNode : leafNodes) {
+		    newOperationNode = operationNode.clone();
+		    if (leafNode.getParent() != null) {
+			leafNode.getParent().addChild(newOperationNode);
+			leafNode.getParent().removeChild(leafNode);
+		    }
 
-		// Add the leaf node just after the selection node
-		selectionNode.addChild(leafNode);
+		    // Add the leaf node just after the operation node
+		    newOperationNode.addChild(leafNode);
+		}
 
 		returnValue = true;
 		break;
