@@ -240,7 +240,7 @@ public class Node implements Cloneable {
 	boolean returnValue;
 
 	returnValue = false;
-	if (this.getLeafNode(sqlData) != null) {
+	if (!this.getLeafNodes(sqlData).isEmpty()) {
 	    returnValue = true;
 	}
 
@@ -248,32 +248,30 @@ public class Node implements Cloneable {
     }
 
     /**
-     * Look for the leaf node identified by the specified SQL Data in this
+     * Look for the leaf nodes identified by the specified SQL Data in this
      * Node's hierarchy.
      * 
      * @param sqlData
      *            Leaf Node's SQL Data.
-     * @return The leaf Node if it's indeed in this Node's hierarchy,
-     *         <em>null</em> otherwise.
+     * @return List containing the leaf Nodes if they're indeed in this Node's
+     *         hierarchy. If no matching Node is found, an empty List is
+     *         returned.
      */
-    public Node getLeafNode(final String sqlData) {
-	Node returnValue;
+    public List<Node> getLeafNodes(final String sqlData) {
+	List<Node> returnValue;
 
 	// Check if the data is in this node
-	returnValue = null;
+	returnValue = new ArrayList<Node>();
 	if (this.children == null) {
 	    if (this.sqlData.toLowerCase().equals(sqlData.toLowerCase())) {
-		returnValue = this;
+		returnValue.add(this);
 	    }
 	}
 
 	// Check if the data is in one of my children
 	else {
 	    for (Node child : this.children) {
-		returnValue = child.getLeafNode(sqlData);
-		if (returnValue != null) {
-		    break;
-		}
+		returnValue.addAll(child.getLeafNodes(sqlData));
 	    }
 	}
 
