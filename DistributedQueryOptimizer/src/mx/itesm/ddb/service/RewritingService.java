@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import mx.itesm.ddb.service.operator.Node;
 import mx.itesm.ddb.service.operator.OperatorTree;
@@ -98,6 +99,14 @@ public class RewritingService {
 		returnValues.add(rewriteTree);
 		returnValue = this.exportTemporaryTree(operatorTree, queryId, rewriteTree,
 			returnValue, "CommuteSelectionWithBinaryOperators", imageDir);
+	    } while (rewriteTree);
+
+	    // commuteProjectionWithBinaryOperators
+	    do {
+		rewriteTree = this.commuteProjectionWithBinaryOperators(operatorTree.getRootNode());
+		returnValues.add(rewriteTree);
+		returnValue = this.exportTemporaryTree(operatorTree, queryId, rewriteTree,
+			returnValue, "CommuteProjectionWithBinaryOperators", imageDir);
 	    } while (rewriteTree);
 	} while (returnValues.contains(Boolean.TRUE));
 
@@ -364,9 +373,10 @@ public class RewritingService {
      * union compatible (have the same schema)</li>
      * </ul>
      * 
-     * @param operatorTree
-     *            Operator Tree to analyze.
-     * @return Rewritten Operator Tree.
+     * @param currentNode
+     *            Starting node for the analysis.
+     * @return true if any of the scenarios were found in the specified Node
+     *         hierarchy, false otherwise.
      */
     public boolean commuteSelectionWithBinaryOperators(final Node currentNode) {
 	boolean returnValue;
@@ -426,16 +436,99 @@ public class RewritingService {
      * <ul>
      * <li>Projection and Cartesian product can be commuted</li>
      * <li>Projection and Join can also be commuted</li>
-     * <li>Projection and Difference can be commuted</li>
      * <li></li>
      * </ul>
      * 
-     * @param operatorTree
-     *            Operator Tree to analyze.
-     * @return Rewritten Operator Tree.
+     * @param currentNode
+     *            Starting node for the analysis.
+     * @return true if any of the scenarios were found in the specified Node
+     *         hierarchy, false otherwise.
      */
-    public OperatorTree commuteProjectionWithBinaryOperators(final OperatorTree operatorTree) {
-	return null;
+    public boolean commuteProjectionWithBinaryOperators(final Node currentNode) {
+	Node projectionNode;
+	boolean returnValue;
+	List<Node> leafNodes;
+	boolean previousMatch;
+	boolean projectionAdded;
+	boolean childReturnValue;
+	List<Node> currentChildren;
+	Map<String, String> groupedAttributes;
+
+	returnValue = false;
+	currentChildren = currentNode.getChildren();
+	if (currentNode.getRelationalOperator() != null) {
+	    // Projection
+	    if (currentNode.getRelationalOperator().equals(RelationalOperator.PROJECTION)) {
+		groupedAttributes = databaseDictionaryService
+			.getGroupedAttributesFromSqlData(currentNode.getSqlData());
+
+		// Any of the commutable operators
+		if ((!groupedAttributes.isEmpty()) && (currentNode.getChildren() != null)) {
+		    for (Node child : currentNode.getChildren()) {
+			if ((child.getRelationalOperator() != null)
+				&& (RewritingService.commutableOperators.contains(child
+					.getRelationalOperator()))) {
+
+			    // Add the neccesary projections for the appropiate
+			    // leaf nodes
+			    for (String currentRelation : groupedAttributes.keySet()) {
+				projectionNode = new Node(groupedAttributes.get(currentRelation),
+					RelationalOperator.PROJECTION);
+
+				// Before commuting operators, verify if this is
+				// a previous found case, that is, a projection
+				// already exists right before the relation leaf
+				// node, with the required attributes
+				leafNodes = child.getLeafNodes(currentRelation);
+				previousMatch = false;
+				for (Node relationNode : leafNodes) {
+				    if ((relationNode != null)
+					    && (relationNode.getParent() != null)
+					    && (relationNode.getParent().getRelationalOperator() != null)
+					    && (relationNode.getParent().getRelationalOperator()
+						    .equals(RelationalOperator.PROJECTION))) {
+					previousMatch = true;
+					break;
+				    }
+				}
+
+				if (previousMatch) {
+				    continue;
+				}
+
+				// Try to commute operators
+				projectionAdded = this.addOperationNodeBeforeLeafNode(
+					currentRelation, projectionNode, child, currentChildren);
+
+				if (projectionAdded) {
+				    returnValue = true;
+				}
+			    }
+
+			    // Remove original projection node
+			    if (currentNode.getParent() != null) {
+				currentNode.getParent().addChildren(currentChildren);
+				currentNode.getParent().removeChild(currentNode);
+			    }
+
+			}
+		    }
+		}
+	    }
+	}
+
+	// Test the same for every child
+	if (currentChildren != null) {
+	    for (Node child : currentChildren) {
+		childReturnValue = this.commuteProjectionWithBinaryOperators(child);
+
+		if (childReturnValue) {
+		    returnValue = true;
+		}
+	    }
+	}
+
+	return returnValue;
     }
 
     /**
@@ -530,38 +623,36 @@ public class RewritingService {
 	// contains the relation (leafNode) in order to apply
 	// the operation there
 	returnValue = false;
-	for (Node innerChild : operationChildNode.getChildren()) {
-	    leafNodes = innerChild.getLeafNodes(relation);
+	leafNodes = operationChildNode.getLeafNodes(relation);
 
-	    if (!leafNodes.isEmpty()) {
-		// Disassociate operationNode with its
+	if (!leafNodes.isEmpty()) {
+	    // Disassociate operationNode with its
+	    // children
+	    operationNode.removeAllChildren();
+
+	    // Intermediary node
+	    if (operationNode.getParent() != null) {
+		// The former children of the operationNode are now
 		// children
-		operationNode.removeAllChildren();
-
-		// Intermediary node
-		if (operationNode.getParent() != null) {
-		    // The former children of the operationNode are now children
-		    // of the former parent of the operationNode
-		    operationNode.getParent().addChildren(currentChildren);
-		    operationNode.getParent().removeChild(operationNode);
-		}
-
-		// The operationNode is added between the Leaf Node and the
-		// leaf's parent
-		for (Node leafNode : leafNodes) {
-		    newOperationNode = operationNode.clone();
-		    if (leafNode.getParent() != null) {
-			leafNode.getParent().addChild(newOperationNode);
-			leafNode.getParent().removeChild(leafNode);
-		    }
-
-		    // Add the leaf node just after the operation node
-		    newOperationNode.addChild(leafNode);
-		}
-
-		returnValue = true;
-		break;
+		// of the former parent of the operationNode
+		operationNode.getParent().addChildren(currentChildren);
+		operationNode.getParent().removeChild(operationNode);
 	    }
+
+	    // The operationNode is added between the Leaf Node and the
+	    // leaf's parent
+	    for (Node leafNode : leafNodes) {
+		newOperationNode = operationNode.clone();
+		if (leafNode.getParent() != null) {
+		    leafNode.getParent().addChild(newOperationNode);
+		    leafNode.getParent().removeChild(leafNode);
+		}
+
+		// Add the leaf node just after the operation node
+		newOperationNode.addChild(leafNode);
+	    }
+
+	    returnValue = true;
 	}
 
 	return returnValue;

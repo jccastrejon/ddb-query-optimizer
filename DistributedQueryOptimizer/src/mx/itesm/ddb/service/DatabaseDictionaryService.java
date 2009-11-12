@@ -2,7 +2,9 @@ package mx.itesm.ddb.service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import mx.itesm.ddb.util.ConditionOperator;
 
@@ -65,10 +67,10 @@ public class DatabaseDictionaryService {
     }
 
     /**
-     * Get the referenced attributes used by this SqlData elements.
+     * Get the referenced attributes used by this SqlData.
      * 
      * @param sqlData
-     *            Array of SqlData elements to be analyzed.
+     *            SqlData to be analyzed.
      * @return Array of referenced attributes.
      */
     public List<String> getAttributesFromSqlData(final String sqlData) {
@@ -99,6 +101,43 @@ public class DatabaseDictionaryService {
 		}
 
 		returnValue.add(this.getValidExpression(innerExpression));
+	    }
+	}
+
+	return returnValue;
+    }
+
+    /**
+     * Get the referenced attributes used by this SqlData, grouped by relations.
+     * 
+     * @param sqlData
+     *            SqlData to be analyzed.
+     * @return Referenced attributes, grouped by relations.
+     */
+    public Map<String, String> getGroupedAttributesFromSqlData(final String sqlData) {
+	int counter;
+	String currentRelation;
+	List<String> attributes;
+	String currentGroup;
+	Map<String, String> returnValue;
+
+	attributes = this.getAttributesFromSqlData(sqlData);
+	returnValue = new HashMap<String, String>();
+	counter = 0;
+	for (String attribute : attributes) {
+	    if (attribute.indexOf('.') > 0) {
+		currentRelation = attribute.substring(0, attribute.indexOf('.'));
+		currentGroup = returnValue.get(currentRelation);
+		if (currentGroup == null) {
+		    currentGroup = "";
+		}
+
+		currentGroup += attribute;
+		if ((++counter) < attributes.size()) {
+		    currentGroup += ", ";
+		}
+
+		returnValue.put(currentRelation, currentGroup);
 	    }
 	}
 
