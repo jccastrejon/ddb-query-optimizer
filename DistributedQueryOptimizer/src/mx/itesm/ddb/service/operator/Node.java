@@ -216,7 +216,10 @@ public class Node implements Cloneable {
     public void removeChild(final Node node) {
 	if ((this.children != null) && (node != null)) {
 	    this.children.remove(node);
-	    node.setParent(null);
+
+	    if (node.getParent() == this) {
+		node.setParent(null);
+	    }
 	}
     }
 
