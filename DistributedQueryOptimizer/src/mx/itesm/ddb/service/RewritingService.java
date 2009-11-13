@@ -454,6 +454,9 @@ public class RewritingService {
 	boolean projectionAdded;
 	boolean childReturnValue;
 	List<Node> currentChildren;
+	List<Node> newInnerChildren;
+	List<Node> originalInnerChildren;
+	StringBuilder projectionAttributes;
 	Map<String, String> groupedAttributes;
 
 	returnValue = false;
@@ -504,6 +507,55 @@ public class RewritingService {
 
 				if (projectionAdded) {
 				    returnValue = true;
+				}
+			    }
+
+			    // Besides the projection added just before the leaf
+			    // nodes, there should be a projection after the
+			    // commutable operator, to reduce the attributes
+			    // before performing the operation. The projection
+			    // just added could be that required projection,
+			    // depending on the position of the currentNode in
+			    // the Operator Tree
+			    if ((returnValue) && (child.getChildren() != null)) {
+				newInnerChildren = new ArrayList<Node>();
+				originalInnerChildren = new ArrayList<Node>();
+				for (Node innerChild : child.getChildren()) {
+				    // Add the new projection node only if
+				    // it hasn't been added yet
+				    if ((innerChild.getRelationalOperator() != null)
+					    && (!innerChild.getRelationalOperator().equals(
+						    RelationalOperator.PROJECTION))) {
+
+					projectionAttributes = new StringBuilder();
+					for (String currentRelation : groupedAttributes.keySet()) {
+					    if (innerChild.containsLeafNode(currentRelation)) {
+						projectionAttributes.append(groupedAttributes
+							.get(currentRelation));
+					    }
+					}
+
+					projectionNode = new Node(projectionAttributes.toString(),
+						RelationalOperator.PROJECTION);
+
+					// Add the new projection node just
+					// after the commutable operator
+					projectionNode.addChild(innerChild);
+					newInnerChildren.add(projectionNode);
+					originalInnerChildren.add(innerChild);
+				    }
+				}
+
+				// Replace original inner children for new
+				// projection children. We didn't do it in the
+				// previous cycle because of
+				// ConcurrentModificationException
+				for (Node replacedNode : originalInnerChildren) {
+				    child.removeChild(replacedNode);
+				}
+
+				for (Node newInnerChild : newInnerChildren) {
+				    child.addChild(newInnerChild);
 				}
 			    }
 			}
