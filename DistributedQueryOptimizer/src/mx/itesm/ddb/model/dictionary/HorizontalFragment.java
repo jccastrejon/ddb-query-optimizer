@@ -35,6 +35,7 @@ public class HorizontalFragment extends Relation {
 	    final Collection<Predicate> minterm) {
 	super(name, source);
 	this.source = source;
+	this.source.addFragment(this);
     }
 
     /**

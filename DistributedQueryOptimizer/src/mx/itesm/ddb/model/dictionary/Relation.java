@@ -61,6 +61,8 @@ public class Relation {
 	    throw new IllegalArgumentException("Invalid attributes specified for relation: " + name
 		    + ", specified: " + attributes);
 	}
+
+	this.attributes = attributes;
 	this.assignKeyAttributes(attributes);
     }
 
@@ -80,7 +82,49 @@ public class Relation {
 	    throw new IllegalArgumentException("Invalid base relation specified for relation: "
 		    + name + ", specified: " + relation);
 	}
+
+	this.attributes = relation.getAttributes();
 	this.assignKeyAttributes(relation.getAttributes());
+    }
+
+    /**
+     * Add a new fragment to this relation.
+     * 
+     * @param relation
+     *            Fragment.
+     */
+    public void addFragment(final Relation relation) {
+	if (relation != null) {
+	    if (this.fragments == null) {
+		this.fragments = new ArrayList<Relation>();
+	    }
+
+	    this.fragments.add(relation);
+	}
+    }
+
+    /**
+     * Get the attribute identified with the given name.
+     * 
+     * @param name
+     *            Attribute's name.
+     * @return The Attribute if it's indeed associated with this relation,
+     *         <em>null</em> otherwise.
+     */
+    public Attribute getAttribute(final String name) {
+	Attribute returnValue;
+
+	returnValue = null;
+	if (this.attributes != null) {
+	    for (Attribute attribute : this.attributes) {
+		if (attribute.getName().equals(name)) {
+		    returnValue = attribute;
+		    break;
+		}
+	    }
+	}
+
+	return returnValue;
     }
 
     /**
@@ -94,7 +138,7 @@ public class Relation {
 	this.keyAttributes = new ArrayList<Attribute>();
 	if (attributes != null) {
 	    for (Attribute attribute : attributes) {
-		if (attribute.isKeyAttribute()) {
+		if ((attribute != null) && (attribute.isKeyAttribute())) {
 		    this.keyAttributes.add(attribute);
 		}
 	    }

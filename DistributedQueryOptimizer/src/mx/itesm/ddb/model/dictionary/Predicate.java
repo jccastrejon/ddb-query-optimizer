@@ -22,7 +22,7 @@ public class Predicate {
     /**
      * Value of the attribute's domain used by this predicate.
      */
-    private Object value;
+    private String value;
 
     /**
      * Full constructor.
@@ -35,7 +35,7 @@ public class Predicate {
      *            Value of the attribute's domain used by this predicate.
      */
     public Predicate(final Attribute attribute, final PredicateOperator predicateOperator,
-	    final Object value) {
+	    final String value) {
 	if (!attribute.getAttributeDomain().isValidValue(value)) {
 	    throw new IllegalArgumentException("Invalid value: " + value + " for domain: "
 		    + attribute.getAttributeDomain());
@@ -79,7 +79,7 @@ public class Predicate {
     /**
      * @return the value
      */
-    public Object getValue() {
+    public String getValue() {
 	return value;
     }
 
@@ -87,7 +87,7 @@ public class Predicate {
      * @param value
      *            the value to set
      */
-    public void setValue(Object value) {
+    public void setValue(String value) {
 	this.value = value;
     }
 }
