@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import mx.itesm.ddb.dao.DatabaseDictionaryDao;
 import mx.itesm.ddb.util.ConditionOperator;
 
 /**
@@ -15,6 +16,11 @@ import mx.itesm.ddb.util.ConditionOperator;
  * 
  */
 public class DatabaseDictionaryService {
+
+    /**
+     * Database Dictionary DAO.
+     */
+    DatabaseDictionaryDao databaseDictionaryDao;
 
     /**
      * Get the referenced table used by this expression.
@@ -147,5 +153,20 @@ public class DatabaseDictionaryService {
      */
     private String getValidExpression(final String expression) {
 	return expression.replace('(', ' ').replace(')', ' ').trim();
+    }
+
+    /**
+     * @return the databaseDictionaryDao
+     */
+    public DatabaseDictionaryDao getDatabaseDictionaryDao() {
+	return databaseDictionaryDao;
+    }
+
+    /**
+     * @param databaseDictionaryDao
+     *            the databaseDictionaryDao to set
+     */
+    public void setDatabaseDictionaryDao(DatabaseDictionaryDao databaseDictionaryDao) {
+	this.databaseDictionaryDao = databaseDictionaryDao;
     }
 }

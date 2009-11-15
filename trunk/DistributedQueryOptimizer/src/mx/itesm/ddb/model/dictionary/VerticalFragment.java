@@ -36,6 +36,7 @@ public class VerticalFragment extends Relation {
 		    "Vertical fragment doesn't contain required key attributes. Required: "
 			    + source.getKeyAttributes() + ", provided: " + this.getKeyAttributes());
 	}
+	this.source.addFragment(this);
     }
 
     /**
