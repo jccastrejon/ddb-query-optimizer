@@ -78,15 +78,15 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 
 	returnValue = null;
 	if (this.relations != null) {
-	    returnValue = this.relations.get(name);
+	    returnValue = this.relations.get(name.toLowerCase());
 	}
 
 	if ((returnValue == null) && (this.horizontalFragments != null)) {
-	    returnValue = this.horizontalFragments.get(name);
+	    returnValue = this.horizontalFragments.get(name.toLowerCase());
 	}
 
 	if ((returnValue == null) && (this.verticalFragments != null)) {
-	    returnValue = this.verticalFragments.get(name);
+	    returnValue = this.verticalFragments.get(name.toLowerCase());
 	}
 
 	return returnValue;
@@ -134,7 +134,8 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 		    currentAttributes.add(currentAttribute);
 		}
 
-		this.relations.put(relation, new Relation(relation, currentAttributes));
+		this.relations.put(relation.toLowerCase(),
+			new Relation(relation, currentAttributes));
 	    }
 	}
 
@@ -161,14 +162,14 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 		    currentPredicateValue = this.databaseDictionary.getProperty("predicate."
 			    + predicate + ".value");
 		    currentPredicate = new Predicate(this.relations.get(
-			    currentPredicateAttribute[0])
-			    .getAttribute(currentPredicateAttribute[1]), currentPredicateOperator,
+			    currentPredicateAttribute[0].toLowerCase()).getAttribute(
+			    currentPredicateAttribute[1]), currentPredicateOperator,
 			    currentPredicateValue);
 		    currentPredicates.add(currentPredicate);
 		}
 
-		this.horizontalFragments.put(fragment, new HorizontalFragment(fragment,
-			currentRelation, currentPredicates));
+		this.horizontalFragments.put(fragment.toLowerCase(), new HorizontalFragment(
+			fragment, currentRelation, currentPredicates));
 	    }
 	}
 
@@ -191,7 +192,7 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 		    currentAttributes.add(currentRelation.getAttribute(attribute));
 		}
 
-		this.verticalFragments.put(fragment, new VerticalFragment(fragment,
+		this.verticalFragments.put(fragment.toLowerCase(), new VerticalFragment(fragment,
 			currentRelation, currentAttributes));
 	    }
 	}
