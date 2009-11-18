@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import mx.itesm.ddb.dao.DatabaseDictionaryDao;
+import mx.itesm.ddb.model.dictionary.Relation;
 import mx.itesm.ddb.util.ConditionOperator;
 
 /**
@@ -21,6 +22,18 @@ public class DatabaseDictionaryService {
      * Database Dictionary DAO.
      */
     DatabaseDictionaryDao databaseDictionaryDao;
+
+    /**
+     * Get the relation identified by the given name.
+     * 
+     * @param name
+     *            Relation name.
+     * @return A Relation instance if there's a Relation identified by the given
+     *         name in the database dictionary, <em>null</em> otherwise.
+     */
+    public Relation getRelation(final String name) {
+	return databaseDictionaryDao.getRelation(name);
+    }
 
     /**
      * Get the referenced table used by this expression.
