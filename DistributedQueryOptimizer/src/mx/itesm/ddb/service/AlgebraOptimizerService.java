@@ -42,14 +42,19 @@ public class AlgebraOptimizerService {
     private final static Logger logger = Logger.getLogger(AlgebraOptimizerService.class);
 
     /**
-     * Database Dictionary Service.
-     */
-    private DatabaseDictionaryService databaseDictionaryService;
-
-    /**
      * Rewriting Service.
      */
     private RewritingService rewritingService;
+
+    /**
+     * Localization Service.
+     */
+    private LocalizationService localizationService;
+
+    /**
+     * Database Dictionary Service.
+     */
+    private DatabaseDictionaryService databaseDictionaryService;
 
     /**
      * Build the Optimal Operator Tree from the given SQL query and save it in
@@ -131,9 +136,12 @@ public class AlgebraOptimizerService {
 	leafNodes = this.getConditionNodes(queryData.getConditions(), leafNodes);
 
 	returnValue = this.orderNodes(rootNode, leafNodes);
-	logger.debug("Operator Tree before rewriting: " + returnValue);
+	logger.debug("Initial operator tree: " + returnValue);
 	rewritingSteps = rewritingService.rewriteOperatorTree(returnValue, queryId, imageDir);
 	logger.debug("Operator Tree after rewriting: " + returnValue);
+	rewritingSteps = localizationService.reduceRelationFragments(returnValue, rewritingSteps,
+		queryId, imageDir);
+	logger.debug("Operator Tree after reduction: " + returnValue);
 
 	// Update the rewriting steps needed to generate the Operator Tree
 	returnValue.setRewritingSteps(rewritingSteps);
@@ -477,5 +485,20 @@ public class AlgebraOptimizerService {
      */
     public void setRewritingService(RewritingService rewritingService) {
 	this.rewritingService = rewritingService;
+    }
+
+    /**
+     * @return the localizationService
+     */
+    public LocalizationService getLocalizationService() {
+	return localizationService;
+    }
+
+    /**
+     * @param localizationService
+     *            the localizationService to set
+     */
+    public void setLocalizationService(LocalizationService localizationService) {
+	this.localizationService = localizationService;
     }
 }

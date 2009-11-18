@@ -302,6 +302,30 @@ public class Node implements Cloneable {
     }
 
     /**
+     * Get all the leaf nodes associated to this node.
+     * 
+     * @return List containing the leaf nodes associated to this node.
+     */
+    public List<Node> getLeafNodes() {
+	List<Node> returnValue;
+
+	// Check if this is a leafNode
+	returnValue = new ArrayList<Node>();
+	if (this.children == null) {
+	    returnValue.add(this);
+	}
+
+	// If not, get the node's leafNodes
+	else {
+	    for (Node child : this.children) {
+		returnValue.addAll(child.getLeafNodes());
+	    }
+	}
+
+	return returnValue;
+    }
+
+    /**
      * Get the attributes of the given relation that are used starting from this
      * Node up to the specified Root Node.
      * 
