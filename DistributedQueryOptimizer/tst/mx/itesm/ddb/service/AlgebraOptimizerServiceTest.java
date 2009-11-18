@@ -2,6 +2,8 @@ package mx.itesm.ddb.service;
 
 import java.io.File;
 
+import mx.itesm.ddb.dao.DatabaseDictionaryDao;
+import mx.itesm.ddb.dao.impl.PropertiesDatabaseDictionaryDao;
 import mx.itesm.ddb.parser.ParseException;
 
 import org.apache.log4j.Logger;
@@ -28,7 +30,9 @@ public class AlgebraOptimizerServiceTest extends SqlBaseTest {
 	boolean correctQueries;
 	ParserService parserService;
 	RewritingService rewritingService;
+	LocalizationService localizationService;
 	GraphicExportService graphicExportService;
+	DatabaseDictionaryDao databaseDictionaryDao;
 	AlgebraOptimizerService algebraOptimizerService;
 	DatabaseDictionaryService databaseDictionaryService;
 
@@ -39,11 +43,17 @@ public class AlgebraOptimizerServiceTest extends SqlBaseTest {
 	// imageDir.deleteOnExit();
 	parserService = new ParserService();
 	rewritingService = new RewritingService();
+	localizationService = new LocalizationService();
 	graphicExportService = new GraphicExportService();
 	algebraOptimizerService = new AlgebraOptimizerService();
 	databaseDictionaryService = new DatabaseDictionaryService();
+	databaseDictionaryDao = new PropertiesDatabaseDictionaryDao();
+	localizationService.setGraphicExportService(graphicExportService);
+	databaseDictionaryService.setDatabaseDictionaryDao(databaseDictionaryDao);
+	localizationService.setDatabaseDictionaryService(databaseDictionaryService);
 	algebraOptimizerService.setRewritingService(rewritingService);
 	rewritingService.setGraphicExportService(graphicExportService);
+	algebraOptimizerService.setLocalizationService(localizationService);
 	rewritingService.setDatabaseDictionaryService(databaseDictionaryService);
 	algebraOptimizerService.setDatabaseDictionaryService(databaseDictionaryService);
 
