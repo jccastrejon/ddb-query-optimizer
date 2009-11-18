@@ -24,7 +24,12 @@
 	</bean>
 	<bean id="parserService" class="mx.itesm.ddb.service.ParserService" />
 	<bean id="graphicExportService" class="mx.itesm.ddb.service.GraphicExportService" />
-	<bean id="databaseDictionaryService" class="mx.itesm.ddb.service.DatabaseDictionaryService" />
+	<bean id="databaseDictionaryService" class="mx.itesm.ddb.service.DatabaseDictionaryService">
+		<property name="databaseDictionaryDao" ref="databaseDictionaryDao" />
+	</bean>
+
+	<!-- DAO -->
+	<bean id="databaseDictionaryDao" class="mx.itesm.ddb.dao.impl.PropertiesDatabaseDictionaryDao" />
 
 	<!-- General -->
 	<bean id="propertyConfigurer"
