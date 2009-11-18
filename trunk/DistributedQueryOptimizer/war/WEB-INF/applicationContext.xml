@@ -17,8 +17,14 @@
 	<bean id="algebraOptimizerService" class="mx.itesm.ddb.service.AlgebraOptimizerService">
 		<property name="databaseDictionaryService" ref="databaseDictionaryService" />
 		<property name="rewritingService" ref="rewritingService" />
+		<property name="localizationService" ref="localizationService" />
+
 	</bean>
 	<bean id="rewritingService" class="mx.itesm.ddb.service.RewritingService">
+		<property name="databaseDictionaryService" ref="databaseDictionaryService" />
+		<property name="graphicExportService" ref="graphicExportService" />
+	</bean>
+	<bean id="localizationService" class="mx.itesm.ddb.service.LocalizationService">
 		<property name="databaseDictionaryService" ref="databaseDictionaryService" />
 		<property name="graphicExportService" ref="graphicExportService" />
 	</bean>
