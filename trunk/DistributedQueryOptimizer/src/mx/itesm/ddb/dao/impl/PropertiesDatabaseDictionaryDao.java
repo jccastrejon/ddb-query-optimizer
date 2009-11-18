@@ -129,8 +129,9 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 		for (String attribute : attributes) {
 		    currentAttributeDomain = AttributeDomain.valueOf(this.databaseDictionary
 			    .getProperty("attribute." + relation + "." + attribute + ".domain"));
-		    currentAttribute = new Attribute(attribute, currentAttributeDomain,
-			    keyAttributes.contains(attribute));
+		    currentAttribute = new Attribute(relation.toLowerCase() + "."
+			    + attribute.toLowerCase(), currentAttributeDomain, keyAttributes
+			    .contains(attribute));
 		    currentAttributes.add(currentAttribute);
 		}
 
@@ -163,8 +164,9 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 			    + predicate + ".value");
 		    currentPredicate = new Predicate(this.relations.get(
 			    currentPredicateAttribute[0].toLowerCase()).getAttribute(
-			    currentPredicateAttribute[1]), currentPredicateOperator,
-			    currentPredicateValue);
+			    currentPredicateAttribute[0].toLowerCase() + "."
+				    + currentPredicateAttribute[1].toLowerCase()),
+			    currentPredicateOperator, currentPredicateValue);
 		    currentPredicates.add(currentPredicate);
 		}
 
