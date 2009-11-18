@@ -28,7 +28,7 @@ public class VerticalFragment extends Relation {
      */
     public VerticalFragment(final String name, final Relation source,
 	    final Collection<Attribute> attributes) {
-	super(name, attributes);
+	super(name, attributes, FragmentationType.Vertical);
 	this.source = source;
 
 	if (!this.getKeyAttributes().containsAll(source.getKeyAttributes())) {

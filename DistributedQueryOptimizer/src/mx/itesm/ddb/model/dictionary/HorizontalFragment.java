@@ -33,7 +33,7 @@ public class HorizontalFragment extends Relation {
      */
     public HorizontalFragment(final String name, final Relation source,
 	    final Collection<Predicate> minterm) {
-	super(name, source);
+	super(name, source, FragmentationType.Horizontal);
 	this.minterm = minterm;
 	this.source = source;
 	this.source.addFragment(this);
