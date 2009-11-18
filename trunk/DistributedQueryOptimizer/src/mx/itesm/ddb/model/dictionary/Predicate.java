@@ -46,6 +46,11 @@ public class Predicate {
 	this.value = value;
     }
 
+    @Override
+    public String toString() {
+	return this.attribute.getName() + " " + this.predicateOperator + " " + this.value;
+    }
+
     /**
      * @return the attribute
      */

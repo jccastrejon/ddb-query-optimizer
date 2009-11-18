@@ -32,6 +32,11 @@ public class Relation {
     private Collection<Relation> fragments;
 
     /**
+     * Fragmentation type applied over this relation.
+     */
+    private FragmentationType fragmentationType;
+
+    /**
      * Minimal constructor that specifies only the relation name.
      * 
      * @param name
@@ -67,6 +72,23 @@ public class Relation {
     }
 
     /**
+     * Full constructor that specifies the relation name and the attributes that
+     * define it.
+     * 
+     * @param name
+     *            Relation name.
+     * @param attributes
+     *            Relation attributes.
+     * @param fragmentationType
+     *            Fragmentation Type.
+     */
+    public Relation(final String name, final Collection<Attribute> attributes,
+	    final FragmentationType fragmentationType) {
+	this(name, attributes);
+	this.fragmentationType = fragmentationType;
+    }
+
+    /**
      * Full constructor that specifies the relation name and a base relation for
      * the other attributes.
      * 
@@ -88,6 +110,23 @@ public class Relation {
     }
 
     /**
+     * Full constructor that specifies the relation name and a base relation for
+     * the other attributes.
+     * 
+     * @param name
+     *            Relation name.
+     * @param relation
+     *            Base relation.
+     * @param fragmentationType
+     *            Fragmentation Type.
+     */
+    public Relation(final String name, final Relation relation,
+	    final FragmentationType fragmentationType) {
+	this(name, relation);
+	this.fragmentationType = fragmentationType;
+    }
+
+    /**
      * Add a new fragment to this relation.
      * 
      * @param relation
@@ -97,6 +136,17 @@ public class Relation {
 	if (relation != null) {
 	    if (this.fragments == null) {
 		this.fragments = new ArrayList<Relation>();
+	    }
+
+	    // A relation can only be fragmented in one way
+	    if (this.fragmentationType != null) {
+		if (this.fragmentationType != relation.fragmentationType) {
+		    throw new IllegalArgumentException("Invalid fragment type: "
+			    + relation.getFragmentationType() + " for relation of type: "
+			    + this.getFragmentationType());
+		}
+	    } else {
+		this.fragmentationType = relation.getFragmentationType();
 	    }
 
 	    this.fragments.add(relation);
@@ -203,5 +253,20 @@ public class Relation {
      */
     public void setFragments(Collection<Relation> fragments) {
 	this.fragments = fragments;
+    }
+
+    /**
+     * @return the fragmentationType
+     */
+    public FragmentationType getFragmentationType() {
+	return fragmentationType;
+    }
+
+    /**
+     * @param fragmentationType
+     *            the fragmentationType to set
+     */
+    public void setFragmentationType(FragmentationType fragmentationType) {
+	this.fragmentationType = fragmentationType;
     }
 }
