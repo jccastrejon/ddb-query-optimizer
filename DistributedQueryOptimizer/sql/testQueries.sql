@@ -19,3 +19,4 @@ select tabla.atributo from tabla1, tabla2 where tabla1.atributo = tabla2.atribut
 select tabla1.atributo from tabla1, tabla2 where tabla1.atributo = (select max(atributo) from tabla3);
 select R.nombre from R,S where R.enum = S.enum and (S.duracion=30 or R.edad=55);
 select emp.ename from proj, asg, emp where asg.eno = emp.eno and asg.pno = proj.pno and emp.ename != "J Doe" and proj.pname = "cad cam" and (asg.dur = 12 or asg.dur=24);
+select * from emp where emp.eno > 7;
