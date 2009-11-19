@@ -195,6 +195,11 @@ public class Relation {
 	}
     }
 
+    @Override
+    public String toString() {
+	return this.getName();
+    }
+
     /**
      * @return the name
      */
