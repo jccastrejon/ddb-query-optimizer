@@ -19,6 +19,11 @@ public enum AttributeDomain {
 
 	    return returnValue;
 	}
+
+	@Override
+	public int compareValues(final String first, final String second) {
+	    return first.compareToIgnoreCase(second.trim());
+	}
     },
     IntegerAttributeDomain {
 	@Override
@@ -37,6 +42,11 @@ public enum AttributeDomain {
 
 	    return returnValue;
 	}
+
+	@Override
+	public int compareValues(final String first, final String second) {
+	    return new Integer(first.trim()).compareTo(new Integer(second.trim()));
+	}
     };
     /**
      * Check if the specified value is valid for this domain.
@@ -47,4 +57,17 @@ public enum AttributeDomain {
      *         <em>false</em> otherwise.
      */
     public abstract boolean isValidValue(final String value);
+
+    /**
+     * Compare to values according to the domain semantics.
+     * 
+     * @param first
+     *            First value.
+     * @param second
+     *            Second value.
+     * @return <em>0</em> if the values are equal,
+     *         <em>a value lower than cero</em> if the first value is lower than
+     *         the second one and <em>a value greater than cero</em> otherwise.
+     */
+    public abstract int compareValues(final String first, final String second);
 }
