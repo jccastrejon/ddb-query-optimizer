@@ -243,7 +243,8 @@ public class LocalizationService {
 
 			    // Part of a complex selection condition
 			    if (currentCondition.indexOf(')') > 0) {
-				currentCondition.substring(0, currentCondition.indexOf(')') - 1);
+				currentCondition = currentCondition.substring(0, currentCondition
+					.indexOf(')') - 1);
 			    }
 
 			    // Add to the selection conditions for
