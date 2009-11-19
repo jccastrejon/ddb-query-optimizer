@@ -9,6 +9,8 @@ import java.util.Map;
 import mx.itesm.ddb.dao.DatabaseDictionaryDao;
 import mx.itesm.ddb.model.dictionary.Relation;
 import mx.itesm.ddb.util.ConditionOperator;
+import mx.itesm.ddb.util.ExpressionOperator;
+import mx.itesm.ddb.util.ExpressionOperator.ArithmeticOperator;
 
 /**
  * Database Dictionary Service.
@@ -98,25 +100,33 @@ public class DatabaseDictionaryService {
 	List<String> returnValue;
 
 	returnValue = new ArrayList<String>();
-	// [expression = value]
+	// [expression {operator} value]
 	if (sqlData.indexOf(ConditionOperator.BinaryOperator.AND_OPERATOR.toString().trim()) == -1) {
 	    expression = sqlData;
-	    if (expression.indexOf('=') > 0) {
-		expression = sqlData.substring(0, sqlData.indexOf('='));
+	    for (ArithmeticOperator operator : ExpressionOperator.ArithmeticOperator.values()) {
+		if (expression.indexOf(operator.getDescription()) > 0) {
+		    expression = expression.substring(0, expression.indexOf(operator
+			    .getDescription()));
+		    break;
+		}
 	    }
 
 	    returnValue = Arrays.asList(expression.trim().split(" "));
 	}
 
-	// [expression = value] and [expression = value]
+	// [expression {operator} value] and [expression {operator} value]
 	else {
 	    expressions = sqlData.split(ConditionOperator.BinaryOperator.AND_OPERATOR
 		    .getDescription());
 
 	    returnValue = new ArrayList<String>(expressions.length);
 	    for (String innerExpression : expressions) {
-		if (innerExpression.indexOf('=') > 0) {
-		    innerExpression = innerExpression.substring(0, innerExpression.indexOf('='));
+		for (ArithmeticOperator operator : ExpressionOperator.ArithmeticOperator.values()) {
+		    if (innerExpression.indexOf(operator.getDescription()) > 0) {
+			innerExpression = innerExpression.substring(0, innerExpression
+				.indexOf(operator.getDescription()));
+			break;
+		    }
 		}
 
 		returnValue.add(this.getValidExpression(innerExpression));
