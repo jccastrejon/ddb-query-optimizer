@@ -148,6 +148,7 @@ public class LocalizationService {
     private boolean reducePrimaryHorizontalFragmentation(final Node currentNode) {
 	Node operatorNode;
 	boolean returnValue;
+	boolean reductionApplied;
 	List<Node> leafNodes;
 	List<Node> ignoredNodes;
 	Node selectionNode;
@@ -177,7 +178,13 @@ public class LocalizationService {
 		    // first chidl is found so there's no need to repeat this
 		    // process with all of them
 		    ignoredNodes.addAll(operatorNode.getChildren());
-		    returnValue = this.reductionWithSelection(operatorNode, selectionNode);
+		    reductionApplied = this.reductionWithSelection(operatorNode, selectionNode);
+
+		    // If at least one reduction has been applied over the
+		    // leafs, the returnValue is true
+		    if ((!returnValue) && (reductionApplied)) {
+			returnValue = true;
+		    }
 		}
 	    }
 	}
