@@ -32,14 +32,19 @@ public class LocalizationService {
     private final Logger logger = Logger.getLogger(LocalizationService.class);
 
     /**
+     * Rewriting Service.
+     */
+    private RewritingService rewritingService;
+
+    /**
      * Graphic Export Service.
      */
-    GraphicExportService graphicExportService;
+    private GraphicExportService graphicExportService;
 
     /**
      * Database Dictionary DAO.
      */
-    DatabaseDictionaryService databaseDictionaryService;
+    private DatabaseDictionaryService databaseDictionaryService;
 
     /**
      * Use reduction techniques over the relation fragments to generate simpler
@@ -69,6 +74,9 @@ public class LocalizationService {
 	if (reductionFound) {
 	    this.graphicExportService.saveIntermediateOperatorTree(operatorTree, queryId,
 		    (++returnValue), "GenericQuery", imageDir);
+
+	    returnValue = rewritingService.rewriteOperatorTree(operatorTree, queryId, imageDir,
+		    returnValue);
 
 	    // Primary Horizontal Fragments
 	    reductionFound = this.reducePrimaryHorizontalFragmentation(operatorTree.getRootNode());
@@ -344,10 +352,15 @@ public class LocalizationService {
      *         <em>false</em> otherwise.
      */
     private boolean reductionWithJoin(final Node unionNode, final Node joinNode) {
+	Node newJoinNode;
+	Node newUnionNode;
 	Relation fragment;
 	boolean returnValue;
 	Node joinBranchNode;
 	List<Node> leafNodes;
+	int comparissonResult;
+	Relation joinFragment;
+	boolean invalidMinterm;
 	Node currentBranchNode;
 	List<Node> ignoredNodes;
 	Node joinBranchUnionNode;
@@ -357,6 +370,7 @@ public class LocalizationService {
 	Node joinBranchUnionBranchNode;
 	Node currentBranchUnionBranchNode;
 	Collection<Predicate> fragmentPredicates;
+	Collection<Predicate> joinFragmentPredicates;
 
 	// Try to make the corresponding Joins
 	returnValue = false;
@@ -386,81 +400,128 @@ public class LocalizationService {
 		    }
 		}
 
-		// Make the Joins between all of the leaf Nodes of the joinNode
 		if (validReductionCase) {
-		    leafNodes = joinNode.getLeafNodes();
+		    break;
+		}
+	    }
+	}
 
-		    for (Node leafNode : leafNodes) {
-			// Branch of the Join node containing the leaf node
-			currentBranchNode = joinNode.getNodeContainingLeafNode(leafNode
-				.getSqlData());
+	// Make the Joins between all of the leaf Nodes of the joinNode and
+	// group them with a new Union node
+	if (validReductionCase) {
+	    leafNodes = joinNode.getLeafNodes();
+	    newUnionNode = new Node(RelationalOperator.UNION);
 
-			// Union node inside the current branch that contains
-			// the leaf node
-			currentBranchUnionNode = leafNode
-				.getClosestRelationalOperatorNode(RelationalOperator.UNION);
+	    for (Node leafNode : leafNodes) {
+		// Branch of the Join node containing the leaf node
+		currentBranchNode = joinNode.getNodeContainingLeafNode(leafNode.getSqlData());
 
-			if (currentBranchUnionNode != null) {
-			    // Branch of the Union node that contains the leaf
-			    // node
-			    currentBranchUnionBranchNode = currentBranchUnionNode
-				    .getNodeContainingLeafNode(leafNode.getSqlData());
-			} else {
-			    // There's no Union node, there's only one fragment
-			    // for this relation
-			    currentBranchUnionBranchNode = leafNode;
+		// Union node inside the current branch that contains
+		// the leaf node
+		currentBranchUnionNode = leafNode
+			.getClosestRelationalOperatorNode(RelationalOperator.UNION);
+
+		if (currentBranchUnionNode != null) {
+		    // Branch of the Union node that contains the leaf
+		    // node
+		    currentBranchUnionBranchNode = currentBranchUnionNode
+			    .getNodeContainingLeafNode(leafNode.getSqlData());
+		} else {
+		    // There's no Union node, there's only one fragment
+		    // for this relation
+		    currentBranchUnionBranchNode = leafNode;
+		}
+
+		// Since Join is commutative, avoid duplicating work
+		if (ignoredNodes.contains(currentBranchUnionBranchNode)) {
+		    continue;
+		}
+
+		// Look for leaf nodes to make Join with
+		for (Node joinLeafNode : leafNodes) {
+		    // Avoid joining a leaf node with itself
+		    if (joinLeafNode == leafNode) {
+			continue;
+		    }
+
+		    // Avoid joining leaf nodes that belong to the same
+		    // branch of the Join node
+		    joinBranchNode = joinNode.getNodeContainingLeafNode(joinLeafNode.getSqlData());
+		    if (joinBranchNode == currentBranchNode) {
+			continue;
+		    }
+
+		    // This is a leaf that belongs to the opposite
+		    // branch of tht Join node
+		    joinBranchUnionNode = joinLeafNode
+			    .getClosestRelationalOperatorNode(RelationalOperator.UNION);
+
+		    if (joinBranchUnionNode != null) {
+			// Union node inside the opposite branch that
+			// contains the leaf node
+			joinBranchUnionBranchNode = joinBranchUnionNode
+				.getNodeContainingLeafNode(joinLeafNode.getSqlData());
+		    } else {
+			// There's no Union node, there's only one
+			// fragment for this relation
+			joinBranchUnionBranchNode = joinLeafNode;
+		    }
+
+		    // Since Join is commutative, avoid duplicating work
+		    returnValue = true;
+		    ignoredNodes.add(currentBranchUnionBranchNode);
+		    ignoredNodes.add(joinBranchUnionBranchNode);
+
+		    // Check if the qualifications of the joined
+		    // fragments are contradicting
+		    fragment = databaseDictionaryService.getRelation(leafNode.getSqlData());
+		    joinFragment = databaseDictionaryService.getRelation(joinLeafNode.getSqlData());
+
+		    if ((fragment != null)
+			    && (joinFragment != null)
+			    && (fragment.getFragmentationType() == FragmentationType.Horizontal)
+			    && (joinFragment.getFragmentationType() == FragmentationType.Horizontal)) {
+			fragmentPredicates = ((HorizontalFragment) fragment).getMinterm();
+			joinFragmentPredicates = ((HorizontalFragment) joinFragment).getMinterm();
+
+			// Look for predicates that refer to the same attribute
+			// and check if they contradict
+			invalidMinterm = false;
+			for (Predicate predicate : fragmentPredicates) {
+			    for (Predicate joinPredicate : joinFragmentPredicates) {
+				if (predicate.getAttribute().getName().equals(
+					joinPredicate.getAttribute().getName())) {
+				    comparissonResult = predicate.getAttribute()
+					    .getAttributeDomain().compareValues(
+						    predicate.getValue(), joinPredicate.getValue());
+				    invalidMinterm = predicate.getPredicateOperator()
+					    .isInvalidComparisson(comparissonResult,
+						    joinPredicate.getPredicateOperator());
+				    break;
+				}
+			    }
+
+			    if (invalidMinterm) {
+				break;
+			    }
 			}
 
-			// Since Join is commutative, avoid duplicating work
-			if (ignoredNodes.contains(currentBranchUnionBranchNode)) {
-			    continue;
-			}
+			if (!invalidMinterm) {
+			    // Add the new Join node
+			    newJoinNode = new Node(joinNode.getSqlData(), RelationalOperator.JOIN);
+			    newJoinNode.addChild(currentBranchUnionBranchNode);
+			    newJoinNode.addChild(joinBranchUnionBranchNode);
+			    newUnionNode.addChild(newJoinNode);
 
-			for (Node joinLeafNode : leafNodes) {
-			    // Avoid joining a leaf node with itself
-			    if (joinLeafNode == leafNode) {
-				continue;
-			    }
-
-			    // Avoid joining leaf nodes that belong to the same
-			    // branch of the Join node
-			    joinBranchNode = joinNode.getNodeContainingLeafNode(joinLeafNode
-				    .getSqlData());
-			    if (joinBranchNode == currentBranchNode) {
-				continue;
-			    }
-
-			    // This is a leaf that belongs to the opposite
-			    // branch of tht Join node
-			    joinBranchUnionNode = joinLeafNode
-				    .getClosestRelationalOperatorNode(RelationalOperator.UNION);
-
-			    if (joinBranchUnionNode != null) {
-				// Union node inside the opposite branch that
-				// contains the leaf node
-				joinBranchUnionBranchNode = joinBranchUnionNode
-					.getNodeContainingLeafNode(joinLeafNode.getSqlData());
-			    } else {
-				// There's no Union node, there's only one
-				// fragment for this relation
-				joinBranchUnionBranchNode = joinLeafNode;
-			    }
-
-			    // Since Join is commutative, avoid duplicating work
-			    ignoredNodes.add(currentBranchUnionBranchNode);
-			    ignoredNodes.add(joinBranchUnionBranchNode);
-			    
-
-			    logger.warn("Reduction with selection, Join: "
-				    + currentBranchUnionBranchNode + " with "
-				    + joinBranchUnionBranchNode);
+			    logger.warn("Reduction with selection, new Join: " + newJoinNode);
 			}
 		    }
 		}
 	    }
 
-	    if (validReductionCase) {
-		break;
+	    // New Join nodes have been added
+	    if (newUnionNode.getChildren() != null) {
+
 	    }
 	}
 
@@ -495,5 +556,20 @@ public class LocalizationService {
      */
     public void setGraphicExportService(GraphicExportService graphicExportService) {
 	this.graphicExportService = graphicExportService;
+    }
+
+    /**
+     * @return the rewritingService
+     */
+    public RewritingService getRewritingService() {
+	return rewritingService;
+    }
+
+    /**
+     * @param rewritingService
+     *            the rewritingService to set
+     */
+    public void setRewritingService(RewritingService rewritingService) {
+	this.rewritingService = rewritingService;
     }
 }

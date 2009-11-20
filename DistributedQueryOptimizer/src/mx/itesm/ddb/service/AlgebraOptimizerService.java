@@ -137,7 +137,7 @@ public class AlgebraOptimizerService {
 
 	returnValue = this.orderNodes(rootNode, leafNodes);
 	logger.debug("Initial operator tree: " + returnValue);
-	rewritingSteps = rewritingService.rewriteOperatorTree(returnValue, queryId, imageDir);
+	rewritingSteps = rewritingService.rewriteOperatorTree(returnValue, queryId, imageDir, 0);
 	logger.debug("Operator Tree after rewriting: " + returnValue);
 	rewritingSteps = localizationService.reduceRelationFragments(returnValue, rewritingSteps,
 		queryId, imageDir);
