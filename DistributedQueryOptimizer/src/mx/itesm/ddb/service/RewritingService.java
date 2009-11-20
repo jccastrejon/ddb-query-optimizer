@@ -458,6 +458,7 @@ public class RewritingService {
 	List<Node> originalInnerChildren;
 	StringBuilder projectionAttributes;
 	Map<String, String> groupedAttributes;
+	Map<String, String> childGroupedAttributes;
 
 	returnValue = false;
 	currentChildren = currentNode.getChildren();
@@ -520,6 +521,14 @@ public class RewritingService {
 			    if ((returnValue) && (child.getChildren() != null)) {
 				newInnerChildren = new ArrayList<Node>();
 				originalInnerChildren = new ArrayList<Node>();
+
+				// Attributes contained in the commutable
+				// operator node
+				childGroupedAttributes = null;
+				if (child.getSqlData() != null) {
+				    childGroupedAttributes = databaseDictionaryService
+					    .getGroupedAttributesFromSqlData(child.getSqlData());
+				}
 				for (Node innerChild : child.getChildren()) {
 				    // Add the new projection node only if
 				    // it hasn't been added yet
@@ -532,6 +541,18 @@ public class RewritingService {
 					    if (innerChild.containsLeafNode(currentRelation)) {
 						projectionAttributes.append(groupedAttributes
 							.get(currentRelation));
+					    }
+					}
+
+					// Add the attributes required to
+					// perform the commutable operation
+					if (childGroupedAttributes != null) {
+					    for (String relation : childGroupedAttributes.keySet()) {
+						if (innerChild.containsLeafNode(relation)) {
+						    projectionAttributes
+							    .append(childGroupedAttributes
+								    .get(relation));
+						}
 					    }
 					}
 
