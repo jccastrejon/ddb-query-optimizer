@@ -154,12 +154,12 @@ public class LocalizationService {
      *            Starting node for the analysis.
      */
     private boolean reducePrimaryHorizontalFragmentation(final Node currentNode) {
-	Node operatorNode;
+	Node unionNode;
 	boolean returnValue;
-	boolean reductionApplied;
 	List<Node> leafNodes;
-	List<Node> ignoredNodes;
 	Node upperOperatorNode;
+	List<Node> ignoredNodes;
+	boolean reductionApplied;
 
 	// Reduction with Selection
 	returnValue = false;
@@ -170,11 +170,10 @@ public class LocalizationService {
 		continue;
 	    }
 
-	    operatorNode = leafNode.getParent();
-	    if ((operatorNode != null)
-		    && (operatorNode.getRelationalOperator() == RelationalOperator.UNION)) {
+	    unionNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.UNION);
+	    if (unionNode != null) {
 		// Look for the closest Selection
-		upperOperatorNode = operatorNode
+		upperOperatorNode = unionNode
 			.getClosestRelationalOperatorNode(RelationalOperator.SELECT);
 
 		// If a selection is found, proceed with reduction
@@ -183,7 +182,7 @@ public class LocalizationService {
 		    // first child is found so there's no need to repeat this
 		    // process with all of them
 		    ignoredNodes.addAll(upperOperatorNode.getLeafNodes());
-		    reductionApplied = this.reductionWithSelection(operatorNode, upperOperatorNode);
+		    reductionApplied = this.reductionWithSelection(unionNode, upperOperatorNode);
 
 		    // If at least one reduction has been applied over the
 		    // leafs, the returnValue is true
@@ -193,7 +192,7 @@ public class LocalizationService {
 		}
 
 		// Look for the closes Join
-		upperOperatorNode = operatorNode
+		upperOperatorNode = unionNode
 			.getClosestRelationalOperatorNode(RelationalOperator.JOIN);
 
 		// If a join is found, proceed with reduction
@@ -202,7 +201,7 @@ public class LocalizationService {
 		    // first child is found so there's no need to repeat this
 		    // process with all of them
 		    ignoredNodes.addAll(upperOperatorNode.getLeafNodes());
-		    reductionApplied = this.reductionWithJoin(operatorNode, upperOperatorNode);
+		    reductionApplied = this.reductionWithJoin(unionNode, upperOperatorNode);
 
 		    // If at least one reduction has been applied over the
 		    // leafs, the returnValue is true
@@ -368,6 +367,7 @@ public class LocalizationService {
 	List<String> joinAttributes;
 	Node currentBranchUnionNode;
 	Node joinBranchUnionBranchNode;
+	List<Node> unionChildLeafNodes;
 	Node currentBranchUnionBranchNode;
 	Collection<Predicate> fragmentPredicates;
 	Collection<Predicate> joinFragmentPredicates;
@@ -377,7 +377,14 @@ public class LocalizationService {
 	validReductionCase = false;
 	ignoredNodes = new ArrayList<Node>();
 	for (Node child : unionNode.getChildren()) {
-	    fragment = databaseDictionaryService.getRelation(child.getSqlData());
+	    unionChildLeafNodes = child.getLeafNodes();
+
+	    // Each union branch should reference only one fragment
+	    fragment = null;
+	    if ((unionChildLeafNodes != null) && (unionChildLeafNodes.size() == 1)) {
+		fragment = databaseDictionaryService.getRelation(unionChildLeafNodes.get(0)
+			.getSqlData());
+	    }
 
 	    if ((fragment != null)
 		    && (fragment.getFragmentationType() == FragmentationType.Horizontal)) {
@@ -414,7 +421,8 @@ public class LocalizationService {
 
 	    for (Node leafNode : leafNodes) {
 		// Branch of the Join node containing the leaf node
-		currentBranchNode = joinNode.getNodeContainingLeafNode(leafNode.getSqlData());
+		currentBranchNode = joinNode.getNodeContainingLeafNode(databaseDictionaryService
+			.getRelationNames(leafNode.getSqlData()));
 
 		// Union node inside the current branch that contains
 		// the leaf node
@@ -425,7 +433,8 @@ public class LocalizationService {
 		    // Branch of the Union node that contains the leaf
 		    // node
 		    currentBranchUnionBranchNode = currentBranchUnionNode
-			    .getNodeContainingLeafNode(leafNode.getSqlData());
+			    .getNodeContainingLeafNode(databaseDictionaryService
+				    .getRelationNames(leafNode.getSqlData()));
 		} else {
 		    // There's no Union node, there's only one fragment
 		    // for this relation
@@ -446,7 +455,8 @@ public class LocalizationService {
 
 		    // Avoid joining leaf nodes that belong to the same
 		    // branch of the Join node
-		    joinBranchNode = joinNode.getNodeContainingLeafNode(joinLeafNode.getSqlData());
+		    joinBranchNode = joinNode.getNodeContainingLeafNode(databaseDictionaryService
+			    .getRelationNames(joinLeafNode.getSqlData()));
 		    if (joinBranchNode == currentBranchNode) {
 			continue;
 		    }
@@ -460,7 +470,8 @@ public class LocalizationService {
 			// Union node inside the opposite branch that
 			// contains the leaf node
 			joinBranchUnionBranchNode = joinBranchUnionNode
-				.getNodeContainingLeafNode(joinLeafNode.getSqlData());
+				.getNodeContainingLeafNode(databaseDictionaryService
+					.getRelationNames(joinLeafNode.getSqlData()));
 		    } else {
 			// There's no Union node, there's only one
 			// fragment for this relation

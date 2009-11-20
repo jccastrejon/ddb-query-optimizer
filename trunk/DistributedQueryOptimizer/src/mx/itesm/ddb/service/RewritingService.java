@@ -489,7 +489,8 @@ public class RewritingService {
 				// a previous found case, that is, a projection
 				// already exists right before the relation leaf
 				// node, with the required attributes
-				leafNodes = child.getLeafNodes(currentRelation);
+				leafNodes = child.getLeafNodes(databaseDictionaryService
+					.getRelationNames(currentRelation));
 				previousMatch = false;
 				for (Node relationNode : leafNodes) {
 				    if ((relationNode != null)
@@ -542,7 +543,9 @@ public class RewritingService {
 
 					projectionAttributes = new StringBuilder();
 					for (String currentRelation : groupedAttributes.keySet()) {
-					    if (innerChild.containsLeafNode(currentRelation)) {
+					    if (innerChild
+						    .containsLeafNode(databaseDictionaryService
+							    .getRelationNames(currentRelation))) {
 						projectionAttributes.append(groupedAttributes
 							.get(currentRelation));
 					    }
@@ -552,7 +555,9 @@ public class RewritingService {
 					// perform the commutable operation
 					if (childGroupedAttributes != null) {
 					    for (String relation : childGroupedAttributes.keySet()) {
-						if (innerChild.containsLeafNode(relation)) {
+						if (innerChild
+							.containsLeafNode(databaseDictionaryService
+								.getRelationNames(relation))) {
 						    projectionAttributes
 							    .append(childGroupedAttributes
 								    .get(relation));
@@ -696,7 +701,8 @@ public class RewritingService {
 	// contains the relation (leafNode) in order to apply
 	// the operation there
 	returnValue = false;
-	leafNodes = operationChildNode.getLeafNodes(relation);
+	leafNodes = operationChildNode.getLeafNodes(databaseDictionaryService
+		.getRelationNames(relation));
 
 	if (!leafNodes.isEmpty()) {
 	    // Disassociate operationNode with its

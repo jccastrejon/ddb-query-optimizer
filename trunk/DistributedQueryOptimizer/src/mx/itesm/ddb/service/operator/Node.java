@@ -259,7 +259,7 @@ public class Node implements Cloneable {
      * @return <em>true</em> if the leaf node is defined within this node
      *         hierarchy, <em>false</em> otherwise.
      */
-    public boolean containsLeafNode(final String sqlData) {
+    public boolean containsLeafNode(final String... sqlData) {
 	boolean returnValue;
 
 	returnValue = false;
@@ -280,14 +280,18 @@ public class Node implements Cloneable {
      *         hierarchy. If no matching Node is found, an empty List is
      *         returned.
      */
-    public List<Node> getLeafNodes(final String sqlData) {
+    public List<Node> getLeafNodes(final String... sqlData) {
 	List<Node> returnValue;
 
 	// Check if the data is in this node
 	returnValue = new ArrayList<Node>();
 	if (this.children == null) {
-	    if (this.sqlData.toLowerCase().equals(sqlData.toLowerCase())) {
-		returnValue.add(this);
+	    if (sqlData != null) {
+		for (String relationName : sqlData) {
+		    if (this.sqlData.toLowerCase().equalsIgnoreCase(relationName)) {
+			returnValue.add(this);
+		    }
+		}
 	    }
 	}
 
@@ -337,7 +341,7 @@ public class Node implements Cloneable {
      *         no leaf node is identified the given SQL Data, we return
      *         <em>null</em>.
      */
-    public Node getNodeContainingLeafNode(final String sqlData) {
+    public Node getNodeContainingLeafNode(final String... sqlData) {
 	Node returnValue;
 
 	returnValue = null;
