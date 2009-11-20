@@ -364,6 +364,7 @@ public class LocalizationService {
 	List<Node> ignoredNodes;
 	Node joinBranchUnionNode;
 	boolean validReductionCase;
+	String joinCommonAttribute;
 	List<String> joinAttributes;
 	Node currentBranchUnionNode;
 	Node joinBranchUnionBranchNode;
@@ -418,6 +419,12 @@ public class LocalizationService {
 	if (validReductionCase) {
 	    leafNodes = joinNode.getLeafNodes();
 	    newUnionNode = new Node(RelationalOperator.UNION);
+
+	    // Get the common attribute name of this Join
+	    joinCommonAttribute = databaseDictionaryService.getAttributesFromSqlData(
+		    joinNode.getSqlData()).get(0);
+	    joinCommonAttribute = joinCommonAttribute
+		    .substring(joinCommonAttribute.indexOf('.') + 1);
 
 	    for (Node leafNode : leafNodes) {
 		// Branch of the Join node containing the leaf node
@@ -498,17 +505,22 @@ public class LocalizationService {
 			// and check if they contradict
 			invalidMinterm = false;
 			for (Predicate predicate : fragmentPredicates) {
+			    if (!predicate.getAttribute().getName().endsWith(joinCommonAttribute)) {
+				continue;
+			    }
 			    for (Predicate joinPredicate : joinFragmentPredicates) {
-				if (predicate.getAttribute().getName().equals(
-					joinPredicate.getAttribute().getName())) {
-				    comparissonResult = predicate.getAttribute()
-					    .getAttributeDomain().compareValues(
-						    predicate.getValue(), joinPredicate.getValue());
-				    invalidMinterm = predicate.getPredicateOperator()
-					    .isInvalidComparisson(comparissonResult,
-						    joinPredicate.getPredicateOperator());
-				    break;
+				if (!joinPredicate.getAttribute().getName().endsWith(
+					joinCommonAttribute)) {
+				    continue;
 				}
+
+				comparissonResult = predicate.getAttribute().getAttributeDomain()
+					.compareValues(predicate.getValue(),
+						joinPredicate.getValue());
+				invalidMinterm = predicate.getPredicateOperator()
+					.isInvalidComparisson(comparissonResult,
+						joinPredicate.getPredicateOperator());
+				break;
 			    }
 
 			    if (invalidMinterm) {
