@@ -151,7 +151,7 @@ public class LocalizationService {
 	boolean reductionApplied;
 	List<Node> leafNodes;
 	List<Node> ignoredNodes;
-	Node selectionNode;
+	Node upperOperatorNode;
 
 	// Reduction with Selection
 	returnValue = false;
@@ -166,19 +166,35 @@ public class LocalizationService {
 	    if ((operatorNode != null)
 		    && (operatorNode.getRelationalOperator() == RelationalOperator.UNION)) {
 		// Look for the closest Selection
-		selectionNode = operatorNode.getParent();
-		while ((selectionNode != null)
-			&& (selectionNode.getRelationalOperator() != RelationalOperator.SELECT)) {
-		    selectionNode = selectionNode.getParent();
-		}
+		upperOperatorNode = operatorNode
+			.getClosestRelationalOperatorNode(RelationalOperator.SELECT);
 
 		// If a selection is found, proceed with reduction
-		if (selectionNode != null) {
+		if (upperOperatorNode != null) {
 		    // All children of the Union node will be evaluated when the
-		    // first chidl is found so there's no need to repeat this
+		    // first child is found so there's no need to repeat this
 		    // process with all of them
-		    ignoredNodes.addAll(operatorNode.getChildren());
-		    reductionApplied = this.reductionWithSelection(operatorNode, selectionNode);
+		    ignoredNodes.addAll(upperOperatorNode.getLeafNodes());
+		    reductionApplied = this.reductionWithSelection(operatorNode, upperOperatorNode);
+
+		    // If at least one reduction has been applied over the
+		    // leafs, the returnValue is true
+		    if ((!returnValue) && (reductionApplied)) {
+			returnValue = true;
+		    }
+		}
+
+		// Look for the closes Join
+		upperOperatorNode = operatorNode
+			.getClosestRelationalOperatorNode(RelationalOperator.JOIN);
+
+		// If a join is found, proceed with reduction
+		if (upperOperatorNode != null) {
+		    // All children of the Union node will be evaluated when the
+		    // first child is found so there's no need to repeat this
+		    // process with all of them
+		    ignoredNodes.addAll(upperOperatorNode.getLeafNodes());
+		    reductionApplied = this.reductionWithJoin(operatorNode, upperOperatorNode);
 
 		    // If at least one reduction has been applied over the
 		    // leafs, the returnValue is true
@@ -309,6 +325,143 @@ public class LocalizationService {
 	if ((unionNode.getChildren() != null) && (unionNode.getChildren().size() == 1)) {
 	    unionNode.getParent().addChild(unionNode.getChildren().get(0));
 	    unionNode.getParent().removeChild(unionNode);
+	}
+
+	return returnValue;
+    }
+
+    /**
+     * Joins on horizontally fragmented relations can be simplified when the
+     * joined relations are fragmented according to the join attribute. The
+     * simplification consists of distributing joins over unions and eliminating
+     * useless joins.
+     * 
+     * @param unionNode
+     *            Union Node of the relation fragments.
+     * @param joinNode
+     *            Join Node that contains the join attribute to test.
+     * @return <em>true</em> if a reduction was applied over the unionNode,
+     *         <em>false</em> otherwise.
+     */
+    private boolean reductionWithJoin(final Node unionNode, final Node joinNode) {
+	Relation fragment;
+	boolean returnValue;
+	Node joinBranchNode;
+	List<Node> leafNodes;
+	Node currentBranchNode;
+	List<Node> ignoredNodes;
+	Node joinBranchUnionNode;
+	boolean validReductionCase;
+	List<String> joinAttributes;
+	Node currentBranchUnionNode;
+	Node joinBranchUnionBranchNode;
+	Node currentBranchUnionBranchNode;
+	Collection<Predicate> fragmentPredicates;
+
+	// Try to make the corresponding Joins
+	returnValue = false;
+	validReductionCase = false;
+	ignoredNodes = new ArrayList<Node>();
+	for (Node child : unionNode.getChildren()) {
+	    fragment = databaseDictionaryService.getRelation(child.getSqlData());
+
+	    if ((fragment != null)
+		    && (fragment.getFragmentationType() == FragmentationType.Horizontal)) {
+		fragmentPredicates = ((HorizontalFragment) fragment).getMinterm();
+		joinAttributes = databaseDictionaryService.getAttributesFromSqlData(joinNode
+			.getSqlData());
+
+		// Check if the relation was fragmented according to the join
+		// attribute
+		for (String joinAttribute : joinAttributes) {
+		    for (Predicate predicate : fragmentPredicates) {
+			if (predicate.getAttribute().getName().equalsIgnoreCase(joinAttribute)) {
+			    validReductionCase = true;
+			    break;
+			}
+		    }
+
+		    if (validReductionCase) {
+			break;
+		    }
+		}
+
+		// Make the Joins between all of the leaf Nodes of the joinNode
+		if (validReductionCase) {
+		    leafNodes = joinNode.getLeafNodes();
+
+		    for (Node leafNode : leafNodes) {
+			// Branch of the Join node containing the leaf node
+			currentBranchNode = joinNode.getNodeContainingLeafNode(leafNode
+				.getSqlData());
+
+			// Union node inside the current branch that contains
+			// the leaf node
+			currentBranchUnionNode = leafNode
+				.getClosestRelationalOperatorNode(RelationalOperator.UNION);
+
+			if (currentBranchUnionNode != null) {
+			    // Branch of the Union node that contains the leaf
+			    // node
+			    currentBranchUnionBranchNode = currentBranchUnionNode
+				    .getNodeContainingLeafNode(leafNode.getSqlData());
+			} else {
+			    // There's no Union node, there's only one fragment
+			    // for this relation
+			    currentBranchUnionBranchNode = leafNode;
+			}
+
+			// Since Join is commutative, avoid duplicating work
+			if (ignoredNodes.contains(currentBranchUnionBranchNode)) {
+			    continue;
+			}
+
+			for (Node joinLeafNode : leafNodes) {
+			    // Avoid joining a leaf node with itself
+			    if (joinLeafNode == leafNode) {
+				continue;
+			    }
+
+			    // Avoid joining leaf nodes that belong to the same
+			    // branch of the Join node
+			    joinBranchNode = joinNode.getNodeContainingLeafNode(joinLeafNode
+				    .getSqlData());
+			    if (joinBranchNode == currentBranchNode) {
+				continue;
+			    }
+
+			    // This is a leaf that belongs to the opposite
+			    // branch of tht Join node
+			    joinBranchUnionNode = joinLeafNode
+				    .getClosestRelationalOperatorNode(RelationalOperator.UNION);
+
+			    if (joinBranchUnionNode != null) {
+				// Union node inside the opposite branch that
+				// contains the leaf node
+				joinBranchUnionBranchNode = joinBranchUnionNode
+					.getNodeContainingLeafNode(joinLeafNode.getSqlData());
+			    } else {
+				// There's no Union node, there's only one
+				// fragment for this relation
+				joinBranchUnionBranchNode = joinLeafNode;
+			    }
+
+			    // Since Join is commutative, avoid duplicating work
+			    ignoredNodes.add(currentBranchUnionBranchNode);
+			    ignoredNodes.add(joinBranchUnionBranchNode);
+			    
+
+			    logger.warn("Reduction with selection, Join: "
+				    + currentBranchUnionBranchNode + " with "
+				    + joinBranchUnionBranchNode);
+			}
+		    }
+		}
+	    }
+
+	    if (validReductionCase) {
+		break;
+	    }
 	}
 
 	return returnValue;
