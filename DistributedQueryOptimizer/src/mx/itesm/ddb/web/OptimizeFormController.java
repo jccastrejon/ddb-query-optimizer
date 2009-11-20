@@ -1,13 +1,12 @@
 package mx.itesm.ddb.web;
 
 import java.io.File;
-import java.io.IOException;
 
 import javax.servlet.ServletException;
 
+import mx.itesm.ddb.service.AlgebraOptimizerService;
 import mx.itesm.ddb.service.ParserService;
 import mx.itesm.ddb.service.Query;
-import mx.itesm.ddb.service.AlgebraOptimizerService;
 
 import org.apache.log4j.Logger;
 import org.springframework.web.servlet.mvc.SimpleFormController;
@@ -47,8 +46,9 @@ public class OptimizeFormController extends SimpleFormController {
 	    queryDir.deleteOnExit();
 
 	    algebraOptimizerService.buildOperatorTree(query, queryDir);
-	} catch (IOException e) {
+	} catch (Exception e) {
 	    logger.error("Error building operatorTree for: " + query.getSql(), e);
+	    query.setQueryData(null);
 	}
     }
 

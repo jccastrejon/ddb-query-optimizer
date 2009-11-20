@@ -12,6 +12,12 @@
 	
 	<div id="sql">
 		<h3><fmt:message key="optimize.sqlQuery"/></h3>
+		
+		<!-- Unsupported query -->
+		<c:if test="${(not empty query.sql) and (empty query.queryData)}">
+			<span id="sql.errors" class="error"><fmt:message key="optimize.unsupportedQuery"/></span>
+		</c:if>
+		
 		<form:form method="post" commandName="query">
 			<form:hidden path="id"/>
 			<form:errors path="sql" cssClass="error"/><br/>
