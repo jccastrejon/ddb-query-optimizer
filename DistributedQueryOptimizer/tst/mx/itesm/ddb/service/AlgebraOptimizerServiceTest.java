@@ -48,6 +48,7 @@ public class AlgebraOptimizerServiceTest extends SqlBaseTest {
 	algebraOptimizerService = new AlgebraOptimizerService();
 	databaseDictionaryService = new DatabaseDictionaryService();
 	databaseDictionaryDao = new PropertiesDatabaseDictionaryDao();
+	localizationService.setRewritingService(rewritingService);
 	localizationService.setGraphicExportService(graphicExportService);
 	databaseDictionaryService.setDatabaseDictionaryDao(databaseDictionaryDao);
 	localizationService.setDatabaseDictionaryService(databaseDictionaryService);
