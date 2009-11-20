@@ -326,6 +326,38 @@ public class Node implements Cloneable {
     }
 
     /**
+     * Get the node whose branch contains the leaf node identified by the
+     * specified SQL Data.
+     * 
+     * @param sqlData
+     *            Leaf Node's SQL Data.
+     * @return If this node has children, we return the child whose branch
+     *         contains the specified leaf node. If this node has no children,
+     *         we return this node if the leaf node exists in its hierarchy. If
+     *         no leaf node is identified the given SQL Data, we return
+     *         <em>null</em>.
+     */
+    public Node getNodeContainingLeafNode(final String sqlData) {
+	Node returnValue;
+
+	returnValue = null;
+	if (this.getChildren() != null) {
+	    for (Node child : children) {
+		if (child.containsLeafNode(sqlData)) {
+		    returnValue = child;
+		    break;
+		}
+	    }
+	} else {
+	    if (this.containsLeafNode(sqlData)) {
+		return this;
+	    }
+	}
+
+	return returnValue;
+    }
+
+    /**
      * Get the attributes of the given relation that are used starting from this
      * Node up to the specified Root Node.
      * 
@@ -351,6 +383,37 @@ public class Node implements Cloneable {
 
 	if ((this != rootNode) && (this.parent != null)) {
 	    returnValue.addAll(this.parent.getRelationAttributes(sqlData, rootNode));
+	}
+
+	return returnValue;
+    }
+
+    /**
+     * Get the closes Node up in this Node's hierarchy that contains the
+     * specified Relational Operator.
+     * 
+     * @param relationalOperator
+     *            Relational Operator.
+     * @return The closest Node containing the specified Relational Operator or
+     *         <em>null</em> if no Node is found.
+     */
+    public Node getClosestRelationalOperatorNode(final RelationalOperator relationalOperator) {
+	Node returnValue;
+
+	returnValue = null;
+	if (this.getParent() != null) {
+	    returnValue = this.getParent();
+	    while ((returnValue != null)
+		    && (returnValue.getRelationalOperator() != relationalOperator)) {
+		returnValue = returnValue.getParent();
+	    }
+	}
+
+	// Make sure that the return value does contain the Relational Operator,
+	// avoiding the case where we reached the root node without finding a
+	// matching Node
+	if ((returnValue != null) && (returnValue.getRelationalOperator() != relationalOperator)) {
+	    returnValue = null;
 	}
 
 	return returnValue;
