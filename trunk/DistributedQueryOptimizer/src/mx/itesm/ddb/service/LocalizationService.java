@@ -479,7 +479,6 @@ public class LocalizationService {
 		    }
 
 		    // Since Join is commutative, avoid duplicating work
-		    returnValue = true;
 		    ignoredNodes.add(currentBranchUnionBranchNode);
 		    ignoredNodes.add(joinBranchUnionBranchNode);
 
@@ -520,8 +519,8 @@ public class LocalizationService {
 			if (!invalidMinterm) {
 			    // Add the new Join node
 			    newJoinNode = new Node(joinNode.getSqlData(), RelationalOperator.JOIN);
-			    newJoinNode.addChild(currentBranchUnionBranchNode);
-			    newJoinNode.addChild(joinBranchUnionBranchNode);
+			    newJoinNode.addChild(currentBranchUnionBranchNode.clone());
+			    newJoinNode.addChild(joinBranchUnionBranchNode.clone());
 			    newUnionNode.addChild(newJoinNode);
 
 			    logger.warn("Reduction with selection, new Join: " + newJoinNode);
@@ -532,7 +531,9 @@ public class LocalizationService {
 
 	    // New Join nodes have been added
 	    if (newUnionNode.getChildren() != null) {
-
+		returnValue = true;
+		joinNode.getParent().addChild(newUnionNode);
+		joinNode.getParent().removeChild(joinNode);
 	    }
 	}
 
