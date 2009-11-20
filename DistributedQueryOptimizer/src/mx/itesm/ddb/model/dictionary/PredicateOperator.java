@@ -7,7 +7,7 @@ package mx.itesm.ddb.model.dictionary;
  * 
  */
 public enum PredicateOperator {
-    EQUALS_TO("="), DIFFERENT_THAN("!="), GREATER_THAN(">"), LESS_THAN("<"), GREATER_THAN_OR_EQUALS(
+    DIFFERENT_THAN("!="), EQUALS_TO("="), GREATER_THAN(">"), LESS_THAN("<"), GREATER_THAN_OR_EQUALS(
 	    ">="), LESS_THAN_OR_EQUALS("<=");
 
     /**
