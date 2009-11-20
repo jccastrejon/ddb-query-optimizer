@@ -38,6 +38,39 @@ public class DatabaseDictionaryService {
     }
 
     /**
+     * Verifies if a given attribute is valid for a given relation. The
+     * attribute name is of the form: <em>relation.attribute</em>.
+     * 
+     * @param attributeName
+     *            Full attribute name.
+     * @return <em>true</em> if the attribute is valid for the given relation,
+     *         <em>false</em> otherwise.
+     */
+    public boolean isValidAttribute(final String attributeName) {
+	int dotIndex;
+	Relation relation;
+	boolean returnValue;
+	String relationPart;
+	String trimmedAttributeName;
+
+	returnValue = false;
+	trimmedAttributeName = attributeName.trim();
+	dotIndex = trimmedAttributeName.indexOf('.');
+	if (dotIndex > 0) {
+	    relationPart = trimmedAttributeName.substring(0, dotIndex);
+
+	    relation = this.databaseDictionaryDao.getRelation(relationPart);
+	    if (relation != null) {
+		if (relation.getAttribute(trimmedAttributeName) != null) {
+		    returnValue = true;
+		}
+	    }
+	}
+
+	return returnValue;
+    }
+
+    /**
      * Get the referenced table used by this expression.
      * 
      * @param expression
@@ -68,15 +101,18 @@ public class DatabaseDictionaryService {
 	String returnValue;
 
 	returnValue = null;
-	// [expression = value]
+	// [expression {operator} value]
 	if (sqlData.indexOf(ConditionOperator.BinaryOperator.AND_OPERATOR.getDescription()) == -1) {
 	    returnValue = sqlData;
-	    if (returnValue.indexOf('=') > 0) {
-		returnValue = sqlData.substring(0, sqlData.indexOf('='));
+	    for (ArithmeticOperator operator : ExpressionOperator.ArithmeticOperator.values()) {
+		if (returnValue.indexOf(operator.getDescription()) > 0) {
+		    returnValue = sqlData.substring(0, sqlData.indexOf(operator.getDescription()));
+		    break;
+		}
 	    }
 	}
 
-	// [expression = value] and [expression = value]
+	// [expression {operator} value] and [expression {operator} value]
 	else {
 	    // All the conditions refer to the same relation, so we take the
 	    // first one
@@ -96,22 +132,43 @@ public class DatabaseDictionaryService {
      */
     public List<String> getAttributesFromSqlData(final String sqlData) {
 	String expression;
+	String firstOperand;
+	String secondOperand;
 	String[] expressions;
 	List<String> returnValue;
+	boolean operatorFound;
 
 	returnValue = new ArrayList<String>();
 	// [expression {operator} value]
 	if (sqlData.indexOf(ConditionOperator.BinaryOperator.AND_OPERATOR.toString().trim()) == -1) {
 	    expression = sqlData;
+	    operatorFound = false;
 	    for (ArithmeticOperator operator : ExpressionOperator.ArithmeticOperator.values()) {
 		if (expression.indexOf(operator.getDescription()) > 0) {
-		    expression = expression.substring(0, expression.indexOf(operator
+		    // expression
+		    firstOperand = expression.substring(0, expression.indexOf(operator
 			    .getDescription()));
+		    if (this.isValidAttribute(firstOperand)) {
+			returnValue.add(firstOperand.trim());
+		    }
+
+		    // value
+		    secondOperand = expression.substring(expression.indexOf(operator
+			    .getDescription())
+			    + operator.getDescription().length());
+		    if (this.isValidAttribute(secondOperand)) {
+			returnValue.add(secondOperand.trim());
+		    }
+
+		    operatorFound = true;
 		    break;
 		}
 	    }
 
-	    returnValue = Arrays.asList(expression.trim().split(" "));
+	    // If no operator was found
+	    if (!operatorFound) {
+		returnValue = Arrays.asList(expression.trim().split(" "));
+	    }
 	}
 
 	// [expression {operator} value] and [expression {operator} value]
