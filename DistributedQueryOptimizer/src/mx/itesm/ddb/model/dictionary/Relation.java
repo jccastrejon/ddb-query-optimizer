@@ -167,7 +167,7 @@ public class Relation {
 	returnValue = null;
 	if (this.attributes != null) {
 	    for (Attribute attribute : this.attributes) {
-		if (attribute.getName().equals(name)) {
+		if (attribute.getName().equalsIgnoreCase(name)) {
 		    returnValue = attribute;
 		    break;
 		}
