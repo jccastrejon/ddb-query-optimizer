@@ -38,6 +38,32 @@ public class DatabaseDictionaryService {
     }
 
     /**
+     * Get all the names that are used to reference a relation. That is, the
+     * global relation and fragments names.
+     * 
+     * @param name
+     *            Relation name.
+     * @return Names used to reference a relation.
+     */
+    public String[] getRelationNames(final String name) {
+	Relation relation;
+	List<String> returnValue;
+
+	returnValue = new ArrayList<String>();
+	relation = this.getRelation(name);
+	if (relation != null) {
+	    returnValue.add(relation.getName());
+	    if (relation.getFragments() != null) {
+		for (Relation fragment : relation.getFragments()) {
+		    returnValue.add(fragment.getName());
+		}
+	    }
+	}
+
+	return returnValue.toArray(new String[returnValue.size()]);
+    }
+
+    /**
      * Verifies if a given attribute is valid for a given relation. The
      * attribute name is of the form: <em>relation.attribute</em>.
      * 

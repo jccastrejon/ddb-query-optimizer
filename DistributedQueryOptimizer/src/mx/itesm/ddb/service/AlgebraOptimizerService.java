@@ -334,7 +334,8 @@ public class AlgebraOptimizerService {
 	    newNodeChildren = new ArrayList<Node>();
 	    for (String table : tables) {
 		for (Node leafNode : leafNodes) {
-		    if (leafNode.containsLeafNode(table)) {
+		    if (leafNode
+			    .containsLeafNode(databaseDictionaryService.getRelationNames(table))) {
 			newNodeChildren.add(leafNode);
 			break;
 		    }
