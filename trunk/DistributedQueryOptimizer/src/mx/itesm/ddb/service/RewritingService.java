@@ -58,20 +58,24 @@ public class RewritingService {
      *            Query Id.
      * @param imageDir
      *            Directory where to save the temporary Operator Tree.
+     * @param currentRewritingSteps
+     *            Current Rewriting Steps applied over the Operator Tree.
      * @return Number of steps needed to build the final Operator Tree.
      * @throws IOException
      *             If an I/O error occurs.
      */
     public int rewriteOperatorTree(final OperatorTree operatorTree, final String queryId,
-	    final File imageDir) throws IOException {
+	    final File imageDir, final int currentRewritingSteps) throws IOException {
 	int returnValue;
 	boolean rewriteTree;
 	List<Boolean> returnValues;
 
 	// Export original tree before rewriting
-	returnValue = 0;
-	graphicExportService.saveIntermediateOperatorTree(operatorTree, queryId, returnValue,
-		"Initial", imageDir);
+	returnValue = currentRewritingSteps;
+	if (currentRewritingSteps == 0) {
+	    graphicExportService.saveIntermediateOperatorTree(operatorTree, queryId, returnValue,
+		    "Initial", imageDir);
+	}
 
 	// Refine the operator tree till no more changes are found
 	returnValues = new ArrayList<Boolean>();
