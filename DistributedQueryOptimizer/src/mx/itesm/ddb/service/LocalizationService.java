@@ -359,6 +359,8 @@ public class LocalizationService {
 	Relation fragment;
 	boolean returnValue;
 	Node joinBranchNode;
+	Node firstJoinBranchNode;
+	Node secondJoinBranchNode;
 	List<Node> leafNodes;
 	int comparissonResult;
 	Relation joinFragment;
@@ -541,24 +543,25 @@ public class LocalizationService {
 			    // have what's between the original Join node and
 			    // the union node
 			    if (currentBranchNode != currentBranchUnionNode) {
-				currentBranchNode = currentBranchNode
+				firstJoinBranchNode = currentBranchNode
 					.limitedClone(currentBranchUnionNode);
-				currentBranchNode.getLeafNodes().get(0).addChild(
+				firstJoinBranchNode.getLeafNodes().get(0).addChild(
 					currentBranchUnionBranchNode.clone());
 			    } else {
-				currentBranchNode = currentBranchUnionBranchNode.clone();
+				firstJoinBranchNode = currentBranchUnionBranchNode.clone();
 			    }
 
 			    if (joinBranchNode != joinBranchUnionNode) {
-				joinBranchNode = joinBranchNode.limitedClone(joinBranchUnionNode);
-				joinBranchNode.getLeafNodes().get(0).addChild(
+				secondJoinBranchNode = joinBranchNode
+					.limitedClone(joinBranchUnionNode);
+				secondJoinBranchNode.getLeafNodes().get(0).addChild(
 					joinBranchUnionBranchNode.clone());
 			    } else {
-				joinBranchNode = joinBranchUnionBranchNode.clone();
+				secondJoinBranchNode = joinBranchUnionBranchNode.clone();
 			    }
 
-			    newJoinNode.addChild(currentBranchNode);
-			    newJoinNode.addChild(joinBranchNode);
+			    newJoinNode.addChild(firstJoinBranchNode);
+			    newJoinNode.addChild(secondJoinBranchNode);
 			    newUnionNode.addChild(newJoinNode);
 
 			    logger.warn("Reduction with selection, new Join: " + newJoinNode);
