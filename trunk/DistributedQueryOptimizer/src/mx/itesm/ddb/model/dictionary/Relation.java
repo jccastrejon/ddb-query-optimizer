@@ -178,6 +178,30 @@ public class Relation {
     }
 
     /**
+     * Check if the specified attribute is valid for this relation.
+     * 
+     * @param attribute
+     *            Relation attribute.
+     * @return <em>true</em> if this a valid attribute for this relation,
+     *         <em>false</em> otherwise.
+     */
+    public boolean containsAttribute(final String attribute) {
+	boolean returnValue;
+
+	returnValue = false;
+	if ((attributes != null) && (this.attributes != null)) {
+	    for (Attribute relationAttribute : this.attributes) {
+		if (relationAttribute.getName().equalsIgnoreCase(attribute)) {
+		    returnValue = true;
+		    break;
+		}
+	    }
+	}
+
+	return returnValue;
+    }
+
+    /**
      * Assign the key attributes to the <em>keyAttributes</em> property, from
      * the specified attributes collection.
      * 
