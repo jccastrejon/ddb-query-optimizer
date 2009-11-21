@@ -165,54 +165,57 @@ public class DatabaseDictionaryService {
 	boolean operatorFound;
 
 	returnValue = new ArrayList<String>();
-	// [expression {operator} value]
-	if (sqlData.indexOf(ConditionOperator.BinaryOperator.AND_OPERATOR.toString().trim()) == -1) {
-	    expression = sqlData;
-	    operatorFound = false;
-	    for (ArithmeticOperator operator : ExpressionOperator.ArithmeticOperator.values()) {
-		if (expression.indexOf(operator.getDescription()) > 0) {
-		    // expression
-		    firstOperand = expression.substring(0, expression.indexOf(operator
-			    .getDescription()));
-		    if (this.isValidAttribute(firstOperand)) {
-			returnValue.add(firstOperand.trim());
-		    }
-
-		    // value
-		    secondOperand = expression.substring(expression.indexOf(operator
-			    .getDescription())
-			    + operator.getDescription().length());
-		    if (this.isValidAttribute(secondOperand)) {
-			returnValue.add(secondOperand.trim());
-		    }
-
-		    operatorFound = true;
-		    break;
-		}
-	    }
-
-	    // If no operator was found
-	    if (!operatorFound) {
-		returnValue = Arrays.asList(expression.trim().split(" "));
-	    }
-	}
-
-	// [expression {operator} value] and [expression {operator} value]
-	else {
-	    expressions = sqlData.split(ConditionOperator.BinaryOperator.AND_OPERATOR
-		    .getDescription());
-
-	    returnValue = new ArrayList<String>(expressions.length);
-	    for (String innerExpression : expressions) {
+	if (sqlData != null) {
+	    // [expression {operator} value]
+	    if (sqlData.indexOf(ConditionOperator.BinaryOperator.AND_OPERATOR.toString().trim()) == -1) {
+		expression = sqlData;
+		operatorFound = false;
 		for (ArithmeticOperator operator : ExpressionOperator.ArithmeticOperator.values()) {
-		    if (innerExpression.indexOf(operator.getDescription()) > 0) {
-			innerExpression = innerExpression.substring(0, innerExpression
-				.indexOf(operator.getDescription()));
+		    if (expression.indexOf(operator.getDescription()) > 0) {
+			// expression
+			firstOperand = expression.substring(0, expression.indexOf(operator
+				.getDescription()));
+			if (this.isValidAttribute(firstOperand)) {
+			    returnValue.add(firstOperand.trim());
+			}
+
+			// value
+			secondOperand = expression.substring(expression.indexOf(operator
+				.getDescription())
+				+ operator.getDescription().length());
+			if (this.isValidAttribute(secondOperand)) {
+			    returnValue.add(secondOperand.trim());
+			}
+
+			operatorFound = true;
 			break;
 		    }
 		}
 
-		returnValue.add(this.getValidExpression(innerExpression));
+		// If no operator was found
+		if (!operatorFound) {
+		    returnValue = Arrays.asList(expression.trim().split(" "));
+		}
+	    }
+
+	    // [expression {operator} value] and [expression {operator} value]
+	    else {
+		expressions = sqlData.split(ConditionOperator.BinaryOperator.AND_OPERATOR
+			.getDescription());
+
+		returnValue = new ArrayList<String>(expressions.length);
+		for (String innerExpression : expressions) {
+		    for (ArithmeticOperator operator : ExpressionOperator.ArithmeticOperator
+			    .values()) {
+			if (innerExpression.indexOf(operator.getDescription()) > 0) {
+			    innerExpression = innerExpression.substring(0, innerExpression
+				    .indexOf(operator.getDescription()));
+			    break;
+			}
+		    }
+
+		    returnValue.add(this.getValidExpression(innerExpression));
+		}
 	    }
 	}
 
