@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -135,6 +136,7 @@ public class RewritingService {
 	String childRelation;
 	String currentRelation;
 	boolean childReturnValue;
+	Set<String> groupedAttributes;
 	List<ConditionData> groupedConditions;
 	OperationConditionData groupedConditionData;
 
@@ -168,8 +170,13 @@ public class RewritingService {
 				child.getParent().removeChild(child);
 				currentNode.removeChild(child);
 				currentNode.addChildren(child.getChildren());
-				currentNode.setSqlData(currentNode.getSqlData()
-					+ child.getSqlData());
+
+				// Avoid grouping the same attribute twice
+				groupedAttributes = new HashSet<String>(databaseDictionaryService
+					.getAttributesFromSqlData(currentNode.getSqlData()));
+				groupedAttributes.addAll(databaseDictionaryService
+					.getAttributesFromSqlData(child.getSqlData()));
+				currentNode.setSqlData(groupedAttributes);
 
 				returnValue = true;
 			    }
