@@ -504,8 +504,7 @@ public class Node implements Cloneable {
 	newSqlData = null;
 	returnValue = new Node(this.relationalOperator);
 
-	newSqlData = new String(this.sqlData);
-
+	// Clone children
 	if (this.children != null) {
 	    for (Node node : this.children) {
 		newNode = node.clone();
@@ -513,7 +512,48 @@ public class Node implements Cloneable {
 	    }
 	}
 
-	returnValue.setSqlData(newSqlData);
+	// Clone node data
+	if (this.sqlData != null) {
+	    newSqlData = new String(this.sqlData);
+	    returnValue.setSqlData(newSqlData);
+	}
+
+	return returnValue;
+    }
+
+    /**
+     * Clone this node and its hierarchy until the limitNode is found in the
+     * hierarchy.
+     * 
+     * @param limitNode
+     *            Limit Node.
+     * @return Node that contains this node's hierarchy until the limitNode. If
+     *         no limitNode is found, the complete node's hierarchy is returned.
+     */
+    public Node limitedClone(final Node limitNode) {
+	Node newNode;
+	String newSqlData;
+	Node returnValue;
+
+	newSqlData = null;
+	returnValue = new Node(this.relationalOperator);
+
+	// Clone children
+	if (this.children != null) {
+	    if (!this.children.contains(limitNode)) {
+		for (Node node : this.children) {
+		    newNode = node.limitedClone(limitNode);
+		    returnValue.addChild(newNode);
+		}
+	    }
+	}
+
+	// Clone node data
+	if (this.sqlData != null) {
+	    newSqlData = new String(this.sqlData);
+	    returnValue.setSqlData(newSqlData);
+	}
+
 	return returnValue;
     }
 
