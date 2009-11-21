@@ -78,11 +78,24 @@ public class LocalizationService {
 	    returnValue = rewritingService.rewriteOperatorTree(operatorTree, queryId, imageDir,
 		    returnValue);
 
+	    // Primary Vertical Fragments
+	    reductionFound = this.reduceVerticalFragmentation(operatorTree.getRootNode());
+	    if (reductionFound) {
+		this.graphicExportService.saveIntermediateOperatorTree(operatorTree, queryId,
+			(++returnValue), "PrimaryVerticalFragments", imageDir);
+
+		returnValue = rewritingService.rewriteOperatorTree(operatorTree, queryId, imageDir,
+			returnValue);
+	    }
+
 	    // Primary Horizontal Fragments
 	    reductionFound = this.reducePrimaryHorizontalFragmentation(operatorTree.getRootNode());
 	    if (reductionFound) {
 		this.graphicExportService.saveIntermediateOperatorTree(operatorTree, queryId,
 			(++returnValue), "PrimaryHorizontalFragments", imageDir);
+
+		returnValue = rewritingService.rewriteOperatorTree(operatorTree, queryId, imageDir,
+			returnValue);
 	    }
 
 	    returnValue = rewritingService.rewriteOperatorTree(operatorTree, queryId, imageDir,
@@ -575,6 +588,67 @@ public class LocalizationService {
 		returnValue = true;
 		joinNode.getParent().addChild(newUnionNode);
 		joinNode.getParent().removeChild(joinNode);
+	    }
+	}
+
+	return returnValue;
+    }
+
+    /**
+     * Queries on vertical fragments can be reduced by determining the useless
+     * intermediate relations and removing the subtrees that produce them.
+     * Projections on a vertical fragment that has no attributes in common with
+     * the projection attributes (except the key of the relation) produces
+     * useless, though not empty relations.
+     * 
+     * @param currentNode
+     *            Starting node for the analysis.
+     */
+    private boolean reduceVerticalFragmentation(final Node currentNode) {
+	Node joinNode;
+	Relation relation;
+	boolean returnValue;
+	List<Node> leafNodes;
+	List<String> projectionAttributes;
+	List<String> newProjectionAttributes;
+
+	returnValue = false;
+	leafNodes = currentNode.getLeafNodes();
+	for (Node leafNode : leafNodes) {
+	    if ((leafNode.getParent() != null)
+		    && (leafNode.getParent().getRelationalOperator() == RelationalOperator.PROJECTION)) {
+		projectionAttributes = databaseDictionaryService.getAttributesFromSqlData(leafNode
+			.getParent().getSqlData());
+		relation = databaseDictionaryService.getRelation(leafNode.getSqlData());
+
+		if (relation != null) {
+		    newProjectionAttributes = new ArrayList<String>();
+		    for (String attribute : projectionAttributes) {
+			if (relation.containsAttribute(attribute)) {
+			    newProjectionAttributes.add(attribute);
+			}
+		    }
+
+		    if (newProjectionAttributes.isEmpty()) {
+			joinNode = leafNode
+				.getClosestRelationalOperatorNode(RelationalOperator.JOIN);
+
+			if (joinNode != null) {
+			    returnValue = true;
+			    joinNode.removeChild(joinNode.getNodeContainingLeafNode(leafNode
+				    .getSqlData()));
+			    if (joinNode.getChildren().size() == 1) {
+				if (joinNode.getParent() != null) {
+				    joinNode.getParent().addChild(joinNode.getChildren().get(0));
+				    joinNode.getParent().removeChild(joinNode);
+				}
+			    }
+			}
+		    } else if (newProjectionAttributes.size() != projectionAttributes.size()) {
+			returnValue = true;
+			leafNode.getParent().setSqlData(newProjectionAttributes);
+		    }
+		}
 	    }
 	}
 
