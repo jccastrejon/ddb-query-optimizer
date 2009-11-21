@@ -85,6 +85,9 @@ public class LocalizationService {
 			(++returnValue), "PrimaryHorizontalFragments", imageDir);
 	    }
 
+	    returnValue = rewritingService.rewriteOperatorTree(operatorTree, queryId, imageDir,
+		    returnValue);
+
 	    // Reduction for Primary Horizontal Fragmentation
 	}
 
@@ -445,6 +448,7 @@ public class LocalizationService {
 		} else {
 		    // There's no Union node, there's only one fragment
 		    // for this relation
+		    currentBranchUnionNode = leafNode;
 		    currentBranchUnionBranchNode = leafNode;
 		}
 
@@ -482,6 +486,7 @@ public class LocalizationService {
 		    } else {
 			// There's no Union node, there's only one
 			// fragment for this relation
+			joinBranchUnionNode = joinLeafNode;
 			joinBranchUnionBranchNode = joinLeafNode;
 		    }
 
@@ -531,8 +536,29 @@ public class LocalizationService {
 			if (!invalidMinterm) {
 			    // Add the new Join node
 			    newJoinNode = new Node(joinNode.getSqlData(), RelationalOperator.JOIN);
-			    newJoinNode.addChild(currentBranchUnionBranchNode.clone());
-			    newJoinNode.addChild(joinBranchUnionBranchNode.clone());
+
+			    // The new branch nodes of the new Join node should
+			    // have what's between the original Join node and
+			    // the union node
+			    if (currentBranchNode != currentBranchUnionNode) {
+				currentBranchNode = currentBranchNode
+					.limitedClone(currentBranchUnionNode);
+				currentBranchNode.getLeafNodes().get(0).addChild(
+					currentBranchUnionBranchNode.clone());
+			    } else {
+				currentBranchNode = currentBranchUnionBranchNode.clone();
+			    }
+
+			    if (joinBranchNode != joinBranchUnionNode) {
+				joinBranchNode = joinBranchNode.limitedClone(joinBranchUnionNode);
+				joinBranchNode.getLeafNodes().get(0).addChild(
+					joinBranchUnionBranchNode.clone());
+			    } else {
+				joinBranchNode = joinBranchUnionBranchNode.clone();
+			    }
+
+			    newJoinNode.addChild(currentBranchNode);
+			    newJoinNode.addChild(joinBranchNode);
 			    newUnionNode.addChild(newJoinNode);
 
 			    logger.warn("Reduction with selection, new Join: " + newJoinNode);
