@@ -191,7 +191,8 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 		currentRelation = this.getRelation(currentFragment);
 		currentAttributes = new ArrayList<Attribute>(attributes.length);
 		for (String attribute : attributes) {
-		    currentAttributes.add(currentRelation.getAttribute(attribute));
+		    currentAttributes.add(currentRelation.getAttribute(currentFragment + "."
+			    + attribute));
 		}
 
 		this.verticalFragments.put(fragment.toLowerCase(), new VerticalFragment(fragment,
