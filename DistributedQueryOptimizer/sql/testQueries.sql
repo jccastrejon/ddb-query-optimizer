@@ -24,3 +24,5 @@ select emp.ename from emp, asg where emp.eno = asg.eno and emp.eno > 7 and asg.p
 SELECT emp.title, asg.pno FROM emp, asg where emp.eno = asg.eno and emp.eno = 1;
 select emp.eno from emp, asg where emp.eno = asg.eno;
 select emp.eno, asg.pno from emp, asg where emp.eno = asg.eno and emp.ename = "Juan";
+select proj.budget from proj;
+select proj.pname, proj.budget from proj;
