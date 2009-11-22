@@ -47,6 +47,11 @@ public class AlgebraOptimizerService {
     private RewritingService rewritingService;
 
     /**
+     * Graphic Export Service.
+     */
+    GraphicExportService graphicExportService;
+
+    /**
      * Localization Service.
      */
     private LocalizationService localizationService;
@@ -130,18 +135,38 @@ public class AlgebraOptimizerService {
 	int rewritingSteps;
 	List<Node> leafNodes;
 	OperatorTree returnValue;
+	List<String> finalProjectionAttributes;
+	List<String> originalProjectionAttributes;
 
 	rootNode = this.getRootNode(queryData.getAttributes());
 	leafNodes = this.getLeafNodes(queryData.getRelations());
 	leafNodes = this.getConditionNodes(queryData.getConditions(), leafNodes);
 
+	rewritingSteps = 0;
 	returnValue = this.orderNodes(rootNode, leafNodes);
+	originalProjectionAttributes = this.databaseDictionaryService
+		.getAttributesFromSqlData(rootNode.getSqlData());
+	this.graphicExportService.saveIntermediateOperatorTree(returnValue, queryId,
+		rewritingSteps, "Initial", imageDir);
 	logger.debug("Initial operator tree: " + returnValue);
-	rewritingSteps = rewritingService.rewriteOperatorTree(returnValue, queryId, imageDir, 0);
+	rewritingSteps = rewritingService.rewriteOperatorTree(returnValue, queryId, imageDir,
+		rewritingSteps);
 	logger.debug("Operator Tree after rewriting: " + returnValue);
 	rewritingSteps = localizationService.reduceRelationFragments(returnValue, rewritingSteps,
 		queryId, imageDir);
 	logger.debug("Operator Tree after reduction: " + returnValue);
+
+	// Make sure the projection attributes list of the initial tree is
+	// maintained
+	if (rootNode.getRelationalOperator() == RelationalOperator.PROJECTION) {
+	    finalProjectionAttributes = this.databaseDictionaryService
+		    .getAttributesFromSqlData(rootNode.getSqlData());
+	    if (finalProjectionAttributes.size() != originalProjectionAttributes.size()) {
+		rootNode.setSqlData(originalProjectionAttributes);
+		this.graphicExportService.saveIntermediateOperatorTree(returnValue, queryId,
+			(++rewritingSteps), "OriginalProjectionAttributes", imageDir);
+	    }
+	}
 
 	// Update the rewriting steps needed to generate the Operator Tree
 	returnValue.setRewritingSteps(rewritingSteps);
@@ -501,5 +526,20 @@ public class AlgebraOptimizerService {
      */
     public void setLocalizationService(LocalizationService localizationService) {
 	this.localizationService = localizationService;
+    }
+
+    /**
+     * @return the graphicExportService
+     */
+    public GraphicExportService getGraphicExportService() {
+	return graphicExportService;
+    }
+
+    /**
+     * @param graphicExportService
+     *            the graphicExportService to set
+     */
+    public void setGraphicExportService(GraphicExportService graphicExportService) {
+	this.graphicExportService = graphicExportService;
     }
 }
