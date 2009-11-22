@@ -14,10 +14,8 @@ public enum PredicateOperator {
 	    boolean returnValue;
 
 	    returnValue = false;
-	    if (operator == PredicateOperator.EQUALS_TO) {
-		if (comparissonResult == 0) {
-		    returnValue = true;
-		}
+	    if ((operator == PredicateOperator.EQUALS_TO) && (comparissonResult == 0)) {
+		returnValue = true;
 	    }
 
 	    return returnValue;
