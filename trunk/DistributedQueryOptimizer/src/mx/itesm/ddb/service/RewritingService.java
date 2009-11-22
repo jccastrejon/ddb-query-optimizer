@@ -71,14 +71,8 @@ public class RewritingService {
 	boolean rewriteTree;
 	List<Boolean> returnValues;
 
-	// Export original tree before rewriting
-	returnValue = currentRewritingSteps;
-	if (currentRewritingSteps == 0) {
-	    graphicExportService.saveIntermediateOperatorTree(operatorTree, queryId, returnValue,
-		    "Initial", imageDir);
-	}
-
 	// Refine the operator tree till no more changes are found
+	returnValue = currentRewritingSteps;
 	returnValues = new ArrayList<Boolean>();
 	do {
 	    returnValues.clear();
