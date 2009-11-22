@@ -50,13 +50,14 @@ public class AlgebraOptimizerServiceTest extends SqlBaseTest {
 	databaseDictionaryDao = new PropertiesDatabaseDictionaryDao();
 	localizationService.setRewritingService(rewritingService);
 	localizationService.setGraphicExportService(graphicExportService);
-	databaseDictionaryService.setDatabaseDictionaryDao(databaseDictionaryDao);
 	localizationService.setDatabaseDictionaryService(databaseDictionaryService);
-	algebraOptimizerService.setRewritingService(rewritingService);
-	rewritingService.setGraphicExportService(graphicExportService);
 	algebraOptimizerService.setLocalizationService(localizationService);
-	rewritingService.setDatabaseDictionaryService(databaseDictionaryService);
+	algebraOptimizerService.setRewritingService(rewritingService);
+	algebraOptimizerService.setGraphicExportService(graphicExportService);
 	algebraOptimizerService.setDatabaseDictionaryService(databaseDictionaryService);
+	rewritingService.setGraphicExportService(graphicExportService);
+	rewritingService.setDatabaseDictionaryService(databaseDictionaryService);
+	databaseDictionaryService.setDatabaseDictionaryDao(databaseDictionaryDao);
 
 	// Try to parse each query in the test file
 	for (String testQuery : this.getTestQueries()) {
