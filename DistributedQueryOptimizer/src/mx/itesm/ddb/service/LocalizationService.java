@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import mx.itesm.ddb.model.dictionary.Attribute;
 import mx.itesm.ddb.model.dictionary.FragmentationType;
 import mx.itesm.ddb.model.dictionary.HorizontalFragment;
 import mx.itesm.ddb.model.dictionary.Predicate;
@@ -120,6 +121,7 @@ public class LocalizationService {
 	Node fragmentsParent;
 	List<Node> leafNodes;
 	Relation currentRelation;
+	Collection<String> joinAttributes;
 	Collection<Relation> currentRelationFragments;
 
 	returnValue = false;
@@ -140,7 +142,13 @@ public class LocalizationService {
 			fragmentsParent = new Node(RelationalOperator.UNION);
 			break;
 		    case Vertical:
+			joinAttributes = new ArrayList<String>();
+			for (Attribute attribute : currentRelation.getKeyAttributes()) {
+			    joinAttributes.add(attribute.getName());
+			}
+
 			fragmentsParent = new Node(RelationalOperator.JOIN);
+			fragmentsParent.setSqlData(joinAttributes);
 			break;
 		    }
 
@@ -609,18 +617,30 @@ public class LocalizationService {
 	Relation relation;
 	boolean returnValue;
 	List<Node> leafNodes;
+	Node lastProjectionNode;
 	List<String> projectionAttributes;
 	List<String> newProjectionAttributes;
+	List<String> lastProjectionAttributes;
+	List<String> testProjectionAttributes;
+	List<String> pendingProjectionAttributes;
 
+	// For each leaf node, check if its parent is a projection node. If
+	// that's the case, check if the relation identified by the leaf node is
+	// vertically fragmented and contains the projection attributes, if it
+	// doesn't, remove the branch that contains this leaf node
 	returnValue = false;
 	leafNodes = currentNode.getLeafNodes();
 	for (Node leafNode : leafNodes) {
-	    if ((leafNode.getParent() != null)
+	    relation = databaseDictionaryService.getRelation(leafNode.getSqlData());
+
+	    if ((relation.getFragmentationType() == FragmentationType.Vertical)
+		    && (leafNode.getParent() != null)
 		    && (leafNode.getParent().getRelationalOperator() == RelationalOperator.PROJECTION)) {
 		projectionAttributes = databaseDictionaryService.getAttributesFromSqlData(leafNode
 			.getParent().getSqlData());
-		relation = databaseDictionaryService.getRelation(leafNode.getSqlData());
 
+		// Add to the new projection attributes list only those
+		// attributes that are valid for this relation
 		if (relation != null) {
 		    newProjectionAttributes = new ArrayList<String>();
 		    for (String attribute : projectionAttributes) {
@@ -629,14 +649,48 @@ public class LocalizationService {
 			}
 		    }
 
-		    if (newProjectionAttributes.isEmpty()) {
-			joinNode = leafNode
-				.getClosestRelationalOperatorNode(RelationalOperator.JOIN);
+		    // Check if the newProjectionAttributes are actually used by
+		    // another projection node in the operator tree
+		    joinNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.JOIN);
+		    if (joinNode != null) {
+			pendingProjectionAttributes = new ArrayList<String>(newProjectionAttributes);
+			lastProjectionNode = joinNode
+				.getClosestRelationalOperatorNode(RelationalOperator.PROJECTION);
 
-			if (joinNode != null) {
+			// Test each of the new projection attributes to see
+			// if they're already projected in the operator tree
+			while ((lastProjectionNode != null)
+				&& (!pendingProjectionAttributes.isEmpty())) {
+			    lastProjectionAttributes = databaseDictionaryService
+				    .getAttributesFromSqlData(lastProjectionNode.getSqlData());
+
+			    testProjectionAttributes = new ArrayList<String>(
+				    pendingProjectionAttributes);
+			    for (String pendingAttribute : testProjectionAttributes) {
+				if (lastProjectionAttributes.contains(pendingAttribute)) {
+				    pendingProjectionAttributes.remove(pendingAttribute);
+				}
+			    }
+
+			    // Check if we haven't make it to the root node,
+			    // to avoid an infinite loop
+			    if (lastProjectionNode.getParent() != null) {
+				lastProjectionNode = joinNode
+					.getClosestRelationalOperatorNode(RelationalOperator.PROJECTION);
+			    } else {
+				break;
+			    }
+			}
+
+			// If no one uses the new projection attributes,
+			// remove this branch from the operator tree
+			if (!pendingProjectionAttributes.isEmpty()) {
 			    returnValue = true;
 			    joinNode.removeChild(joinNode.getNodeContainingLeafNode(leafNode
 				    .getSqlData()));
+
+			    // If there's only one child left in the Join node,
+			    // there's no need to keep this Join node
 			    if (joinNode.getChildren().size() == 1) {
 				if (joinNode.getParent() != null) {
 				    joinNode.getParent().addChild(joinNode.getChildren().get(0));
@@ -644,9 +698,13 @@ public class LocalizationService {
 				}
 			    }
 			}
-		    } else if (newProjectionAttributes.size() != projectionAttributes.size()) {
-			returnValue = true;
-			leafNode.getParent().setSqlData(newProjectionAttributes);
+
+			// If all the projection attributes are used, check if
+			// there has been any change to the attributes list
+			else if (newProjectionAttributes.size() != projectionAttributes.size()) {
+			    returnValue = true;
+			    leafNode.getParent().setSqlData(newProjectionAttributes);
+			}
 		    }
 		}
 	    }
