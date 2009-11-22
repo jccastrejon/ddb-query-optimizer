@@ -22,7 +22,7 @@ public enum AttributeDomain {
 
 	@Override
 	public int compareValues(final String first, final String second) {
-	    return first.compareToIgnoreCase(second.trim());
+	    return first.trim().compareToIgnoreCase(second.trim());
 	}
     },
     IntegerAttributeDomain {
