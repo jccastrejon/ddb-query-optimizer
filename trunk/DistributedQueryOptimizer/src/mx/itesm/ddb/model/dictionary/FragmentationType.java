@@ -5,5 +5,5 @@ package mx.itesm.ddb.model.dictionary;
  * 
  */
 public enum FragmentationType {
-    Horizontal, Vertical;
+    Horizontal, Vertical, DerivedHorizontal;
 }

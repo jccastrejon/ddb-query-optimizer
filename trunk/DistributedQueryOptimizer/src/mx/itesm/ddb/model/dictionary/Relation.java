@@ -133,17 +133,31 @@ public class Relation {
      *            Fragment.
      */
     public void addFragment(final Relation relation) {
+	boolean invalidFragment;
+
 	if (relation != null) {
 	    if (this.fragments == null) {
 		this.fragments = new ArrayList<Relation>();
 	    }
 
-	    // A relation can only be fragmented in one way
+	    // A relation can only be fragmented in one way, though a derived
+	    // horizontal fragment is valid for horizontal fragments
+	    invalidFragment = false;
 	    if (this.fragmentationType != null) {
-		if (this.fragmentationType != relation.fragmentationType) {
-		    throw new IllegalArgumentException("Invalid fragment type: "
-			    + relation.getFragmentationType() + " for relation of type: "
-			    + this.getFragmentationType());
+		if (this.fragmentationType == FragmentationType.Horizontal) {
+		    invalidFragment = true;
+		} else if (this.fragmentationType == FragmentationType.Vertical) {
+		    if (relation.getFragmentationType() != FragmentationType.Vertical) {
+			invalidFragment = true;
+		    }
+		}
+
+		if (invalidFragment) {
+		    if (relation.getFragmentationType() == FragmentationType.Vertical) {
+			throw new IllegalArgumentException("Invalid fragment type: "
+				+ relation.getFragmentationType() + " for relation of type: "
+				+ this.getFragmentationType());
+		    }
 		}
 	    } else {
 		this.fragmentationType = relation.getFragmentationType();

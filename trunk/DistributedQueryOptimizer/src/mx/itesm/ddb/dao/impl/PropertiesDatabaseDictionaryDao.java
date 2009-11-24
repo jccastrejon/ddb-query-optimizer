@@ -12,6 +12,7 @@ import java.util.Properties;
 import mx.itesm.ddb.dao.DatabaseDictionaryDao;
 import mx.itesm.ddb.model.dictionary.Attribute;
 import mx.itesm.ddb.model.dictionary.AttributeDomain;
+import mx.itesm.ddb.model.dictionary.FragmentationType;
 import mx.itesm.ddb.model.dictionary.HorizontalFragment;
 import mx.itesm.ddb.model.dictionary.Predicate;
 import mx.itesm.ddb.model.dictionary.PredicateOperator;
@@ -107,6 +108,7 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 	List<String> keyAttributes;
 	String currentPredicateValue;
 	String[] currentPredicateAttribute;
+	FragmentationType fragmentationType;
 	AttributeDomain currentAttributeDomain;
 	Collection<Predicate> currentPredicates;
 	Collection<Attribute> currentAttributes;
@@ -153,6 +155,7 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 		predicates = this.databaseDictionary.getProperty(
 			"horizontalFragment." + fragment + ".predicates").split(",");
 
+		fragmentationType = FragmentationType.Horizontal;
 		currentRelation = this.getRelation(currentFragment);
 		currentPredicates = new ArrayList<Predicate>(predicates.length);
 		for (String predicate : predicates) {
@@ -168,10 +171,16 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 				    + currentPredicateAttribute[1].toLowerCase()),
 			    currentPredicateOperator, currentPredicateValue);
 		    currentPredicates.add(currentPredicate);
+
+		    // If the predicates reference another relation, this is a
+		    // derived horizontal fragment
+		    if (!currentPredicateAttribute[0].equals(currentFragment)) {
+			fragmentationType = FragmentationType.DerivedHorizontal;
+		    }
 		}
 
 		this.horizontalFragments.put(fragment.toLowerCase(), new HorizontalFragment(
-			fragment, currentRelation, currentPredicates));
+			fragment, currentRelation, currentPredicates, fragmentationType));
 	    }
 	}
 
