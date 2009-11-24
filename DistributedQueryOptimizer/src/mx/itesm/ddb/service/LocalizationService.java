@@ -254,6 +254,18 @@ public class LocalizationService {
 		    }
 		}
 	    }
+
+	    leafNodes = currentNode.getLeafNodes();
+	    for (Node leafNode : leafNodes) {
+		// If there's only one fragment left in the Union node,
+		// there's no need for a Union after all
+		unionNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.UNION);
+		if ((unionNode != null) && (unionNode.getChildren() != null)
+			&& (unionNode.getChildren().size() == 1)) {
+		    unionNode.getParent().addChild(unionNode.getChildren().get(0));
+		    unionNode.getParent().removeChild(unionNode);
+		}
+	    }
 	}
 
 	return returnValue;
@@ -351,13 +363,6 @@ public class LocalizationService {
 	    for (Node emptyLeaf : emptyLeafs) {
 		emptyLeaf.getParent().removeChild(emptyLeaf);
 	    }
-	}
-
-	// If there's only one fragment left in the Union node, there's no need
-	// for a Union after all
-	if ((unionNode.getChildren() != null) && (unionNode.getChildren().size() == 1)) {
-	    unionNode.getParent().addChild(unionNode.getChildren().get(0));
-	    unionNode.getParent().removeChild(unionNode);
 	}
 
 	return returnValue;
@@ -481,66 +486,27 @@ public class LocalizationService {
 	Relation fragment;
 	boolean returnValue;
 	Node joinBranchNode;
-	Node firstJoinBranchNode;
-	Node secondJoinBranchNode;
 	List<Node> leafNodes;
 	int comparissonResult;
 	Relation joinFragment;
 	boolean invalidMinterm;
 	Node currentBranchNode;
 	List<Node> ignoredNodes;
+	Node firstJoinBranchNode;
 	Node joinBranchUnionNode;
+	Node secondJoinBranchNode;
 	boolean validReductionCase;
 	String joinCommonAttribute;
-	List<String> joinAttributes;
 	Node currentBranchUnionNode;
 	Node joinBranchUnionBranchNode;
-	List<Node> unionChildLeafNodes;
 	Node currentBranchUnionBranchNode;
 	Collection<Predicate> fragmentPredicates;
 	Collection<Predicate> joinFragmentPredicates;
 
 	// Try to make the corresponding Joins
 	returnValue = false;
-	validReductionCase = false;
+	validReductionCase = true;
 	ignoredNodes = new ArrayList<Node>();
-	for (Node child : unionNode.getChildren()) {
-	    unionChildLeafNodes = child.getLeafNodes();
-
-	    // Each union branch should reference only one fragment
-	    fragment = null;
-	    if ((unionChildLeafNodes != null) && (unionChildLeafNodes.size() == 1)) {
-		fragment = databaseDictionaryService.getRelation(unionChildLeafNodes.get(0)
-			.getSqlData());
-	    }
-
-	    if ((fragment != null)
-		    && ((fragment.getFragmentationType() == FragmentationType.Horizontal) || (fragment
-			    .getFragmentationType() == FragmentationType.DerivedHorizontal))) {
-		fragmentPredicates = ((HorizontalFragment) fragment).getMinterm();
-		joinAttributes = databaseDictionaryService.getAttributesFromSqlData(joinNode
-			.getSqlData());
-
-		// Check if the relation was fragmented according to the join
-		// attribute
-		for (String joinAttribute : joinAttributes) {
-		    for (Predicate predicate : fragmentPredicates) {
-			if (predicate.getAttribute().getName().equalsIgnoreCase(joinAttribute)) {
-			    validReductionCase = true;
-			    break;
-			}
-		    }
-
-		    if (validReductionCase) {
-			break;
-		    }
-		}
-
-		if (validReductionCase) {
-		    break;
-		}
-	    }
-	}
 
 	// Make the Joins between all of the leaf Nodes of the joinNode and
 	// group them with a new Union node
@@ -626,8 +592,10 @@ public class LocalizationService {
 
 		    if ((fragment != null)
 			    && (joinFragment != null)
-			    && (fragment.getFragmentationType() == FragmentationType.Horizontal)
-			    && (joinFragment.getFragmentationType() == FragmentationType.Horizontal)) {
+			    && ((fragment.getFragmentationType() == FragmentationType.Horizontal) || (fragment
+				    .getFragmentationType() == FragmentationType.DerivedHorizontal))
+			    && ((joinFragment.getFragmentationType() == FragmentationType.Horizontal) || (joinFragment
+				    .getFragmentationType() == FragmentationType.DerivedHorizontal))) {
 			fragmentPredicates = ((HorizontalFragment) fragment).getMinterm();
 			joinFragmentPredicates = ((HorizontalFragment) joinFragment).getMinterm();
 
@@ -635,22 +603,19 @@ public class LocalizationService {
 			// and check if they contradict
 			invalidMinterm = false;
 			for (Predicate predicate : fragmentPredicates) {
-			    if (!predicate.getAttribute().getName().endsWith(joinCommonAttribute)) {
-				continue;
-			    }
 			    for (Predicate joinPredicate : joinFragmentPredicates) {
-				if (!joinPredicate.getAttribute().getName().endsWith(
-					joinCommonAttribute)) {
-				    continue;
+				if (joinPredicate.getAttribute().getName().equals(
+					predicate.getAttribute().getName())) {
+				    comparissonResult = predicate.getAttribute()
+					    .getAttributeDomain().compareValues(
+						    predicate.getValue(), joinPredicate.getValue());
+				    invalidMinterm = predicate.getPredicateOperator()
+					    .isInvalidComparisson(comparissonResult,
+						    joinPredicate.getPredicateOperator());
+				    if (invalidMinterm) {
+					break;
+				    }
 				}
-
-				comparissonResult = predicate.getAttribute().getAttributeDomain()
-					.compareValues(predicate.getValue(),
-						joinPredicate.getValue());
-				invalidMinterm = predicate.getPredicateOperator()
-					.isInvalidComparisson(comparissonResult,
-						joinPredicate.getPredicateOperator());
-				break;
 			    }
 
 			    if (invalidMinterm) {
