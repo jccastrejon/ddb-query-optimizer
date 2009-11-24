@@ -251,6 +251,35 @@ public class Node implements Cloneable {
     }
 
     /**
+     * Check if in down in this Node's hierarchy there's a Node with the
+     * specified Relational Operator.
+     * 
+     * @param relationalOperator
+     *            Relational Operator to look for.
+     * @return <em>true</em> if a Node exists down in this Node's hierarchy with
+     *         the specified Relational Operator.
+     */
+    public boolean containsRelationalOperatorNode(final RelationalOperator relationalOperator) {
+	boolean returnValue;
+
+	returnValue = false;
+	if (this.relationalOperator == relationalOperator) {
+	    returnValue = true;
+	}
+
+	else if (this.children != null) {
+	    for (Node child : this.children) {
+		returnValue = child.containsRelationalOperatorNode(relationalOperator);
+		if (returnValue) {
+		    break;
+		}
+	    }
+	}
+
+	return returnValue;
+    }
+
+    /**
      * Checks if this a leaf node identified by the specified SQL Data, or if
      * it's contained in one of its children.
      * 

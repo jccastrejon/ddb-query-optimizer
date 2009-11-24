@@ -67,43 +67,54 @@ public class LocalizationService {
 	    final String queryId, final File imageDir) throws IOException {
 	int returnValue;
 	boolean reductionFound;
+	List<Boolean> returnValues;
 
 	returnValue = rewritingSteps;
+	returnValues = new ArrayList<Boolean>();
+	do {
+	    returnValues.clear();
 
-	// GenericQuery
-	reductionFound = this.buildGenericQuery(operatorTree.getRootNode());
-	if (reductionFound) {
-	    this.graphicExportService.saveIntermediateOperatorTree(operatorTree, queryId,
-		    (++returnValue), "GenericQuery", imageDir);
-
-	    returnValue = rewritingService.rewriteOperatorTree(operatorTree, queryId, imageDir,
-		    returnValue);
-
-	    // Primary Vertical Fragments
-	    reductionFound = this.reduceVerticalFragmentation(operatorTree.getRootNode());
+	    // GenericQuery
+	    reductionFound = this.buildGenericQuery(operatorTree.getRootNode());
+	    returnValues.add(reductionFound);
 	    if (reductionFound) {
 		this.graphicExportService.saveIntermediateOperatorTree(operatorTree, queryId,
-			(++returnValue), "PrimaryVerticalFragments", imageDir);
+			(++returnValue), "GenericQuery", imageDir);
+
+		returnValue = rewritingService.rewriteOperatorTree(operatorTree, queryId, imageDir,
+			returnValue);
+
+		// Vertical Fragments
+		do {
+		    reductionFound = this.reduceVerticalFragmentation(operatorTree.getRootNode());
+		    returnValues.add(reductionFound);
+		    if (reductionFound) {
+			this.graphicExportService.saveIntermediateOperatorTree(operatorTree,
+				queryId, (++returnValue), "PrimaryVerticalFragments", imageDir);
+
+			returnValue = rewritingService.rewriteOperatorTree(operatorTree, queryId,
+				imageDir, returnValue);
+		    }
+		} while (reductionFound);
+
+		// Horizontal Fragments
+		do {
+		    reductionFound = this.reducePrimaryHorizontalFragmentation(operatorTree
+			    .getRootNode());
+		    returnValues.add(reductionFound);
+		    if (reductionFound) {
+			this.graphicExportService.saveIntermediateOperatorTree(operatorTree,
+				queryId, (++returnValue), "PrimaryHorizontalFragments", imageDir);
+
+			returnValue = rewritingService.rewriteOperatorTree(operatorTree, queryId,
+				imageDir, returnValue);
+		    }
+		} while (reductionFound);
 
 		returnValue = rewritingService.rewriteOperatorTree(operatorTree, queryId, imageDir,
 			returnValue);
 	    }
-
-	    // Primary Horizontal Fragments
-	    reductionFound = this.reducePrimaryHorizontalFragmentation(operatorTree.getRootNode());
-	    if (reductionFound) {
-		this.graphicExportService.saveIntermediateOperatorTree(operatorTree, queryId,
-			(++returnValue), "PrimaryHorizontalFragments", imageDir);
-
-		returnValue = rewritingService.rewriteOperatorTree(operatorTree, queryId, imageDir,
-			returnValue);
-	    }
-
-	    returnValue = rewritingService.rewriteOperatorTree(operatorTree, queryId, imageDir,
-		    returnValue);
-
-	    // Reduction for Primary Horizontal Fragmentation
-	}
+	} while (returnValues.contains(Boolean.TRUE));
 
 	return returnValue;
     }
@@ -139,6 +150,7 @@ public class LocalizationService {
 		    // Decide the grouping operator
 		    switch (currentRelation.getFragmentationType()) {
 		    case Horizontal:
+		    case DerivedHorizontal:
 			fragmentsParent = new Node(RelationalOperator.UNION);
 			break;
 		    case Vertical:
@@ -189,54 +201,121 @@ public class LocalizationService {
 	returnValue = false;
 	ignoredNodes = new ArrayList<Node>();
 	leafNodes = currentNode.getLeafNodes();
-	for (Node leafNode : leafNodes) {
-	    if (ignoredNodes.contains(leafNode)) {
-		continue;
-	    }
 
-	    unionNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.UNION);
-	    if (unionNode != null) {
-		// Look for the closest Selection
-		upperOperatorNode = unionNode
-			.getClosestRelationalOperatorNode(RelationalOperator.SELECT);
+	// Custom reduction with selections with no intermediary Union node
+	returnValue = this.customReductionWithSelection(leafNodes);
 
-		// If a selection is found, proceed with reduction
-		if (upperOperatorNode != null) {
-		    // All children of the Union node will be evaluated when the
-		    // first child is found so there's no need to repeat this
-		    // process with all of them
-		    ignoredNodes.addAll(upperOperatorNode.getLeafNodes());
-		    reductionApplied = this.reductionWithSelection(unionNode, upperOperatorNode);
-
-		    // If at least one reduction has been applied over the
-		    // leafs, the returnValue is true
-		    if ((!returnValue) && (reductionApplied)) {
-			returnValue = true;
-		    }
+	// Check union cases
+	if (!returnValue) {
+	    for (Node leafNode : leafNodes) {
+		if (ignoredNodes.contains(leafNode)) {
+		    continue;
 		}
 
-		// Look for the closes Join
-		upperOperatorNode = unionNode
-			.getClosestRelationalOperatorNode(RelationalOperator.JOIN);
+		unionNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.UNION);
+		if (unionNode != null) {
+		    // Look for the closest Selection
+		    upperOperatorNode = unionNode
+			    .getClosestRelationalOperatorNode(RelationalOperator.SELECT);
 
-		// If a join is found, proceed with reduction
-		if (upperOperatorNode != null) {
-		    // All children of the Union node will be evaluated when the
-		    // first child is found so there's no need to repeat this
-		    // process with all of them
-		    ignoredNodes.addAll(upperOperatorNode.getLeafNodes());
-		    reductionApplied = this.reductionWithJoin(unionNode, upperOperatorNode);
+		    // If a selection is found, proceed with reduction
+		    if (upperOperatorNode != null) {
+			// All children of the Union node will be evaluated when
+			// the first child is found so there's no need to repeat
+			// this process with all of them
+			ignoredNodes.addAll(upperOperatorNode.getLeafNodes());
+			reductionApplied = this
+				.reductionWithSelection(unionNode, upperOperatorNode);
 
-		    // If at least one reduction has been applied over the
-		    // leafs, the returnValue is true
-		    if ((!returnValue) && (reductionApplied)) {
-			returnValue = true;
+			// If at least one reduction has been applied over the
+			// leafs, the returnValue is true
+			if ((!returnValue) && (reductionApplied)) {
+			    returnValue = true;
+			}
+		    }
+
+		    // Look for the closes Join
+		    upperOperatorNode = unionNode
+			    .getClosestRelationalOperatorNode(RelationalOperator.JOIN);
+
+		    // If a join is found, proceed with reduction
+		    if (upperOperatorNode != null) {
+			// All children of the Union node will be evaluated when
+			// the first child is found so there's no need to repeat
+			// this process with all of them
+			ignoredNodes.addAll(upperOperatorNode.getLeafNodes());
+			reductionApplied = this.reductionWithJoin(unionNode, upperOperatorNode);
+
+			// If at least one reduction has been applied over the
+			// leafs, the returnValue is true
+			if ((!returnValue) && (reductionApplied)) {
+			    returnValue = true;
+			}
 		    }
 		}
 	    }
 	}
 
-	// Reduction with Join
+	return returnValue;
+    }
+
+    /**
+     * Custom reduction with Selection and Horizontal fragments, when there's no
+     * intermediary Union node.
+     * 
+     * @param leafNodes
+     *            Operator Tree's leaf nodes.
+     * @return <em>true</em> if the custom reduction has been applied to the
+     *         Operator Tree, <em>false</em> otherwise.
+     */
+    private boolean customReductionWithSelection(final List<Node> leafNodes) {
+	boolean returnValue;
+	List<Node> emptyLeafs;
+	Node upperOperatorNode;
+
+	// Reduction with Selection
+	returnValue = false;
+	emptyLeafs = new ArrayList<Node>();
+
+	// Check if the nearest selection to a leaf causes empty relations,
+	// without an intermediate Union. This can happen if
+	// CommuteSelectionWithBinaryOperators is applied before reduction
+	for (Node leafNode : leafNodes) {
+	    upperOperatorNode = leafNode
+		    .getClosestRelationalOperatorNode(RelationalOperator.SELECT);
+	    if ((upperOperatorNode != null)
+		    && (!upperOperatorNode.containsRelationalOperatorNode(RelationalOperator.UNION))) {
+		if (this.generatesEmptyHorizontalFragment(leafNode, upperOperatorNode)) {
+		    emptyLeafs.add(leafNode);
+		}
+	    }
+	}
+
+	// Remove empty relations
+	if (!emptyLeafs.isEmpty()) {
+	    returnValue = true;
+	    for (Node emptyLeaf : emptyLeafs) {
+		upperOperatorNode = emptyLeaf
+			.getClosestRelationalOperatorNode(RelationalOperator.UNION);
+
+		if (upperOperatorNode != null) {
+		    upperOperatorNode.removeChild(upperOperatorNode
+			    .getNodeContainingLeafNode(emptyLeaf.getSqlData()));
+		}
+	    }
+	}
+
+	// If there's only one fragment left in the Union node, there's no need
+	// for a Union after all
+	for (Node leafNode : leafNodes) {
+	    upperOperatorNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.UNION);
+
+	    if ((upperOperatorNode != null) && (upperOperatorNode.getChildren() != null)
+		    && (upperOperatorNode.getChildren().size() == 1)) {
+		upperOperatorNode.getParent().addChild(upperOperatorNode.getChildren().get(0));
+		upperOperatorNode.getParent().removeChild(upperOperatorNode);
+	    }
+	}
 
 	return returnValue;
     }
@@ -253,93 +332,16 @@ public class LocalizationService {
      *         <em>false</em> otherwise.
      */
     private boolean reductionWithSelection(final Node unionNode, final Node selectionNode) {
-	Relation fragment;
 	boolean returnValue;
 	List<Node> emptyLeafs;
-	int comparissonResult;
-	String conditionValue;
-	boolean invalidMinterm;
-	String currentCondition;
-	String predicateAttribute;
-	String selectionCondition;
-	List<String> selectionConditions;
-	int currentSelectionConditionIndex;
-	PredicateOperator conditionOperator;
-	Collection<Predicate> fragmentPredicates;
 
 	// Check for every fragment if their minterm contradicts the
 	// selection condition
 	returnValue = false;
 	emptyLeafs = new ArrayList<Node>();
 	for (Node child : unionNode.getChildren()) {
-	    fragment = databaseDictionaryService.getRelation(child.getSqlData());
-
-	    if ((fragment != null)
-		    && (fragment.getFragmentationType() == FragmentationType.Horizontal)) {
-		fragmentPredicates = ((HorizontalFragment) fragment).getMinterm();
-
-		invalidMinterm = false;
-		if (fragmentPredicates != null) {
-		    // Condition on the Selection Node
-		    selectionCondition = selectionNode.getSqlData();
-		    for (Predicate predicate : fragmentPredicates) {
-
-			// Get the conditions that apply to this
-			// predicate
-			predicateAttribute = predicate.getAttribute().getName().toLowerCase();
-			currentSelectionConditionIndex = selectionCondition
-				.indexOf(predicateAttribute);
-			selectionConditions = new ArrayList<String>();
-			while (currentSelectionConditionIndex >= 0) {
-			    // Unique condition
-			    currentCondition = selectionCondition
-				    .substring(currentSelectionConditionIndex);
-
-			    // Part of a complex selection condition
-			    if (currentCondition.indexOf(')') > 0) {
-				currentCondition = currentCondition.substring(0, currentCondition
-					.indexOf(')') - 1);
-			    }
-
-			    // Add to the selection conditions for
-			    // this predicate
-			    selectionConditions.add(currentCondition.trim());
-
-			    // Look for the next condition
-			    currentSelectionConditionIndex = selectionCondition.indexOf(
-				    predicateAttribute, currentSelectionConditionIndex + 1);
-			}
-
-			// Check if there's any violation
-			comparissonResult = 0;
-			for (String testCondition : selectionConditions) {
-			    conditionValue = null;
-			    conditionOperator = null;
-			    for (PredicateOperator operator : PredicateOperator.values()) {
-				if (testCondition.indexOf(operator.getDescription()) > 0) {
-				    conditionOperator = operator;
-				    conditionValue = testCondition.substring(testCondition.indexOf(
-					    ' ', testCondition.indexOf(operator.getDescription())));
-				    break;
-				}
-			    }
-
-			    comparissonResult = predicate.getAttribute().getAttributeDomain()
-				    .compareValues(conditionValue, predicate.getValue());
-
-			    invalidMinterm = conditionOperator.isInvalidComparisson(
-				    comparissonResult, predicate.getPredicateOperator());
-			}
-
-			if (invalidMinterm) {
-			    emptyLeafs.add(child);
-			    logger.warn("Empty fragment: " + fragment + " conditions: "
-				    + selectionCondition + " and " + predicate + " in fragment: "
-				    + fragment + " comparisson result: " + comparissonResult);
-			    break;
-			}
-		    }
-		}
+	    if (this.generatesEmptyHorizontalFragment(child, selectionNode)) {
+		emptyLeafs.add(child);
 	    }
 	}
 
@@ -356,6 +358,105 @@ public class LocalizationService {
 	if ((unionNode.getChildren() != null) && (unionNode.getChildren().size() == 1)) {
 	    unionNode.getParent().addChild(unionNode.getChildren().get(0));
 	    unionNode.getParent().removeChild(unionNode);
+	}
+
+	return returnValue;
+    }
+
+    /**
+     * Check if the Selection node generates an empty relation when applied to
+     * the given Relation fragment node.
+     * 
+     * @param fragmentNode
+     *            Relation fragment node.
+     * @param selectionNode
+     *            Selection node.
+     * @return <em>true</em> if the selection generates an empty relation,
+     *         <em>false</em> otherwise.
+     */
+    private boolean generatesEmptyHorizontalFragment(final Node fragmentNode,
+	    final Node selectionNode) {
+	Relation fragment;
+	boolean returnValue;
+	int comparissonResult;
+	String conditionValue;
+	boolean invalidMinterm;
+	String currentCondition;
+	String predicateAttribute;
+	String selectionCondition;
+	List<String> selectionConditions;
+	int currentSelectionConditionIndex;
+	PredicateOperator conditionOperator;
+	Collection<Predicate> fragmentPredicates;
+
+	returnValue = false;
+	fragment = databaseDictionaryService.getRelation(fragmentNode.getSqlData());
+	if ((fragment != null)
+		&& ((fragment.getFragmentationType() == FragmentationType.Horizontal) || (fragment
+			.getFragmentationType() == FragmentationType.DerivedHorizontal))) {
+	    fragmentPredicates = ((HorizontalFragment) fragment).getMinterm();
+
+	    invalidMinterm = false;
+	    if (fragmentPredicates != null) {
+		// Condition on the Selection Node
+		selectionCondition = selectionNode.getSqlData();
+		for (Predicate predicate : fragmentPredicates) {
+
+		    // Get the conditions that apply to this
+		    // predicate
+		    predicateAttribute = predicate.getAttribute().getName().toLowerCase();
+		    currentSelectionConditionIndex = selectionCondition.indexOf(predicateAttribute);
+		    selectionConditions = new ArrayList<String>();
+		    while (currentSelectionConditionIndex >= 0) {
+			// Unique condition
+			currentCondition = selectionCondition
+				.substring(currentSelectionConditionIndex);
+
+			// Part of a complex selection condition
+			if (currentCondition.indexOf(')') > 0) {
+			    currentCondition = currentCondition.substring(0, currentCondition
+				    .indexOf(')') - 1);
+			}
+
+			// Add to the selection conditions for
+			// this predicate
+			selectionConditions.add(currentCondition.trim());
+
+			// Look for the next condition
+			currentSelectionConditionIndex = selectionCondition.indexOf(
+				predicateAttribute, currentSelectionConditionIndex + 1);
+		    }
+
+		    // Check if there's any violation
+		    comparissonResult = 0;
+		    for (String testCondition : selectionConditions) {
+			conditionValue = null;
+			conditionOperator = null;
+			for (PredicateOperator operator : PredicateOperator.values()) {
+			    if (testCondition.indexOf(operator.getDescription()) > 0) {
+				conditionOperator = operator;
+				conditionValue = testCondition.substring(testCondition.indexOf(' ',
+					testCondition.indexOf(operator.getDescription())));
+				break;
+			    }
+			}
+
+			comparissonResult = predicate.getAttribute().getAttributeDomain()
+				.compareValues(conditionValue, predicate.getValue());
+
+			invalidMinterm = conditionOperator.isInvalidComparisson(comparissonResult,
+				predicate.getPredicateOperator());
+		    }
+
+		    if (invalidMinterm) {
+			returnValue = true;
+			logger.warn("Empty fragment: " + fragment + " conditions: "
+				+ selectionCondition + " and " + predicate + " in fragment: "
+				+ fragment + " comparisson result: " + comparissonResult);
+			break;
+		    }
+		}
+	    }
 	}
 
 	return returnValue;
@@ -414,7 +515,8 @@ public class LocalizationService {
 	    }
 
 	    if ((fragment != null)
-		    && (fragment.getFragmentationType() == FragmentationType.Horizontal)) {
+		    && ((fragment.getFragmentationType() == FragmentationType.Horizontal) || (fragment
+			    .getFragmentationType() == FragmentationType.DerivedHorizontal))) {
 		fragmentPredicates = ((HorizontalFragment) fragment).getMinterm();
 		joinAttributes = databaseDictionaryService.getAttributesFromSqlData(joinNode
 			.getSqlData());

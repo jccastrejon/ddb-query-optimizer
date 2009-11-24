@@ -30,10 +30,12 @@ public class HorizontalFragment extends Relation {
      *            Source relation of this fragment.
      * @param minterm
      *            Minterm that defines this fragment.
+     * @param fragmentationType
+     *            Fragmentation Type (Primary - Derived).
      */
     public HorizontalFragment(final String name, final Relation source,
-	    final Collection<Predicate> minterm) {
-	super(name, source, FragmentationType.Horizontal);
+	    final Collection<Predicate> minterm, final FragmentationType fragmentationType) {
+	super(name, source, fragmentationType);
 	this.minterm = minterm;
 	this.source = source;
 	this.source.addFragment(this);
