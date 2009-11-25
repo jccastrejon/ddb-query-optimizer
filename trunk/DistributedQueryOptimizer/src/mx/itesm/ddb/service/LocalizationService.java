@@ -132,6 +132,8 @@ public class LocalizationService {
 	Node fragmentsParent;
 	List<Node> leafNodes;
 	Relation currentRelation;
+	Node hybridJoinFragments;
+	Node hybridUnionFragments;
 	Collection<String> joinAttributes;
 	Collection<Relation> currentRelationFragments;
 
@@ -162,15 +164,53 @@ public class LocalizationService {
 			fragmentsParent = new Node(RelationalOperator.JOIN);
 			fragmentsParent.setSqlData(joinAttributes);
 			break;
+		    case Hybrid:
+			hybridJoinFragments = new Node(RelationalOperator.JOIN);
+			hybridUnionFragments = new Node(RelationalOperator.UNION);
+
+			// Union with all the hybrid and horizontal fragments
+			for (Relation fragment : currentRelationFragments) {
+			    if (fragment.getFragmentationType() != FragmentationType.Vertical) {
+				fragmentNode = new Node(fragment.getName());
+				hybridUnionFragments.addChild(fragmentNode);
+			    } else {
+				fragmentNode = new Node(fragment.getName());
+				hybridJoinFragments.addChild(fragmentNode);
+			    }
+			}
+
+			// If there was any vertical fragment, group it with the
+			// Union node. If not, the return value is the Union
+			if ((hybridJoinFragments.getChildren() != null)
+				&& (!hybridJoinFragments.getChildren().isEmpty())) {
+			    // Complete the Join node with the join attributes
+			    joinAttributes = new ArrayList<String>();
+			    for (Attribute attribute : currentRelation.getKeyAttributes()) {
+				joinAttributes.add(attribute.getName());
+			    }
+			    hybridJoinFragments.setSqlData(joinAttributes);
+
+			    // Group with Union
+			    hybridJoinFragments.addChild(hybridUnionFragments);
+			    fragmentsParent = hybridJoinFragments;
+			} else {
+			    fragmentsParent = hybridUnionFragments;
+			}
+
+			break;
 		    }
 
 		    // Group fragments
-		    for (Relation fragment : currentRelationFragments) {
-			fragmentNode = new Node(fragment.getName());
-			fragmentsParent.addChild(fragmentNode);
+		    if ((fragmentsParent.getChildren() == null)
+			    || ((fragmentsParent.getChildren() != null) && (fragmentsParent
+				    .getChildren().isEmpty()))) {
+			for (Relation fragment : currentRelationFragments) {
+			    fragmentNode = new Node(fragment.getName());
+			    fragmentsParent.addChild(fragmentNode);
+			}
 		    }
 
-		    // Replace leafNode with the new Union
+		    // Replace leafNode with the new fragments parent
 		    leafNode.getParent().addChild(fragmentsParent);
 		    leafNode.getParent().removeChild(leafNode);
 		}
@@ -742,7 +782,7 @@ public class LocalizationService {
 			    // Check if we haven't make it to the root node,
 			    // to avoid an infinite loop
 			    if (lastProjectionNode.getParent() != null) {
-				lastProjectionNode = joinNode
+				lastProjectionNode = lastProjectionNode
 					.getClosestRelationalOperatorNode(RelationalOperator.PROJECTION);
 			    } else {
 				break;

@@ -3,8 +3,8 @@ package mx.itesm.ddb.model.dictionary;
 import java.util.Collection;
 
 /**
- * Relation fragment obtained by applying the Projection operation using the
- * fragment's attributes.
+ * Relation fragment obtained by applying the <em>Projection</em> operation
+ * using the fragment's attributes.
  * 
  * @author jccastrejon
  * 
