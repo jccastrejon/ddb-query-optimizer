@@ -210,8 +210,7 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 		currentAttributes = this.loadAttributes(attributes, currentRelation,
 			currentFragment);
 
-		new HybridFragment(fragment, currentRelation, currentPredicates, currentAttributes,
-			FragmentationType.Hybrid);
+		new HybridFragment(fragment, currentRelation, currentPredicates, currentAttributes);
 	    }
 	}
     }
