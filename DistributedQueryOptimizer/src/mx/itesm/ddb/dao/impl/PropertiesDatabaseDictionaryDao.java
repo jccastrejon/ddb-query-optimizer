@@ -14,6 +14,7 @@ import mx.itesm.ddb.model.dictionary.Attribute;
 import mx.itesm.ddb.model.dictionary.AttributeDomain;
 import mx.itesm.ddb.model.dictionary.FragmentationType;
 import mx.itesm.ddb.model.dictionary.HorizontalFragment;
+import mx.itesm.ddb.model.dictionary.HybridFragment;
 import mx.itesm.ddb.model.dictionary.Predicate;
 import mx.itesm.ddb.model.dictionary.PredicateOperator;
 import mx.itesm.ddb.model.dictionary.Relation;
@@ -45,19 +46,9 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
     private Properties databaseDictionary;
 
     /**
-     * Relation defined in the database dictionary.
+     * Relations defined in the database dictionary.
      */
     private Map<String, Relation> relations;
-
-    /**
-     * Horizontal fragments defined in the database dictionary.
-     */
-    private Map<String, HorizontalFragment> horizontalFragments;
-
-    /**
-     * Vertical fragments defined in the database dictionary.
-     */
-    private Map<String, VerticalFragment> verticalFragments;
 
     /**
      * Default constructor.
@@ -80,14 +71,22 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 	returnValue = null;
 	if (this.relations != null) {
 	    returnValue = this.relations.get(name.toLowerCase());
-	}
+	    if (returnValue == null) {
+		for (Relation relation : this.relations.values()) {
+		    if (relation.getFragments() != null) {
+			for (Relation fragment : relation.getFragments()) {
+			    if (fragment.getName().equalsIgnoreCase(name)) {
+				returnValue = fragment;
+				break;
+			    }
+			}
 
-	if ((returnValue == null) && (this.horizontalFragments != null)) {
-	    returnValue = this.horizontalFragments.get(name.toLowerCase());
-	}
-
-	if ((returnValue == null) && (this.verticalFragments != null)) {
-	    returnValue = this.verticalFragments.get(name.toLowerCase());
+			if (returnValue != null) {
+			    break;
+			}
+		    }
+		}
+	    }
 	}
 
 	return returnValue;
@@ -103,16 +102,12 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 	String propertyValue;
 	String currentFragment;
 	Relation currentRelation;
-	Predicate currentPredicate;
 	Attribute currentAttribute;
 	List<String> keyAttributes;
-	String currentPredicateValue;
-	String[] currentPredicateAttribute;
 	FragmentationType fragmentationType;
 	AttributeDomain currentAttributeDomain;
 	Collection<Predicate> currentPredicates;
 	Collection<Attribute> currentAttributes;
-	PredicateOperator currentPredicateOperator;
 
 	// Load relations
 	propertyValue = this.databaseDictionary.getProperty("relations");
@@ -146,7 +141,6 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 	propertyValue = this.databaseDictionary.getProperty("horizontalFragments");
 	if (propertyValue != null) {
 	    relations = propertyValue.split(",");
-	    this.horizontalFragments = new HashMap<String, HorizontalFragment>(relations.length);
 
 	    // Load horizontal fragment data
 	    for (String fragment : relations) {
@@ -155,32 +149,22 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 		predicates = this.databaseDictionary.getProperty(
 			"horizontalFragment." + fragment + ".predicates").split(",");
 
-		fragmentationType = FragmentationType.Horizontal;
 		currentRelation = this.getRelation(currentFragment);
-		currentPredicates = new ArrayList<Predicate>(predicates.length);
-		for (String predicate : predicates) {
-		    currentPredicateAttribute = this.databaseDictionary.getProperty(
-			    "predicate." + predicate + ".attribute").split("\\.");
-		    currentPredicateOperator = PredicateOperator.valueOf(this.databaseDictionary
-			    .getProperty("predicate." + predicate + ".operator"));
-		    currentPredicateValue = this.databaseDictionary.getProperty("predicate."
-			    + predicate + ".value");
-		    currentPredicate = new Predicate(this.relations.get(
-			    currentPredicateAttribute[0].toLowerCase()).getAttribute(
-			    currentPredicateAttribute[0].toLowerCase() + "."
-				    + currentPredicateAttribute[1].toLowerCase()),
-			    currentPredicateOperator, currentPredicateValue);
-		    currentPredicates.add(currentPredicate);
+		currentPredicates = this.loadPredicates(predicates);
 
+		// Decide fragmentation type
+		fragmentationType = FragmentationType.Horizontal;
+		for (Predicate predicate : currentPredicates) {
 		    // If the predicates reference another relation, this is a
 		    // derived horizontal fragment
-		    if (!currentPredicateAttribute[0].equals(currentFragment)) {
+		    if (!currentRelation.containsAttribute(predicate.getAttribute().getName())) {
 			fragmentationType = FragmentationType.DerivedHorizontal;
+			break;
 		    }
 		}
 
-		this.horizontalFragments.put(fragment.toLowerCase(), new HorizontalFragment(
-			fragment, currentRelation, currentPredicates, fragmentationType));
+		new HorizontalFragment(fragment, currentRelation, currentPredicates,
+			fragmentationType);
 	    }
 	}
 
@@ -188,7 +172,6 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 	propertyValue = this.databaseDictionary.getProperty("verticalFragments");
 	if (propertyValue != null) {
 	    relations = propertyValue.split(",");
-	    this.verticalFragments = new HashMap<String, VerticalFragment>(relations.length);
 
 	    // Load vertical fragment data
 	    for (String fragment : relations) {
@@ -198,15 +181,94 @@ public class PropertiesDatabaseDictionaryDao implements DatabaseDictionaryDao {
 			"verticalFragment." + fragment + ".attributes").split(",");
 
 		currentRelation = this.getRelation(currentFragment);
-		currentAttributes = new ArrayList<Attribute>(attributes.length);
-		for (String attribute : attributes) {
-		    currentAttributes.add(currentRelation.getAttribute(currentFragment + "."
-			    + attribute));
-		}
+		currentAttributes = this.loadAttributes(attributes, currentRelation,
+			currentFragment);
 
-		this.verticalFragments.put(fragment.toLowerCase(), new VerticalFragment(fragment,
-			currentRelation, currentAttributes));
+		new VerticalFragment(fragment, currentRelation, currentAttributes);
 	    }
 	}
+
+	// Load hybrid fragmentations
+	propertyValue = this.databaseDictionary.getProperty("hybridFragments");
+	if (propertyValue != null) {
+	    relations = propertyValue.split(",");
+
+	    // Load hybrid fragment data
+	    for (String fragment : relations) {
+		currentFragment = this.databaseDictionary.getProperty("hybridFragment." + fragment
+			+ ".source");
+		attributes = this.databaseDictionary.getProperty(
+			"hybridFragment." + fragment + ".attributes").split(",");
+		predicates = this.databaseDictionary.getProperty(
+			"hybridFragment." + fragment + ".predicates").split(",");
+		currentRelation = this.getRelation(currentFragment);
+
+		// Load predicates (Horizontal)
+		currentPredicates = this.loadPredicates(predicates);
+
+		// Load attributes (Vertical)
+		currentAttributes = this.loadAttributes(attributes, currentRelation,
+			currentFragment);
+
+		new HybridFragment(fragment, currentRelation, currentPredicates, currentAttributes,
+			FragmentationType.Hybrid);
+	    }
+	}
+    }
+
+    /**
+     * Load the specified predicates definitions.
+     * 
+     * @param predicates
+     *            Predicates to load.
+     * @return Collection with the loaded Predicates.
+     */
+    private Collection<Predicate> loadPredicates(final String[] predicates) {
+	Predicate currentPredicate;
+	String currentPredicateValue;
+	Collection<Predicate> returnValue;
+	String[] currentPredicateAttribute;
+	PredicateOperator currentPredicateOperator;
+
+	returnValue = new ArrayList<Predicate>(predicates.length);
+	for (String predicate : predicates) {
+	    currentPredicateAttribute = this.databaseDictionary.getProperty(
+		    "predicate." + predicate + ".attribute").split("\\.");
+	    currentPredicateOperator = PredicateOperator.valueOf(this.databaseDictionary
+		    .getProperty("predicate." + predicate + ".operator"));
+	    currentPredicateValue = this.databaseDictionary.getProperty("predicate." + predicate
+		    + ".value");
+	    currentPredicate = new Predicate(this.relations.get(
+		    currentPredicateAttribute[0].toLowerCase()).getAttribute(
+		    currentPredicateAttribute[0].toLowerCase() + "."
+			    + currentPredicateAttribute[1].toLowerCase()),
+		    currentPredicateOperator, currentPredicateValue);
+	    returnValue.add(currentPredicate);
+	}
+
+	return returnValue;
+    }
+
+    /**
+     * Load the specified attributes definition.
+     * 
+     * @param attributes
+     *            Attributes to load.
+     * @param currentRelation
+     *            Relation being loaded.
+     * @param currentFragment
+     *            Fragment being loaded.
+     * @return Collection with the loaded Attributes.
+     */
+    private Collection<Attribute> loadAttributes(final String[] attributes,
+	    final Relation currentRelation, final String currentFragment) {
+	Collection<Attribute> returnValue;
+
+	returnValue = new ArrayList<Attribute>(attributes.length);
+	for (String attribute : attributes) {
+	    returnValue.add(currentRelation.getAttribute(currentFragment + "." + attribute));
+	}
+
+	return returnValue;
     }
 }

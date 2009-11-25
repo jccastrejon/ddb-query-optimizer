@@ -3,13 +3,14 @@ package mx.itesm.ddb.model.dictionary;
 import java.util.Collection;
 
 /**
- * Relation fragment obtained by applying the <em>Selection</em> operation using
- * the minterm over the source relation.
+ * Relation fragment obtained by applying both the <em>Selection</em> operation
+ * using the minterm over the source relation and the <em>Projection</em>
+ * operation using the fragment's attributes.
  * 
  * @author jccastrejon
  * 
  */
-public class HorizontalFragment extends Relation {
+public class HybridFragment extends Relation {
 
     /**
      * Source relation of this fragment.
@@ -22,22 +23,19 @@ public class HorizontalFragment extends Relation {
     Collection<Predicate> minterm;
 
     /**
-     * Full constructor.
      * 
      * @param name
-     *            Fragment name.
      * @param source
-     *            Source relation of this fragment.
      * @param minterm
-     *            Minterm that defines this fragment.
+     * @param attributes
      * @param fragmentationType
-     *            Fragmentation Type (Primary - Derived).
      */
-    public HorizontalFragment(final String name, final Relation source,
-	    final Collection<Predicate> minterm, final FragmentationType fragmentationType) {
-	super(name, source, fragmentationType);
-	this.minterm = minterm;
+    public HybridFragment(final String name, final Relation source,
+	    final Collection<Predicate> minterm, final Collection<Attribute> attributes,
+	    final FragmentationType fragmentationType) {
+	super(name, attributes, FragmentationType.Hybrid);
 	this.source = source;
+	this.minterm = minterm;
 	this.source.addFragment(this);
     }
 

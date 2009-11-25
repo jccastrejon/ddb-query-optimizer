@@ -140,24 +140,32 @@ public class Relation {
 		this.fragments = new ArrayList<Relation>();
 	    }
 
-	    // A relation can only be fragmented in one way, though a derived
-	    // horizontal fragment is valid for horizontal fragments
+	    // We can't mix Vertical and Horizontal fragments, but we can have
+	    // Horizontal and DerivedHorizontal in the same relation, or mix
+	    // Hybrid with anything else
 	    invalidFragment = false;
 	    if (this.fragmentationType != null) {
-		if (this.fragmentationType == FragmentationType.Horizontal) {
-		    invalidFragment = true;
-		} else if (this.fragmentationType == FragmentationType.Vertical) {
-		    if (relation.getFragmentationType() != FragmentationType.Vertical) {
-			invalidFragment = true;
+		if (relation.getFragmentationType() == FragmentationType.Hybrid) {
+		    this.fragmentationType = FragmentationType.Hybrid;
+		} else {
+		    switch (this.fragmentationType) {
+		    case Horizontal:
+		    case DerivedHorizontal:
+			if (relation.getFragmentationType() == FragmentationType.Vertical) {
+			    invalidFragment = true;
+			}
+			break;
+		    case Vertical:
+			if (relation.getFragmentationType() != FragmentationType.Vertical) {
+			    invalidFragment = true;
+			}
 		    }
 		}
 
 		if (invalidFragment) {
-		    if (relation.getFragmentationType() == FragmentationType.Vertical) {
-			throw new IllegalArgumentException("Invalid fragment type: "
-				+ relation.getFragmentationType() + " for relation of type: "
-				+ this.getFragmentationType());
-		    }
+		    throw new IllegalArgumentException("Invalid fragment type: "
+			    + relation.getFragmentationType() + " for relation of type: "
+			    + this.getFragmentationType());
 		}
 	    } else {
 		this.fragmentationType = relation.getFragmentationType();
