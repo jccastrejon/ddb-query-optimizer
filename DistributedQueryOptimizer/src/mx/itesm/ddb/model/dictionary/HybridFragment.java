@@ -23,16 +23,19 @@ public class HybridFragment extends Relation {
     Collection<Predicate> minterm;
 
     /**
+     * Full constructor.
      * 
      * @param name
+     *            Fragment name.
      * @param source
+     *            Source relation of this fragment.
      * @param minterm
+     *            Minterm that defines this fragment.
      * @param attributes
-     * @param fragmentationType
+     *            Attributes from the source relation that define this fragment.
      */
     public HybridFragment(final String name, final Relation source,
-	    final Collection<Predicate> minterm, final Collection<Attribute> attributes,
-	    final FragmentationType fragmentationType) {
+	    final Collection<Predicate> minterm, final Collection<Attribute> attributes) {
 	super(name, attributes, FragmentationType.Hybrid);
 	this.source = source;
 	this.minterm = minterm;
