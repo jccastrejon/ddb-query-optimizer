@@ -725,10 +725,11 @@ public class LocalizationService {
 	boolean returnValue;
 	List<Node> leafNodes;
 	Node lastProjectionNode;
+	boolean validProjection;
+	String leafGlobalRelation;
 	List<String> projectionAttributes;
 	List<String> newProjectionAttributes;
 	List<String> lastProjectionAttributes;
-	List<String> testProjectionAttributes;
 	List<String> pendingProjectionAttributes;
 
 	// For each leaf node, check if its parent is a projection node. If
@@ -749,15 +750,17 @@ public class LocalizationService {
 		// Add to the new projection attributes list only those
 		// attributes that are valid for this relation
 		if (relation != null) {
+		    leafGlobalRelation = null;
 		    newProjectionAttributes = new ArrayList<String>();
 		    for (String attribute : projectionAttributes) {
 			if (relation.containsAttribute(attribute)) {
 			    newProjectionAttributes.add(attribute);
+			    leafGlobalRelation = attribute.substring(0, attribute.indexOf('.'));
 			}
 		    }
 
-		    // Check if the newProjectionAttributes are actually used by
-		    // another projection node in the operator tree
+		    // Check if the newProjectionAttributes are used by all the
+		    // projection nodes that refer to this relation
 		    joinNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.JOIN);
 		    if (joinNode != null) {
 			pendingProjectionAttributes = new ArrayList<String>(newProjectionAttributes);
@@ -766,22 +769,24 @@ public class LocalizationService {
 
 			// Test each of the new projection attributes to see
 			// if they're already projected in the operator tree
+			validProjection = true;
 			while ((lastProjectionNode != null)
 				&& (!pendingProjectionAttributes.isEmpty())) {
 			    lastProjectionAttributes = databaseDictionaryService
 				    .getAttributesFromSqlData(lastProjectionNode.getSqlData());
 
-			    testProjectionAttributes = new ArrayList<String>(
-				    pendingProjectionAttributes);
-			    for (String pendingAttribute : testProjectionAttributes) {
-				if (lastProjectionAttributes.contains(pendingAttribute)) {
-				    pendingProjectionAttributes.remove(pendingAttribute);
+			    for (String projectionAttribute : lastProjectionAttributes) {
+				if (projectionAttribute.startsWith(leafGlobalRelation + ".")) {
+				    if (!pendingProjectionAttributes.contains(projectionAttribute)) {
+					validProjection = false;
+					break;
+				    }
 				}
 			    }
 
 			    // Check if we haven't make it to the root node,
 			    // to avoid an infinite loop
-			    if (lastProjectionNode.getParent() != null) {
+			    if ((validProjection) && (lastProjectionNode.getParent() != null)) {
 				lastProjectionNode = lastProjectionNode
 					.getClosestRelationalOperatorNode(RelationalOperator.PROJECTION);
 			    } else {
@@ -789,9 +794,8 @@ public class LocalizationService {
 			    }
 			}
 
-			// If no one uses the new projection attributes,
-			// remove this branch from the operator tree
-			if (!pendingProjectionAttributes.isEmpty()) {
+			// If the projection generates an empty relation
+			if (!validProjection) {
 			    returnValue = true;
 			    joinNode.removeChild(joinNode.getNodeContainingLeafNode(leafNode
 				    .getSqlData()));
