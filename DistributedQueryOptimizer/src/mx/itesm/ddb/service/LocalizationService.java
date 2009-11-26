@@ -8,7 +8,6 @@ import java.util.List;
 
 import mx.itesm.ddb.model.dictionary.Attribute;
 import mx.itesm.ddb.model.dictionary.FragmentationType;
-import mx.itesm.ddb.model.dictionary.HorizontalFragment;
 import mx.itesm.ddb.model.dictionary.MintermDependentFragment;
 import mx.itesm.ddb.model.dictionary.Predicate;
 import mx.itesm.ddb.model.dictionary.PredicateOperator;
@@ -264,7 +263,7 @@ public class LocalizationService {
 			// All children of the Union node will be evaluated when
 			// the first child is found so there's no need to repeat
 			// this process with all of them
-			ignoredNodes.addAll(upperOperatorNode.getLeafNodes());
+			ignoredNodes.addAll(unionNode.getLeafNodes());
 			reductionApplied = this
 				.reductionWithSelection(unionNode, upperOperatorNode);
 
@@ -385,6 +384,7 @@ public class LocalizationService {
      *         <em>false</em> otherwise.
      */
     private boolean reductionWithSelection(final Node unionNode, final Node selectionNode) {
+	Node emptyBranch;
 	boolean returnValue;
 	List<Node> emptyLeafs;
 
@@ -392,9 +392,9 @@ public class LocalizationService {
 	// selection condition
 	returnValue = false;
 	emptyLeafs = new ArrayList<Node>();
-	for (Node child : unionNode.getChildren()) {
-	    if (this.generatesEmptyHorizontalFragment(child, selectionNode)) {
-		emptyLeafs.add(child);
+	for (Node leaf : unionNode.getLeafNodes()) {
+	    if (this.generatesEmptyHorizontalFragment(leaf, selectionNode)) {
+		emptyLeafs.add(leaf);
 	    }
 	}
 
@@ -402,7 +402,8 @@ public class LocalizationService {
 	if (!emptyLeafs.isEmpty()) {
 	    returnValue = true;
 	    for (Node emptyLeaf : emptyLeafs) {
-		emptyLeaf.getParent().removeChild(emptyLeaf);
+		emptyBranch = unionNode.getNodeContainingLeafNode(emptyLeaf.getSqlData());
+		unionNode.removeChild(emptyBranch);
 	    }
 	}
 
@@ -437,10 +438,8 @@ public class LocalizationService {
 
 	returnValue = false;
 	fragment = databaseDictionaryService.getRelation(fragmentNode.getSqlData());
-	if ((fragment != null)
-		&& ((fragment.getFragmentationType() == FragmentationType.Horizontal) || (fragment
-			.getFragmentationType() == FragmentationType.DerivedHorizontal))) {
-	    fragmentPredicates = ((HorizontalFragment) fragment).getMinterm();
+	if (fragment instanceof MintermDependentFragment) {
+	    fragmentPredicates = ((MintermDependentFragment) fragment).getMinterm();
 
 	    invalidMinterm = false;
 	    if (fragmentPredicates != null) {
