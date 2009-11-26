@@ -566,14 +566,19 @@ public class RewritingService {
 					    }
 					}
 
-					projectionNode = new Node(projectionAttributes.toString(),
-						RelationalOperator.PROJECTION);
+					// Add the new projection node only if
+					// it contains attributes that will
+					// later be used up in the operator tree
+					if (projectionAttributes.length() != 0) {
+					    projectionNode = new Node(projectionAttributes
+						    .toString(), RelationalOperator.PROJECTION);
 
-					// Add the new projection node just
-					// after the commutable operator
-					projectionNode.addChild(innerChild);
-					newInnerChildren.add(projectionNode);
-					originalInnerChildren.add(innerChild);
+					    // Add the new projection node just
+					    // after the commutable operator
+					    projectionNode.addChild(innerChild);
+					    newInnerChildren.add(projectionNode);
+					    originalInnerChildren.add(innerChild);
+					}
 				    }
 				}
 
