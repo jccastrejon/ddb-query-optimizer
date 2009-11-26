@@ -10,7 +10,7 @@ import java.util.Collection;
  * @author jccastrejon
  * 
  */
-public class HybridFragment extends Relation {
+public class HybridFragment extends Relation implements MintermDependentFragment {
 
     /**
      * Source relation of this fragment.
@@ -57,17 +57,12 @@ public class HybridFragment extends Relation {
 	this.source = source;
     }
 
-    /**
-     * @return the minterm
-     */
+    @Override
     public Collection<Predicate> getMinterm() {
 	return minterm;
     }
 
-    /**
-     * @param minterm
-     *            the minterm to set
-     */
+    @Override
     public void setMinterm(Collection<Predicate> minterm) {
 	this.minterm = minterm;
     }
