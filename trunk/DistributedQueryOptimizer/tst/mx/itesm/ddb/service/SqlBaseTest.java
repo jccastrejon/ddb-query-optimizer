@@ -44,7 +44,9 @@ public abstract class SqlBaseTest extends TestCase {
 	this.testQueries = new ArrayList<String>();
 	testReader = new BufferedReader(new FileReader(SqlBaseTest.TEST_FILE));
 	while ((testQuery = testReader.readLine()) != null) {
-	    this.testQueries.add(testQuery);
+	    if (!testQuery.startsWith("#")) {
+		this.testQueries.add(testQuery);
+	    }
 	}
 
 	// Initialize logger

@@ -15,7 +15,7 @@ select emp.eno, emp.title from emp where emp.ename = "Juan" and emp.eno=1 and em
 select emp.ename, emp.title from emp, asg where emp.ename = "Juan" and emp.eno = 1 and emp.title != "Engineer";
 select emp.ename from emp where emp.eno = (select max(asg.resp) from asg);
 select R.nombre from R,S where R.enum = S.enum and (S.duracion=30 or R.edad=55);
-select emp.ename from proj, asg, emp where asg.eno = emp.eno and asg.pno = proj.pno and emp.ename != "J Doe" and proj.pname = "cad cam" and (asg.dur = 12 or asg.dur=24);
+#select emp.ename from proj, asg, emp where asg.eno = emp.eno and asg.pno = proj.pno and emp.ename != "J Doe" and proj.pname = "cad cam" and (asg.dur = 12 or asg.dur=24);
 select emp.ename from emp where emp.eno > 7;
 select emp.ename from emp where emp.eno > 7 and emp.eno < 9;
 select * from emp, asg where emp.eno = asg.eno;
