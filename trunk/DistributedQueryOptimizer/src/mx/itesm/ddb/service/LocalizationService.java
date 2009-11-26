@@ -767,8 +767,9 @@ public class LocalizationService {
 			lastProjectionNode = joinNode
 				.getClosestRelationalOperatorNode(RelationalOperator.PROJECTION);
 
-			// Test each of the new projection attributes to see
-			// if they're already projected in the operator tree
+			// If this projection uses attributes from the leaf
+			// relation, the relation should contain all the
+			// referenced attributes
 			validProjection = true;
 			while ((lastProjectionNode != null)
 				&& (!pendingProjectionAttributes.isEmpty())) {
