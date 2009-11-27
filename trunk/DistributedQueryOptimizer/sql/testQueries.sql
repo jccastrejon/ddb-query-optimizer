@@ -26,3 +26,5 @@ select emp.eno from emp, asg where emp.eno = asg.eno;
 select emp.eno, asg.pno from emp, asg where emp.eno = asg.eno and emp.ename = "Juan";
 select proj.budget from proj;
 select proj.pname, proj.budget from proj;
+select emp.ename from emp where emp.eno = 5;
+select emp.ename, asg.resp from emp, asg, proj where emp.eno=asg.eno and asg.pno=proj.pno;
