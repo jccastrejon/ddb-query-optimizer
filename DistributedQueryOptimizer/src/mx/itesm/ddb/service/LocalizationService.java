@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import mx.itesm.ddb.model.dictionary.Attribute;
 import mx.itesm.ddb.model.dictionary.FragmentationType;
@@ -254,7 +256,7 @@ public class LocalizationService {
 
 		unionNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.UNION);
 		if (unionNode != null) {
-		    // Look for the closest Selection
+		    // Reduction with Selection
 		    upperOperatorNode = unionNode
 			    .getClosestRelationalOperatorNode(RelationalOperator.SELECT);
 
@@ -274,22 +276,24 @@ public class LocalizationService {
 			}
 		    }
 
-		    // Look for the closes Join
-		    upperOperatorNode = unionNode
-			    .getClosestRelationalOperatorNode(RelationalOperator.JOIN);
+		    // Reduction with Join
+		    if (!returnValue) {
+			upperOperatorNode = unionNode
+				.getClosestRelationalOperatorNode(RelationalOperator.JOIN);
 
-		    // If a join is found, proceed with reduction
-		    if (upperOperatorNode != null) {
-			// All children of the Union node will be evaluated when
-			// the first child is found so there's no need to repeat
-			// this process with all of them
-			ignoredNodes.addAll(upperOperatorNode.getLeafNodes());
-			reductionApplied = this.reductionWithJoin(unionNode, upperOperatorNode);
+			// If a join is found, proceed with reduction
+			if (upperOperatorNode != null) {
+			    // All children of the Union node will be evaluated
+			    // when the first child is found so there's no need
+			    // to repeat this process with all of them
+			    ignoredNodes.addAll(upperOperatorNode.getLeafNodes());
+			    reductionApplied = this.reductionWithJoin(unionNode, upperOperatorNode);
 
-			// If at least one reduction has been applied over the
-			// leafs, the returnValue is true
-			if ((!returnValue) && (reductionApplied)) {
-			    returnValue = true;
+			    // If at least one reduction has been applied over
+			    // the leafs, the returnValue is true
+			    if ((!returnValue) && (reductionApplied)) {
+				returnValue = true;
+			    }
 			}
 		    }
 		}
@@ -526,16 +530,20 @@ public class LocalizationService {
 	Relation fragment;
 	boolean returnValue;
 	Node joinBranchNode;
+	String attributeName;
 	List<Node> leafNodes;
 	int comparissonResult;
 	Relation joinFragment;
 	boolean invalidMinterm;
 	Node currentBranchNode;
-	List<Node> ignoredNodes;
+	Set<Node> ignoredNodes;
+	Set<Node> ignoredLeafs;
+	String joinAttributeName;
 	Node firstJoinBranchNode;
 	Node joinBranchUnionNode;
 	Node secondJoinBranchNode;
 	String joinCommonAttribute;
+	Node ignoredLeafsBranchNode;
 	Node currentBranchUnionNode;
 	Node joinBranchUnionBranchNode;
 	Node currentBranchUnionBranchNode;
@@ -544,7 +552,8 @@ public class LocalizationService {
 
 	// Try to make the corresponding Joins
 	returnValue = false;
-	ignoredNodes = new ArrayList<Node>();
+	ignoredNodes = new HashSet<Node>();
+	ignoredLeafs = new HashSet<Node>();
 
 	// Make the Joins between all of the leaf Nodes of the joinNode and
 	// group them with a new Union node
@@ -557,6 +566,8 @@ public class LocalizationService {
 	joinCommonAttribute = joinCommonAttribute.substring(joinCommonAttribute.indexOf('.') + 1);
 
 	for (Node leafNode : leafNodes) {
+	    ignoredLeafs.clear();
+
 	    // Branch of the Join node containing the leaf node
 	    currentBranchNode = joinNode.getNodeContainingLeafNode(databaseDictionaryService
 		    .getRelationNames(leafNode.getSqlData()));
@@ -598,7 +609,13 @@ public class LocalizationService {
 		    continue;
 		}
 
-		// This is a leaf that belongs to the opposite branch of tht
+		// The branch that contains this leaf node has already been
+		// evaluated
+		if (ignoredLeafs.contains(joinLeafNode)) {
+		    continue;
+		}
+
+		// This is a leaf that belongs to the opposite branch of the
 		// Join node
 		joinBranchUnionNode = joinLeafNode
 			.getClosestRelationalOperatorNode(RelationalOperator.UNION);
@@ -609,12 +626,22 @@ public class LocalizationService {
 		    joinBranchUnionBranchNode = joinBranchUnionNode
 			    .getNodeContainingLeafNode(databaseDictionaryService
 				    .getRelationNames(joinLeafNode.getSqlData()));
+
+		    ignoredLeafsBranchNode = joinBranchUnionNode
+			    .getNodeContainingLeafNode(joinLeafNode.getSqlData());
 		} else {
 		    // There's no Union node, there's only one fragment for this
 		    // relation
 		    joinBranchUnionNode = joinLeafNode;
 		    joinBranchUnionBranchNode = joinLeafNode;
+		    ignoredLeafsBranchNode = joinNode.getNodeContainingLeafNode(joinLeafNode
+			    .getSqlData());
 		}
+
+		// Ignore all the leafs that are part of the branch that
+		// contains this leaf. If there's a Union node, it's the
+		// union branch, otherwise, it's the joinNode branch
+		ignoredLeafs.addAll(ignoredLeafsBranchNode.getLeafNodes());
 
 		// Since Join is commutative, avoid duplicating work
 		ignoredNodes.add(currentBranchUnionBranchNode);
@@ -642,9 +669,13 @@ public class LocalizationService {
 		    invalidMinterm = false;
 		    if ((fragmentPredicates != null) && (joinFragmentPredicates != null)) {
 			for (Predicate predicate : fragmentPredicates) {
+			    attributeName = predicate.getAttribute().getName();
+			    attributeName = attributeName.substring(attributeName.indexOf('.'));
 			    for (Predicate joinPredicate : joinFragmentPredicates) {
-				if (joinPredicate.getAttribute().getName().equals(
-					predicate.getAttribute().getName())) {
+				joinAttributeName = joinPredicate.getAttribute().getName();
+				joinAttributeName = joinAttributeName.substring(joinAttributeName
+					.indexOf('.'));
+				if (joinAttributeName.equalsIgnoreCase(attributeName)) {
 				    comparissonResult = predicate.getAttribute()
 					    .getAttributeDomain().compareValues(
 						    predicate.getValue(), joinPredicate.getValue());
