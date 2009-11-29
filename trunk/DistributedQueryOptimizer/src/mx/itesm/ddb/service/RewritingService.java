@@ -385,6 +385,7 @@ public class RewritingService {
      *         hierarchy, false otherwise.
      */
     public boolean commuteSelectionWithBinaryOperators(final Node currentNode) {
+	Node testNode;
 	boolean returnValue;
 	String currentRelation;
 	boolean childReturnValue;
@@ -402,13 +403,25 @@ public class RewritingService {
 		// Cartesian product, Join or Union operators
 		if ((currentRelation != null) && (currentNode.getChildren() != null)) {
 		    for (Node child : currentNode.getChildren()) {
-			if ((child.getRelationalOperator() != null)
-				&& (RewritingService.commutableOperators.contains(child
+			// Consider the case when commuteSelectionWithProjection
+			// has occurred in the global relation. If this relation
+			// has been fragmented we need to consider applying the
+			// commute operation again
+			testNode = child;
+			if (child.getRelationalOperator() == RelationalOperator.PROJECTION) {
+			    if (child.getChildren() != null) {
+				testNode = child.getChildren().get(0);
+			    }
+			}
+
+			// Check if one of the commutable operators is found
+			if ((testNode.getRelationalOperator() != null)
+				&& (RewritingService.commutableOperators.contains(testNode
 					.getRelationalOperator()))) {
 
 			    // Try to commute operators
 			    returnValue = this.addOperationNodeBeforeLeafNode(currentRelation,
-				    currentNode, child, currentChildren);
+				    currentNode, testNode, currentChildren);
 
 			    // Commuting done
 			    if (returnValue) {
