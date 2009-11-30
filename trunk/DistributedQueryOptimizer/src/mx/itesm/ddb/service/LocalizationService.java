@@ -566,6 +566,9 @@ public class LocalizationService {
 	joinCommonAttribute = joinCommonAttribute.substring(joinCommonAttribute.indexOf('.') + 1);
 
 	for (Node leafNode : leafNodes) {
+	    // Avoid duplicating work with branches that are not grouped by a
+	    // Union node
+	    ignoredNodes.addAll(ignoredLeafs);
 	    ignoredLeafs.clear();
 
 	    // Branch of the Join node containing the leaf node
