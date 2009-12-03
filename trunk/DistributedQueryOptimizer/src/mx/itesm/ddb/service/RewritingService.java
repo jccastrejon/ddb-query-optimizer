@@ -327,8 +327,10 @@ public class RewritingService {
 					.asList(currentNode.getSqlDataElements()));
 
 				for (String expression : selectionAttributes) {
+				    previousMatch = false;
 				    for (String sqlData : projectionAttributes) {
-					if (sqlData.toString().trim().equals(expression.trim())) {
+					if (sqlData.toString().trim().equalsIgnoreCase(
+						expression.trim())) {
 					    previousMatch = true;
 					    break;
 					}
