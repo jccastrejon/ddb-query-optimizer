@@ -1,7 +1,6 @@
 package mx.itesm.ddb.service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -161,8 +160,10 @@ public class DatabaseDictionaryService {
 	String firstOperand;
 	String secondOperand;
 	String[] expressions;
-	List<String> returnValue;
 	boolean operatorFound;
+	List<String> returnValue;
+	List<String> invalidAttributes;
+	List<String> modifiedAttributes;
 
 	returnValue = new ArrayList<String>();
 	if (sqlData != null) {
@@ -176,7 +177,7 @@ public class DatabaseDictionaryService {
 			firstOperand = expression.substring(0, expression.indexOf(operator
 				.getDescription()));
 			if (this.isValidAttribute(firstOperand)) {
-			    returnValue.add(firstOperand.trim());
+			    returnValue.add(firstOperand.toLowerCase().trim());
 			}
 
 			// value
@@ -184,7 +185,7 @@ public class DatabaseDictionaryService {
 				.getDescription())
 				+ operator.getDescription().length());
 			if (this.isValidAttribute(secondOperand)) {
-			    returnValue.add(secondOperand.trim());
+			    returnValue.add(secondOperand.toLowerCase().trim());
 			}
 
 			operatorFound = true;
@@ -194,7 +195,11 @@ public class DatabaseDictionaryService {
 
 		// If no operator was found
 		if (!operatorFound) {
-		    returnValue = Arrays.asList(expression.trim().split(" "));
+		    expressions = expression.toLowerCase().trim().split(" ");
+		    returnValue = new ArrayList<String>(expressions.length);
+		    for (String innerExpression : expressions) {
+			returnValue.add(innerExpression);
+		    }
 		}
 	    }
 
@@ -214,10 +219,38 @@ public class DatabaseDictionaryService {
 			}
 		    }
 
-		    returnValue.add(this.getValidExpression(innerExpression));
+		    returnValue.add(this.getValidExpression(innerExpression).toLowerCase().trim());
 		}
 	    }
 	}
+
+	// Remove empty values and operators that could have been incorrectly
+	// added ('<, >' when evaluating '<=, >=')
+	invalidAttributes = new ArrayList<String>();
+	modifiedAttributes = new ArrayList<String>();
+	for (String attribute : returnValue) {
+	    operatorFound = false;
+	    if (attribute.trim().length() == 0) {
+		operatorFound = true;
+	    } else {
+		for (ArithmeticOperator operator : ExpressionOperator.ArithmeticOperator.values()) {
+		    if (attribute.contains(operator.getDescription())) {
+			operatorFound = true;
+			modifiedAttributes.add(attribute.substring(0,
+				attribute.indexOf(operator.getDescription())).trim());
+			break;
+		    }
+		}
+	    }
+
+	    if (operatorFound) {
+		invalidAttributes.add(attribute);
+	    }
+	}
+
+	// Update returnValue with the changes found
+	returnValue.removeAll(invalidAttributes);
+	returnValue.addAll(modifiedAttributes);
 
 	return returnValue;
     }
