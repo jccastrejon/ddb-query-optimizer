@@ -448,7 +448,7 @@ public class LocalizationService {
 	    invalidMinterm = false;
 	    if (fragmentPredicates != null) {
 		// Condition on the Selection Node
-		selectionCondition = selectionNode.getSqlData();
+		selectionCondition = selectionNode.getSqlData().toLowerCase();
 		for (Predicate predicate : fragmentPredicates) {
 
 		    // Get the conditions that apply to this
