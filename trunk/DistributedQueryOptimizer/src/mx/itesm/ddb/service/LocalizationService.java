@@ -590,6 +590,11 @@ public class LocalizationService {
 		// relation
 		currentBranchUnionNode = leafNode;
 		currentBranchUnionBranchNode = leafNode;
+
+		// Avoid evaluating other leaf nodes that are part of this
+		// branch of the join, since there's no Union here to make the
+		// separation
+		ignoredNodes.addAll(currentBranchNode.getLeafNodes());
 	    }
 
 	    // Since Join is commutative, avoid duplicating work
