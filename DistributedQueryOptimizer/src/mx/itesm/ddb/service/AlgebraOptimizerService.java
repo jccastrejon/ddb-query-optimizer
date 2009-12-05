@@ -26,8 +26,6 @@ import mx.itesm.ddb.util.impl.QueryRelationData;
 import mx.itesm.ddb.util.impl.SimpleExpressionData;
 import mx.itesm.ddb.util.impl.SimpleRelationData;
 
-import org.apache.log4j.Logger;
-
 /**
  * Relational Algebra Optimizer.
  * 
@@ -35,11 +33,6 @@ import org.apache.log4j.Logger;
  * 
  */
 public class AlgebraOptimizerService {
-
-    /**
-     * Class logger.
-     */
-    private final static Logger logger = Logger.getLogger(AlgebraOptimizerService.class);
 
     /**
      * Rewriting Service.
@@ -148,13 +141,18 @@ public class AlgebraOptimizerService {
 		.getAttributesFromSqlData(rootNode.getSqlData());
 	this.graphicExportService.saveIntermediateOperatorTree(returnValue, queryId,
 		rewritingSteps, "Initial", imageDir);
-	logger.debug("Initial operator tree: " + returnValue);
+
+	// Rewrite Operator Tree according to the Global Relations
 	rewritingSteps = rewritingService.rewriteOperatorTree(returnValue, queryId, imageDir,
 		rewritingSteps);
-	logger.debug("Operator Tree after rewriting: " + returnValue);
+
+	// Custom OR conditions reduction
+	rewritingSteps = rewritingService.customOrConditionsReduction(returnValue, queryId,
+		imageDir, rewritingSteps);
+
+	// Reduce Global Relations to Fragments and apply reductions
 	rewritingSteps = localizationService.reduceRelationFragments(returnValue, rewritingSteps,
 		queryId, imageDir);
-	logger.debug("Operator Tree after reduction: " + returnValue);
 
 	// Make sure the projection attributes list of the initial tree is
 	// maintained

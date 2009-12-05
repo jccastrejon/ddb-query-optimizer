@@ -630,6 +630,163 @@ public class RewritingService {
     }
 
     /**
+     * Check if branches of the operator node can be joined after being
+     * separated by an <em>OR</em> condition. This means, if the branches are
+     * equal except for a condition over one leaf node, group the conditions
+     * over this leaf node from the branches, and create a new Union node in the
+     * first branch to hold them.
+     * 
+     * @param operatorTree
+     *            Operator Tree to be exported.
+     * @param queryId
+     *            Query Id.
+     * @param imageDir
+     *            Directory where to save the temporary Operator Tree.
+     * @param currentRewritingSteps
+     *            Current rewriting step that generated this intermediate
+     *            Operator Tree.
+     * @return Current number of rewriting step.
+     * @throws IOException
+     *             If an I/O error occurs.
+     */
+    public int customOrConditionsReduction(final OperatorTree operatorTree, final String queryId,
+	    final File imageDir, final int currentRewritingSteps) throws IOException {
+	Node unionNode;
+	int returnValue;
+	Node selectNode;
+	Node firstBranch;
+	Node newUnionNode;
+	Node selectParent;
+	boolean leafFound;
+	boolean orCondition;
+	List<Node> leafNodes;
+	List<Node> selectionNodes;
+	List<Node> branchLeafNodes;
+	List<Node> orConditionLeafs;
+	List<Node> orConditionSelectNodes;
+
+	firstBranch = null;
+	returnValue = currentRewritingSteps;
+	unionNode = operatorTree.getRootNode().getRelationalOperatorNode(RelationalOperator.UNION);
+	if ((unionNode != null) && (unionNode.getChildren() != null)
+		&& (!unionNode.getChildren().isEmpty())) {
+	    // Check if the branches refer to the same relations
+	    leafFound = false;
+	    firstBranch = unionNode.getChildren().get(0);
+	    leafNodes = firstBranch.getLeafNodes();
+	    for (Node branch : unionNode.getChildren()) {
+		leafFound = false;
+
+		// The leaf references will not be the same, but the
+		// description might be
+		for (Node innerLeafNode : branch.getLeafNodes()) {
+		    leafFound = false;
+		    for (Node leafNode : leafNodes) {
+			if (leafNode.getDescription().equalsIgnoreCase(
+				innerLeafNode.getDescription())) {
+			    leafFound = true;
+			    break;
+			}
+		    }
+
+		    // A leaf node not found before
+		    if (!leafFound) {
+			break;
+		    }
+		}
+
+		// This branch doesn't have the same leafs as the others
+		if (!leafFound) {
+		    break;
+		}
+	    }
+
+	    // All the branches refer to the same relations, try to apply the
+	    // reduction to keep only one of the branches
+	    if (leafFound) {
+		// Case: <expression> AND (<expression> OR <expression)
+		// For each leaf node get the closest selection node, compare
+		// all of them and see if they're the same, except for a
+		// comparisson, that is, what original cause the Union
+		orCondition = false;
+		orConditionSelectNodes = null;
+		orConditionLeafs = new ArrayList<Node>(leafNodes.size());
+
+		for (Node leafNode : leafNodes) {
+		    orCondition = false;
+		    selectionNodes = new ArrayList<Node>(unionNode.getChildren().size());
+		    for (Node branch : unionNode.getChildren()) {
+			// Assume a relation appears only once
+			// TODO: For nested queries this may not be true:.
+			branchLeafNodes = branch.getLeafNodes(leafNode.getSqlData());
+			selectNode = branchLeafNodes.get(0).getClosestRelationalOperatorNode(
+				RelationalOperator.SELECT);
+
+			if (selectNode != null) {
+			    selectionNodes.add(selectNode);
+			}
+		    }
+
+		    // Check if the select conditions are the same, if they
+		    // don't this is the operator that generated the separation
+		    // of the operator tree
+		    for (Node selectionNode : selectionNodes) {
+			for (Node otherSelectionNode : selectionNodes) {
+			    if (!selectionNode.getSqlData().equalsIgnoreCase(
+				    otherSelectionNode.getSqlData())) {
+				orCondition = true;
+				orConditionSelectNodes = selectionNodes;
+				break;
+			    }
+			}
+
+			// Or condition detected
+			if (orCondition) {
+			    break;
+			}
+		    }
+
+		    // The selection nodes that affect this leaf node in the
+		    // branches were the ones that generated the separation of
+		    // the Operator Tree
+		    if (orCondition) {
+			orConditionLeafs.add(leafNode);
+		    }
+		}
+
+		// Group the orConditionLeafs identified before into just one
+		// branch, with the Union node
+		if (!orConditionLeafs.isEmpty()) {
+		    for (Node orConditionLeaf : orConditionLeafs) {
+			// Assume a relation appears only once
+			// TODO: For nested queries this may not be true:.
+			selectNode = firstBranch.getLeafNodes(orConditionLeaf.getSqlData()).get(0)
+				.getClosestRelationalOperatorNode(RelationalOperator.SELECT);
+			selectParent = selectNode.getParent();
+			newUnionNode = new Node(RelationalOperator.UNION);
+			for (Node orConditionSelectNode : orConditionSelectNodes) {
+			    orConditionSelectNode.getParent().removeChild(orConditionSelectNode);
+			    newUnionNode.addChild(orConditionSelectNode);
+			}
+
+			// Group the selection nodes by one Union node
+			selectParent.addChild(newUnionNode);
+		    }
+
+		    // Remove all but the fist branch of the original Union node
+		    unionNode.getParent().addChild(firstBranch);
+		    unionNode.getParent().removeChild(unionNode);
+		    this.exportTemporaryTree(operatorTree, queryId, true, returnValue,
+			    "CustomOrConditionsReduction", imageDir);
+		    returnValue++;
+		}
+	    }
+	}
+
+	return returnValue;
+    }
+
+    /**
      * Export a temporary Operator Tree to an image in the given Image
      * Directory.
      * 
