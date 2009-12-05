@@ -263,14 +263,34 @@ public class Node implements Cloneable {
 	boolean returnValue;
 
 	returnValue = false;
-	if (this.relationalOperator == relationalOperator) {
+	if (this.getRelationalOperatorNode(relationalOperator) != null) {
 	    returnValue = true;
+	}
+
+	return returnValue;
+    }
+
+    /**
+     * Get the closest Node down in this Node's hierarchy identified by the
+     * specified relational operator.
+     * 
+     * @param relationalOperator
+     *            Relational Operator to look for.
+     * @return The closest Node down in the hierarchy identified by the
+     *         specified relational operator.
+     */
+    public Node getRelationalOperatorNode(final RelationalOperator relationalOperator) {
+	Node returnValue;
+
+	returnValue = null;
+	if (this.relationalOperator == relationalOperator) {
+	    returnValue = this;
 	}
 
 	else if (this.children != null) {
 	    for (Node child : this.children) {
-		returnValue = child.containsRelationalOperatorNode(relationalOperator);
-		if (returnValue) {
+		returnValue = child.getRelationalOperatorNode(relationalOperator);
+		if (returnValue != null) {
 		    break;
 		}
 	    }
