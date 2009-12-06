@@ -254,11 +254,12 @@ public class LocalizationService {
 		    continue;
 		}
 
-		unionNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.UNION);
+		unionNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.UNION,
+			null);
 		if (unionNode != null) {
 		    // Reduction with Selection
-		    upperOperatorNode = unionNode
-			    .getClosestRelationalOperatorNode(RelationalOperator.SELECT);
+		    upperOperatorNode = unionNode.getClosestRelationalOperatorNode(
+			    RelationalOperator.SELECT, null);
 
 		    // If a selection is found, proceed with reduction
 		    if (upperOperatorNode != null) {
@@ -278,8 +279,8 @@ public class LocalizationService {
 
 		    // Reduction with Join
 		    if (!returnValue) {
-			upperOperatorNode = unionNode
-				.getClosestRelationalOperatorNode(RelationalOperator.JOIN);
+			upperOperatorNode = unionNode.getClosestRelationalOperatorNode(
+				RelationalOperator.JOIN, null);
 
 			// If a join is found, proceed with reduction
 			if (upperOperatorNode != null) {
@@ -303,7 +304,8 @@ public class LocalizationService {
 	    for (Node leafNode : leafNodes) {
 		// If there's only one fragment left in the Union node,
 		// there's no need for a Union after all
-		unionNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.UNION);
+		unionNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.UNION,
+			null);
 		if ((unionNode != null) && (unionNode.getChildren() != null)
 			&& (unionNode.getChildren().size() == 1)) {
 		    unionNode.getParent().addChild(unionNode.getChildren().get(0));
@@ -337,8 +339,8 @@ public class LocalizationService {
 	// without an intermediate Union. This can happen if
 	// CommuteSelectionWithBinaryOperators is applied before reduction
 	for (Node leafNode : leafNodes) {
-	    upperOperatorNode = leafNode
-		    .getClosestRelationalOperatorNode(RelationalOperator.SELECT);
+	    upperOperatorNode = leafNode.getClosestRelationalOperatorNode(
+		    RelationalOperator.SELECT, null);
 	    if ((upperOperatorNode != null)
 		    && (!upperOperatorNode.containsRelationalOperatorNode(RelationalOperator.UNION))) {
 		if (this.generatesEmptyHorizontalFragment(leafNode, upperOperatorNode)) {
@@ -351,12 +353,12 @@ public class LocalizationService {
 	if (!emptyLeafs.isEmpty()) {
 	    returnValue = true;
 	    for (Node emptyLeaf : emptyLeafs) {
-		upperOperatorNode = emptyLeaf
-			.getClosestRelationalOperatorNode(RelationalOperator.UNION);
+		upperOperatorNode = emptyLeaf.getClosestRelationalOperatorNode(
+			RelationalOperator.UNION, null);
 
 		if (upperOperatorNode != null) {
-		    upperOperatorNode.removeChild(upperOperatorNode
-			    .getNodeContainingLeafNode(emptyLeaf.getSqlData()));
+		    upperOperatorNode.removeChild(upperOperatorNode.getNodeContainingLeafNode(null,
+			    emptyLeaf.getSqlData()));
 		}
 	    }
 	}
@@ -364,7 +366,8 @@ public class LocalizationService {
 	// If there's only one fragment left in the Union node, there's no need
 	// for a Union after all
 	for (Node leafNode : leafNodes) {
-	    upperOperatorNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.UNION);
+	    upperOperatorNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.UNION,
+		    null);
 
 	    if ((upperOperatorNode != null) && (upperOperatorNode.getChildren() != null)
 		    && (upperOperatorNode.getChildren().size() == 1)) {
@@ -406,7 +409,7 @@ public class LocalizationService {
 	if (!emptyLeafs.isEmpty()) {
 	    returnValue = true;
 	    for (Node emptyLeaf : emptyLeafs) {
-		emptyBranch = unionNode.getNodeContainingLeafNode(emptyLeaf.getSqlData());
+		emptyBranch = unionNode.getNodeContainingLeafNode(null, emptyLeaf.getSqlData());
 		unionNode.removeChild(emptyBranch);
 	    }
 	}
@@ -546,6 +549,7 @@ public class LocalizationService {
 	Node ignoredLeafsBranchNode;
 	Node currentBranchUnionNode;
 	Node joinBranchUnionBranchNode;
+	List<Node> previousBranchNodes;
 	Node currentBranchUnionBranchNode;
 	Collection<Predicate> fragmentPredicates;
 	Collection<Predicate> joinFragmentPredicates;
@@ -554,6 +558,7 @@ public class LocalizationService {
 	returnValue = false;
 	ignoredNodes = new HashSet<Node>();
 	ignoredLeafs = new HashSet<Node>();
+	previousBranchNodes = new ArrayList<Node>();
 
 	// Make the Joins between all of the leaf Nodes of the joinNode and
 	// group them with a new Union node
@@ -572,19 +577,25 @@ public class LocalizationService {
 	    ignoredLeafs.clear();
 
 	    // Branch of the Join node containing the leaf node
-	    currentBranchNode = joinNode.getNodeContainingLeafNode(databaseDictionaryService
+	    currentBranchNode = joinNode.getNodeContainingLeafNode(null, databaseDictionaryService
 		    .getRelationNames(leafNode.getSqlData()));
+
+	    // No Branch node found
+	    if (currentBranchNode == null) {
+		continue;
+	    }
 
 	    // Union node inside the current branch that contains
 	    // the leaf node
-	    currentBranchUnionNode = leafNode
-		    .getClosestRelationalOperatorNode(RelationalOperator.UNION);
+	    currentBranchUnionNode = leafNode.getClosestRelationalOperatorNode(
+		    RelationalOperator.UNION, joinNode);
 
 	    if (currentBranchUnionNode != null) {
 		// Branch of the Union node that contains the leaf node
-		currentBranchUnionBranchNode = currentBranchUnionNode
-			.getNodeContainingLeafNode(databaseDictionaryService
-				.getRelationNames(leafNode.getSqlData()));
+		currentBranchUnionBranchNode = currentBranchUnionNode.getNodeContainingLeafNode(
+			previousBranchNodes, databaseDictionaryService.getRelationNames(leafNode
+				.getSqlData()));
+		previousBranchNodes.add(currentBranchUnionBranchNode);
 	    } else {
 		// There's no Union node, there's only one fragment for this
 		// relation
@@ -595,6 +606,11 @@ public class LocalizationService {
 		// branch of the join, since there's no Union here to make the
 		// separation
 		ignoredNodes.addAll(currentBranchNode.getLeafNodes());
+	    }
+
+	    // No Branch node found in the Union node
+	    if (currentBranchUnionBranchNode == null) {
+		continue;
 	    }
 
 	    // Since Join is commutative, avoid duplicating work
@@ -611,7 +627,7 @@ public class LocalizationService {
 
 		// Avoid joining leaf nodes that belong to the same branch of
 		// the Join node
-		joinBranchNode = joinNode.getNodeContainingLeafNode(databaseDictionaryService
+		joinBranchNode = joinNode.getNodeContainingLeafNode(null, databaseDictionaryService
 			.getRelationNames(joinLeafNode.getSqlData()));
 		if (joinBranchNode == currentBranchNode) {
 		    continue;
@@ -625,24 +641,23 @@ public class LocalizationService {
 
 		// This is a leaf that belongs to the opposite branch of the
 		// Join node
-		joinBranchUnionNode = joinLeafNode
-			.getClosestRelationalOperatorNode(RelationalOperator.UNION);
+		joinBranchUnionNode = joinLeafNode.getClosestRelationalOperatorNode(
+			RelationalOperator.UNION, joinNode);
 
 		if (joinBranchUnionNode != null) {
 		    // Union node inside the opposite branch that contains the
 		    // leaf node
-		    joinBranchUnionBranchNode = joinBranchUnionNode
-			    .getNodeContainingLeafNode(databaseDictionaryService
-				    .getRelationNames(joinLeafNode.getSqlData()));
+		    joinBranchUnionBranchNode = joinBranchUnionNode.getNodeContainingLeafNode(null,
+			    databaseDictionaryService.getRelationNames(joinLeafNode.getSqlData()));
 
-		    ignoredLeafsBranchNode = joinBranchUnionNode
-			    .getNodeContainingLeafNode(joinLeafNode.getSqlData());
+		    ignoredLeafsBranchNode = joinBranchUnionNode.getNodeContainingLeafNode(null,
+			    joinLeafNode.getSqlData());
 		} else {
 		    // There's no Union node, there's only one fragment for this
 		    // relation
 		    joinBranchUnionNode = joinLeafNode;
 		    joinBranchUnionBranchNode = joinLeafNode;
-		    ignoredLeafsBranchNode = joinNode.getNodeContainingLeafNode(joinLeafNode
+		    ignoredLeafsBranchNode = joinNode.getNodeContainingLeafNode(null, joinLeafNode
 			    .getSqlData());
 		}
 
@@ -798,11 +813,12 @@ public class LocalizationService {
 
 		    // Check if the newProjectionAttributes are used by all the
 		    // projection nodes that refer to this relation
-		    joinNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.JOIN);
+		    joinNode = leafNode.getClosestRelationalOperatorNode(RelationalOperator.JOIN,
+			    null);
 		    if (joinNode != null) {
 			pendingProjectionAttributes = new ArrayList<String>(newProjectionAttributes);
-			lastProjectionNode = joinNode
-				.getClosestRelationalOperatorNode(RelationalOperator.PROJECTION);
+			lastProjectionNode = joinNode.getClosestRelationalOperatorNode(
+				RelationalOperator.PROJECTION, null);
 
 			// If this projection uses attributes from the leaf
 			// relation, the relation should contain all the
@@ -826,7 +842,8 @@ public class LocalizationService {
 			    // to avoid an infinite loop
 			    if ((validProjection) && (lastProjectionNode.getParent() != null)) {
 				lastProjectionNode = lastProjectionNode
-					.getClosestRelationalOperatorNode(RelationalOperator.PROJECTION);
+					.getClosestRelationalOperatorNode(
+						RelationalOperator.PROJECTION, null);
 			    } else {
 				break;
 			    }
@@ -835,7 +852,7 @@ public class LocalizationService {
 			// If the projection generates an empty relation
 			if (!validProjection) {
 			    returnValue = true;
-			    joinNode.removeChild(joinNode.getNodeContainingLeafNode(leafNode
+			    joinNode.removeChild(joinNode.getNodeContainingLeafNode(null, leafNode
 				    .getSqlData()));
 
 			    // If there's only one child left in the Join node,
