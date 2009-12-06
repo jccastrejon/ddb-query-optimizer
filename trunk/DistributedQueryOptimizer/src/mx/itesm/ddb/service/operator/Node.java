@@ -382,6 +382,10 @@ public class Node implements Cloneable {
      * Get the node whose branch contains the leaf node identified by the
      * specified SQL Data.
      * 
+     * @param invalidNodes
+     *            List of nodes that though probably containa node identified by
+     *            the sqlData, are considered invalid for return value. If one
+     *            of these is found, we should keep looking for another one.
      * @param sqlData
      *            Leaf Node's SQL Data.
      * @return If this node has children, we return the child whose branch
@@ -390,20 +394,36 @@ public class Node implements Cloneable {
      *         no leaf node is identified the given SQL Data, we return
      *         <em>null</em>.
      */
-    public Node getNodeContainingLeafNode(final String... sqlData) {
+    public Node getNodeContainingLeafNode(final Collection<Node> invalidNodes,
+	    final String... sqlData) {
 	Node returnValue;
+	boolean validValue;
 
 	returnValue = null;
 	if (this.getChildren() != null) {
 	    for (Node child : children) {
 		if (child.containsLeafNode(sqlData)) {
-		    returnValue = child;
-		    break;
+		    validValue = true;
+		    if ((invalidNodes != null) && (invalidNodes.contains(child))) {
+			validValue = false;
+		    }
+
+		    if (validValue) {
+			returnValue = child;
+			break;
+		    }
 		}
 	    }
 	} else {
 	    if (this.containsLeafNode(sqlData)) {
-		return this;
+		validValue = true;
+		if ((invalidNodes != null) && (invalidNodes.contains(this))) {
+		    validValue = false;
+		}
+
+		if (validValue) {
+		    return this;
+		}
 	    }
 	}
 
@@ -447,18 +467,46 @@ public class Node implements Cloneable {
      * 
      * @param relationalOperator
      *            Relational Operator.
+     * @param limitNode
+     *            Limit node up in the hierarchy.
      * @return The closest Node containing the specified Relational Operator or
      *         <em>null</em> if no Node is found.
      */
-    public Node getClosestRelationalOperatorNode(final RelationalOperator relationalOperator) {
+    public Node getClosestRelationalOperatorNode(final RelationalOperator relationalOperator,
+	    final Node limitNode) {
 	Node returnValue;
+	boolean checkLimit;
+	boolean continueSearch;
+
+	// Whether or not we have a limit node for the search
+	checkLimit = false;
+	continueSearch = true;
+	if (limitNode != null) {
+	    checkLimit = true;
+	}
 
 	returnValue = null;
 	if (this.getParent() != null) {
 	    returnValue = this.getParent();
-	    while ((returnValue != null)
-		    && (returnValue.getRelationalOperator() != relationalOperator)) {
-		returnValue = returnValue.getParent();
+	    // We've reached the limit without finding the node
+	    if (checkLimit) {
+		if (returnValue == limitNode) {
+		    continueSearch = false;
+		}
+	    }
+
+	    if (continueSearch) {
+		while ((returnValue != null)
+			&& (returnValue.getRelationalOperator() != relationalOperator)) {
+		    returnValue = returnValue.getParent();
+		    // We've reached the limit without finding the node
+		    if (checkLimit) {
+			if (returnValue == limitNode) {
+			    returnValue = null;
+			    break;
+			}
+		    }
+		}
 	    }
 	}
 
