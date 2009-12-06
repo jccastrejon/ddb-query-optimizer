@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 import mx.itesm.ddb.model.dictionary.Attribute;
+import mx.itesm.ddb.model.dictionary.AttributesSetFragment;
 import mx.itesm.ddb.model.dictionary.FragmentationType;
 import mx.itesm.ddb.model.dictionary.MintermDependentFragment;
 import mx.itesm.ddb.model.dictionary.Predicate;
@@ -793,7 +794,7 @@ public class LocalizationService {
 	for (Node leafNode : leafNodes) {
 	    relation = databaseDictionaryService.getRelation(leafNode.getSqlData());
 
-	    if ((relation.getFragmentationType() == FragmentationType.Vertical)
+	    if ((relation instanceof AttributesSetFragment)
 		    && (leafNode.getParent() != null)
 		    && (leafNode.getParent().getRelationalOperator() == RelationalOperator.PROJECTION)) {
 		projectionAttributes = databaseDictionaryService.getAttributesFromSqlData(leafNode

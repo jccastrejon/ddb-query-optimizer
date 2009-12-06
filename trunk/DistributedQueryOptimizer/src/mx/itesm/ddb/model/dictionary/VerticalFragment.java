@@ -9,7 +9,7 @@ import java.util.Collection;
  * @author jccastrejon
  * 
  */
-public class VerticalFragment extends Relation {
+public class VerticalFragment extends Relation implements AttributesSetFragment {
 
     /**
      * Source relation of this fragment.
