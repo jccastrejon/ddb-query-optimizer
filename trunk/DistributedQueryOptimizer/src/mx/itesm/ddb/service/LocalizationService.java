@@ -4,13 +4,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import mx.itesm.ddb.model.dictionary.Attribute;
 import mx.itesm.ddb.model.dictionary.AttributesSetFragment;
-import mx.itesm.ddb.model.dictionary.FragmentationType;
 import mx.itesm.ddb.model.dictionary.MintermDependentFragment;
 import mx.itesm.ddb.model.dictionary.Predicate;
 import mx.itesm.ddb.model.dictionary.PredicateOperator;
@@ -131,14 +132,19 @@ public class LocalizationService {
      */
     private boolean buildGenericQuery(final Node currentNode) {
 	Node fragmentNode;
+	Node newHybridNode;
 	boolean returnValue;
 	Node fragmentsParent;
 	List<Node> leafNodes;
 	Relation currentRelation;
 	Node hybridJoinFragments;
 	Node hybridUnionFragments;
+	StringBuilder mintermDescription;
 	Collection<String> joinAttributes;
+	Collection<Predicate> fragmentPredicates;
+	Collection<Relation> currentHybridFragments;
 	Collection<Relation> currentRelationFragments;
+	Map<String, Collection<Relation>> hybridFragmentsGroups;
 
 	returnValue = false;
 	leafNodes = currentNode.getLeafNodes();
@@ -171,14 +177,56 @@ public class LocalizationService {
 			hybridJoinFragments = new Node(RelationalOperator.JOIN);
 			hybridUnionFragments = new Node(RelationalOperator.UNION);
 
-			// Union with all the hybrid and horizontal fragments
+			// Group minterm dependent fragments according to their
+			// minterm (Horizontal and Hybrid fragments) and prepare
+			// fragments that depend on attributes for Join
+			hybridFragmentsGroups = new HashMap<String, Collection<Relation>>(
+				currentRelationFragments.size());
 			for (Relation fragment : currentRelationFragments) {
-			    if (fragment.getFragmentationType() != FragmentationType.Vertical) {
-				fragmentNode = new Node(fragment.getName());
-				hybridUnionFragments.addChild(fragmentNode);
-			    } else {
+			    if (fragment instanceof MintermDependentFragment) {
+				fragmentPredicates = ((MintermDependentFragment) fragment)
+					.getMinterm();
+				// Get minterm description
+				mintermDescription = new StringBuilder();
+				for (Predicate predicate : fragmentPredicates) {
+				    mintermDescription.append(predicate.toString());
+				}
+
+				// Get current fragments for the given minterm
+				// description
+				currentHybridFragments = hybridFragmentsGroups
+					.get(mintermDescription.toString());
+				if (currentHybridFragments == null) {
+				    currentHybridFragments = new ArrayList<Relation>();
+				    hybridFragmentsGroups.put(mintermDescription.toString(),
+					    currentHybridFragments);
+				}
+
+				// Add this fragment to the corresponding group
+				currentHybridFragments.add(fragment);
+			    } else if (fragment instanceof AttributesSetFragment) {
+				// Vertical Fragment
 				fragmentNode = new Node(fragment.getName());
 				hybridJoinFragments.addChild(fragmentNode);
+			    }
+			}
+
+			// The groups should be grouped by a Union node, if
+			// there's more than one fragment per group, group this
+			// group fragments by a Join node (assume they're
+			// vertically fragmented an that's why there's more than
+			// one fragment per minterm)
+			for (String minterm : hybridFragmentsGroups.keySet()) {
+			    newHybridNode = hybridUnionFragments;
+			    currentHybridFragments = hybridFragmentsGroups.get(minterm);
+			    if (currentHybridFragments.size() > 1) {
+				// Join before union
+				newHybridNode = new Node(RelationalOperator.JOIN);
+				hybridUnionFragments.addChild(newHybridNode);
+			    }
+
+			    for (Relation innerFragment : currentHybridFragments) {
+				newHybridNode.addChild(new Node(innerFragment.getName()));
 			    }
 			}
 
