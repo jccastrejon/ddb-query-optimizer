@@ -10,7 +10,8 @@ import java.util.Collection;
  * @author jccastrejon
  * 
  */
-public class HybridFragment extends Relation implements MintermDependentFragment {
+public class HybridFragment extends Relation implements MintermDependentFragment,
+	AttributesSetFragment {
 
     /**
      * Source relation of this fragment.
