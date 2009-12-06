@@ -720,7 +720,7 @@ public class RewritingService {
 			// TODO: For nested queries this may not be true:.
 			branchLeafNodes = branch.getLeafNodes(leafNode.getSqlData());
 			selectNode = branchLeafNodes.get(0).getClosestRelationalOperatorNode(
-				RelationalOperator.SELECT);
+				RelationalOperator.SELECT, null);
 
 			if (selectNode != null) {
 			    selectionNodes.add(selectNode);
@@ -761,7 +761,7 @@ public class RewritingService {
 			// Assume a relation appears only once
 			// TODO: For nested queries this may not be true:.
 			selectNode = firstBranch.getLeafNodes(orConditionLeaf.getSqlData()).get(0)
-				.getClosestRelationalOperatorNode(RelationalOperator.SELECT);
+				.getClosestRelationalOperatorNode(RelationalOperator.SELECT, null);
 			selectParent = selectNode.getParent();
 			newUnionNode = new Node(RelationalOperator.UNION);
 			for (Node orConditionSelectNode : orConditionSelectNodes) {
