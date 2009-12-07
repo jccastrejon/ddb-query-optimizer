@@ -577,6 +577,7 @@ public class LocalizationService {
      *         <em>false</em> otherwise.
      */
     private boolean reductionWithJoin(final Node unionNode, final Node joinNode) {
+	Node testNode;
 	Node newJoinNode;
 	Node newUnionNode;
 	Relation fragment;
@@ -692,6 +693,17 @@ public class LocalizationService {
 		// Join node
 		joinBranchUnionNode = joinLeafNode.getClosestRelationalOperatorNode(
 			RelationalOperator.UNION, joinNode);
+
+		// Check if this Union node belongs to the Join node that links
+		// to the first leafNode, if this is not the case, don't use
+		// this Union node
+		if (joinBranchUnionNode != null) {
+		    testNode = joinBranchUnionNode.getClosestRelationalOperatorNode(
+			    RelationalOperator.JOIN, joinNode);
+		    if ((testNode != null) && (!testNode.containsLeafNode(leafNode.getSqlData()))) {
+			joinBranchUnionNode = null;
+		    }
+		}
 
 		if (joinBranchUnionNode != null) {
 		    // Union node inside the opposite branch that contains the
