@@ -28,3 +28,5 @@ select proj.budget from proj;
 select proj.pname, proj.budget from proj;
 select emp.ename from emp where emp.eno = 5;
 select emp.ename, asg.resp from emp, asg, proj where emp.eno=asg.eno and asg.pno=proj.pno;
+#Select Alumno.nombre From Alumno, AlumnoSemestre, Carrera Where Alumno.idCarrera = Carrera.idCarrera AND Alumno.matricula = AlumnoSemestre.matricula AND Carrera.idCarrera = 1 AND AlumnoSemestre.periodo = "200913" AND AlumnoSemestre.promedio >= 90;
+#select r.nombre from r, s where r.enum = s.enum and (s.duracion=30 or r.edad=55);
