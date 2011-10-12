@@ -7,8 +7,8 @@ package mx.itesm.ddb.util;
  * 
  */
 public enum RelationalOperator {
-    SELECT("\u03C3", "&#x3C3;", false), JOIN("\u22C8", "&#x22C8;", false), UNION("\u22C3",
-	    "&#x22C3;", false), PROJECTION("\uu03A0", "&#x3A0;", true), PRODUCT("\u00D7", "&#xD7;",
+    SELECT("σ", "&#x3C3;", false), JOIN("⋈", "&#x22C8;", false), UNION("⋃",
+	    "&#x22C3;", false), PROJECTION("Π", "&#x3A0;", true), PRODUCT("×", "&#xD7;",
 	    false);
 
     /**
