@@ -1,0 +1,1 @@
+Produce an optimized execution plan for queries specified over a distributed database.
